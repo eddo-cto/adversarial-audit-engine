@@ -1,0 +1,16 @@
+{
+  "name": "adversarial-audit-engine",
+  "version": "0.6.0",
+  "description": "A 5-layer adversarial-audit hive (destruens, construens, generative, deep-causal, meta-epistemic governor). Claude Code orchestrates roles and tools; the deterministic core stays in Python (aae, bundled); the independent eye can run on a different vendor. It never reports 'validated' on internal grounds: only a human validates.",
+  "author": { "name": "Capybara Media", "email": "hello@capybaramedia.com" },
+  "keywords": ["audit", "verification", "adversarial", "peer-review", "epistemic", "falsification"],
+  "commands": ["./commands/audit.md"],
+  "agents": [
+    "./agents/oracle.md",
+    "./agents/verifier.md",
+    "./agents/propagator.md",
+    "./agents/governor.md",
+    "./agents/external-auditor.md"
+  ],
+  "hooks": "./hooks/hooks.json"
+}
