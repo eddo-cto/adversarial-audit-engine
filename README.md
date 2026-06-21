@@ -4,6 +4,8 @@
 > artifact, with a deterministic Python core that enforces the discipline.
 > It never reports "validated" on internal grounds: **only a human validates.**
 
+**[Read the story — how it was built and hardened across seven adversarial rounds](STORY.md)**
+
 **Status: research preview (v0.6.0).** Tested across seven adversarial rounds and
 on real cases (a consensus protocol, incident RCA, threat modeling, multi-regulation
 conflicts, scientific peer review). It is not an oracle: it is a tool that
@@ -91,4 +93,4 @@ configured on *your* machine.
 
 MIT (see `LICENSE`). See `DISCLAIMER.md`: the software is provided "as is", without
 warranties; it is not professional advice (legal, financial, medical). Its output
-must always be verified by a competent person before any decision.
+must always be verified by a competent pers
