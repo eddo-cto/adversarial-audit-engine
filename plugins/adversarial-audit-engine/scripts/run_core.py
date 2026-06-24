@@ -30,11 +30,11 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(_HERE, "..", "..")))  # -> aae parent
-sys.path.insert(0, os.path.abspath(os.path.join(_HERE, "..")))  # bundled aae at plugin root
 
 from aae.schema import Ledger, Posta
 from aae.orchestrator import parse_finding, AuditResult
 from aae.gates import enforce_defense_gate, enforce_coverage_gate, evaluate_completion
+from aae.grounding import enforce_grounding
 from aae import metrics as metrics_mod
 from aae.triage import TriageResult
 from aae.meta_epistemic import MetaGovernor
@@ -51,6 +51,12 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     ledger.adjudicate_all()
     enforce_defense_gate(ledger)
     enforce_coverage_gate(ledger)
+    # anti-hallucination: a condemning finding whose quote is not verbatim in the
+    # source text is downgraded (possible fabrication). Pass the artifact text in
+    # payload["source_text"] to activate it.
+    src_text = payload.get("source_text", "")
+    if src_text:
+        enforce_grounding(ledger.findings, src_text)
 
     internal = payload.get("internal_identity", "anthropic:internal")
     external = payload.get("external_identity")

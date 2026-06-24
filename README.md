@@ -6,10 +6,20 @@
 
 **[Read the story — how it was built and hardened across seven adversarial rounds](STORY.md)**
 
-**Status: research preview (v0.6.0).** Tested across seven adversarial rounds and
+**Status: research preview (v0.7.0).** Tested across seven adversarial rounds and
 on real cases (a consensus protocol, incident RCA, threat modeling, multi-regulation
 conflicts, scientific peer review). It is not an oracle: it is a tool that
 *multiplies* a competent human reviewer — it does not replace one.
+
+**v0.7.0** adds a deterministic **anti-hallucination grounding gate**
+(`aae/grounding.py`): a finding may only condemn on a quote that exists *verbatim*
+in the source; anything else (fabricated, paraphrased, or quote-mined out of a
+negated context) is downgraded to "must be read by a human." It was itself broken
+and hardened across three dedicated adversarial rounds — fabrication and PDF-noise
+false-negatives driven to zero, with the residual *semantic* (out-of-context)
+limit honestly declared rather than faked. A companion **legal oracle**
+(`aae/legal_oracle.py`) checks, on demand, that cited norms *exist* and are
+faithfully represented — never their interpretation, never from model memory.
 
 ---
 
