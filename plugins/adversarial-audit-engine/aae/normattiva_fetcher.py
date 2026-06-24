@@ -200,3 +200,73 @@ class NormattivaFetcher:
         text = re.sub(r"[ \t]+", " ", text)
         text = re.sub(r"\n{2,}", "\n", text)
         return text.strip()
+
+
+# --- Open Data / Akoma Ntoso (machine-readable, the proper path) --------------
+
+def parse_akn(xml_text: str) -> Optional[str]:
+    """Convert an Akoma Ntoso XML act to plain text (article numbers, headings and
+    paragraph bodies). Deterministic, stdlib only. Returns None if it can't parse
+    or yields nothing -> oracle abstains. This is the reusable core: feed it the
+    official AKN export and the grounding gate checks fidelity against real law text."""
+    import xml.etree.ElementTree as ET
+    try:
+        root = ET.fromstring(xml_text)
+    except Exception:
+        return None
+
+    def local(tag: str) -> str:
+        return tag.rsplit("}", 1)[-1]
+
+    parts: list[str] = []
+    for el in root.iter():
+        if local(el.tag) in ("num", "heading", "p"):
+            t = " ".join(s.strip() for s in el.itertext() if s and s.strip())
+            if t:
+                parts.append(t)
+    out = "\n".join(parts).strip()
+    return out or None
+
+
+class AkomaNtosoFetcher:
+    """Fetch the OFFICIAL machine-readable act from Normattiva's Akoma Ntoso export
+    (`/do/atto/caricaAKN`) and parse it to text. This is the correct fidelity source.
+
+    Honest limitation: the AKN endpoint is keyed by internal identifiers
+    (`dataGU`, `codiceRedaz`) that are NOT derivable from a plain URN citation — you
+    need a lookup, e.g. from the official Open Data dataset on dati.normattiva.it.
+    So this fetcher takes an `index` mapping a normalized law key -> those ids.
+    Without an entry it ABSTAINS (returns None). Stdlib only.
+    """
+
+    BASE = ("https://www.normattiva.it/do/atto/caricaAKN"
+            "?dataGU={dataGU}&codiceRedaz={codiceRedaz}&dataVigenza={dataVigenza}")
+
+    def __init__(self, index: dict, data_vigenza: Optional[str] = None,
+                 timeout: float = 20.0, user_agent: str = "Mozilla/5.0 (legal-oracle research)"):
+        # index: { law_key : {"dataGU": "YYYYMMDD", "codiceRedaz": "...", "dataVigenza": "YYYYMMDD"?} }
+        self.index = index
+        self.data_vigenza = data_vigenza
+        self.timeout = timeout
+        self.user_agent = user_agent
+
+    @staticmethod
+    def _key(citation: Citation) -> str:
+        ny = _num_year(citation.law)
+        if ny:
+            return f"{ny[0]}/{ny[1]}"
+        return re.sub(r"[^0-9a-z]+", "", (citation.law or "").lower())
+
+    def __call__(self, citation: Citation) -> Optional[str]:
+        ids = self.index.get(self._key(citation))
+        if not ids or not ids.get("dataGU") or not ids.get("codiceRedaz"):
+            return None        # no AKN identifiers -> abstain, never guess
+        url = self.BASE.format(dataGU=ids["dataGU"], codiceRedaz=ids["codiceRedaz"],
+                               dataVigenza=(self.data_vigenza or ids.get("dataVigenza", "")))
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": self.user_agent})
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                xml = resp.read().decode("utf-8", errors="ignore")
+        except Exception:
+            return None
+        return parse_akn(xml)
