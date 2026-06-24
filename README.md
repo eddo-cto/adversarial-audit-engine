@@ -13,13 +13,23 @@ conflicts, scientific peer review). It is not an oracle: it is a tool that
 
 **v0.7.0** adds a deterministic **anti-hallucination grounding gate**
 (`aae/grounding.py`): a finding may only condemn on a quote that exists *verbatim*
-in the source; anything else (fabricated, paraphrased, or quote-mined out of a
-negated context) is downgraded to "must be read by a human." It was itself broken
-and hardened across three dedicated adversarial rounds — fabrication and PDF-noise
-false-negatives driven to zero, with the residual *semantic* (out-of-context)
-limit honestly declared rather than faked. A companion **legal oracle**
-(`aae/legal_oracle.py`) checks, on demand, that cited norms *exist* and are
-faithfully represented — never their interpretation, never from model memory.
+in the source; a fabricated or paraphrased quote is reliably downgraded to "must be
+read by a human." It was itself broken and hardened across three dedicated
+adversarial rounds, and what it does and does not guarantee is stated precisely:
+
+- **Guaranteed (deterministic):** *existence* — no fabricated or altered quote can
+  condemn; and *recall robustness* — PDF noise (hyphenation, zero-width chars,
+  curly quotes) produced **0 false-negatives** on 1,407 real spans.
+- **Best-effort, not guaranteed:** *out-of-context / quote-mining* — a real
+  substring lifted out of a negated clause is flagged by a conservative
+  sentence-scope check that catches most but not all such cases (≈3 in 4 in
+  testing). The residual is the irreducible **semantic** limit, declared rather
+  than faked; meaning is validated by the human. The check costs ≈6% over-flagging
+  (legitimate findings routed to a human) — the safe direction.
+
+A companion **legal oracle** (`aae/legal_oracle.py`) checks, on demand, that cited
+norms *exist* and are faithfully represented — never their interpretation, never
+from model memory.
 
 ---
 
