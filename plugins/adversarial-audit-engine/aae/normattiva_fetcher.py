@@ -46,6 +46,25 @@ _CODICE_URN = {
     "c.p.": "regio.decreto:1930-10-19;1398",       # Codice Penale
 }
 
+# Normattiva serves the actual article text only inside an authenticated SESSION;
+# a session-less URN request returns the portal SHELL or an error page (pure
+# navigation chrome). Returning that chrome to the oracle would let it "verify"
+# claims against menu text — a silent failure. So the fetcher abstains unless the
+# response carries a positive signal that it is a real act page, and never when an
+# error marker is present. Fail-safe: when unsure, return None (abstain).
+_ERROR_MARKERS = ("errore nel caricamento", "errore nel caricamento delle informazioni")
+_ATTO_MARKERS = ("testo in vigore", "aggiornamenti all'articolo", "aggiornamenti all",
+                 "testo storico", "entrata in vigore del provvedimento", "vigente al ")
+
+
+def _looks_like_atto(text: str) -> bool:
+    """True only if the response looks like a real act page (not the portal shell
+    or an error page). Conservative: absence of a positive signal -> abstain."""
+    low = text.lower()
+    if any(e in low for e in _ERROR_MARKERS):
+        return False
+    return any(m in low for m in _ATTO_MARKERS)
+
 
 def _law_key(law: Optional[str]) -> Optional[str]:
     if not law:
@@ -134,8 +153,14 @@ class NormattivaFetcher:
     """Best-effort live fetch from Normattiva via the official URN permalink,
     date-aware. On ANY failure returns None (oracle abstains).
 
-    Validate on your machine: Normattiva is session/cookie protected and the HTML
-    structure changes; treat a None as 'could not verify', never as 'false'.
+    IMPORTANT (validated live, 2026-06): Normattiva serves article text only inside
+    an authenticated session. A plain session-less URN request returns the portal
+    SHELL or an error page (navigation chrome, no article body). This fetcher
+    detects that and ABSTAINS (returns None) rather than feeding chrome to the
+    oracle. In practice raw-HTTP retrieval almost always abstains — by design. For
+    real fidelity checks use LocalCorpusFetcher (a corpus you control), or
+    integrate the official Open Data endpoint (dati.normattiva.it / Akoma Ntoso
+    export). Treat None as 'could not verify', never as 'false'.
     """
 
     PERMALINK = "https://www.normattiva.it/uri-res/N2Ls?{urn}"
@@ -160,7 +185,9 @@ class NormattivaFetcher:
         except Exception:
             return None                         # abstain on any network/parse error
         text = self._extract_text(html)
-        return text or None
+        if not text or not _looks_like_atto(text):
+            return None        # session-less shell / error page -> abstain, never feed chrome
+        return text
 
     @staticmethod
     def _extract_text(html: str) -> str:
