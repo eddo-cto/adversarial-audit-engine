@@ -36,6 +36,7 @@ from aae.orchestrator import parse_finding, AuditResult
 from aae.gates import enforce_defense_gate, enforce_coverage_gate, evaluate_completion
 from aae.grounding import enforce_grounding
 from aae import metrics as metrics_mod
+from aae import run_metrics as rmx
 from aae.triage import TriageResult
 from aae.meta_epistemic import MetaGovernor
 from aae.adapters import independence_level_between
@@ -87,13 +88,47 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     summary = (result.summary() if hasattr(result, "summary") else "")
     with open(os.path.join(out_dir, f"{stem}.summary.txt"), "w", encoding="utf-8") as fh:
         fh.write(summary)
+
+    # longitudinal, bias-resistant metrics: accrue one record per run.
+    rec = rmx.from_ledger(ledger)
+    with open(os.path.join(out_dir, "_runs.jsonl"), "a", encoding="utf-8") as fh:
+        fh.write(json.dumps({"artifact": ledger.artifact_name, "verdicts": rec.verdicts,
+                             "grounding_downgrades": rec.grounding_downgrades,
+                             "by_class": rec.by_class}, ensure_ascii=False) + "\n")
     return result
 
 
+def metrics_report(out_dir: str) -> str:
+    """Longitudinal panel + bias_audit over all accrued runs in out_dir.
+    Descriptive only; no single score; abstention never counts as success."""
+    path = os.path.join(out_dir, "_runs.jsonl")
+    if not os.path.exists(path):
+        return f"Nessuno storico run (_runs.jsonl) in {out_dir}"
+    runs = []
+    for line in open(path, encoding="utf-8"):
+        line = line.strip()
+        if not line:
+            continue
+        d = json.loads(line)
+        runs.append(rmx.RunRecord(verdicts=d.get("verdicts", {}),
+                                  grounding_downgrades=d.get("grounding_downgrades", 0),
+                                  by_class=d.get("by_class", {})))
+    panel = rmx.compute(runs)
+    warns = rmx.bias_audit(panel)
+    return (panel.as_text() + "\n\n=== bias_audit ===\n" +
+            ("\n".join("- " + w for w in warns) if warns else "- nessuna firma degenere"))
+
+
 def main() -> int:
+    out_dir = os.environ.get("AAE_OUT", os.path.join(os.getcwd(), "aae_out"))
+    # longitudinal metrics mode:  run_core.py --metrics [out_dir]
+    if len(sys.argv) > 1 and sys.argv[1] == "--metrics":
+        if len(sys.argv) > 2:
+            out_dir = sys.argv[2]
+        print(metrics_report(out_dir))
+        return 0
     src = sys.argv[1] if len(sys.argv) > 1 else None
     payload = json.load(open(src, encoding="utf-8")) if src else json.load(sys.stdin)
-    out_dir = os.environ.get("AAE_OUT", os.path.join(os.getcwd(), "aae_out"))
     result = run(payload, out_dir)
     print(result.summary())
     print(f"\nwritten to: {out_dir}")

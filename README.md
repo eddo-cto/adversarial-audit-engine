@@ -6,10 +6,18 @@
 
 **[Read the story — how it was built and hardened across seven adversarial rounds](STORY.md)**
 
-**Status: research preview (v0.7.0).** Tested across seven adversarial rounds and
+**Status: research preview (v0.8.0).** Tested across seven adversarial rounds and
 on real cases (a consensus protocol, incident RCA, threat modeling, multi-regulation
 conflicts, scientific peer review). It is not an oracle: it is a tool that
 *multiplies* a competent human reviewer — it does not replace one.
+
+**v0.8.0** adds **bias-resistant longitudinal metrics** (`aae/run_metrics.py`,
+`run_core.py --metrics`): a panel of *orthogonal* rates with **no single composite
+score** (avoiding Goodhart), where **abstention is never counted as success**, and
+*escape/precision/recall* are reported only with **human ground truth** (otherwise
+`n/d`, never an imputed 0). A `bias_audit()` actively flags degenerate signatures
+(rubber-stamp, all-abstain, over-condemn) — the meta-governor applied to the metrics
+themselves. Verified with six adversarial bias tests.
 
 **v0.7.0** adds a deterministic **anti-hallucination grounding gate**
 (`aae/grounding.py`): a finding may only condemn on a quote that exists *verbatim*
