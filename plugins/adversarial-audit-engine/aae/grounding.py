@@ -112,7 +112,12 @@ def classify(quote: str, source: str) -> str:
     return "absent"
 
 
-def enforce_grounding(findings: list, source_text: str) -> list[str]:
+def enforce_grounding(findings: list, source_text: str,
+                      source_trust: str = "high") -> list[str]:
+    """source_trust ('high'|'medium'|'low'): reliability of `source_text`. When the
+    source came from OCR (medium/low), even a STRICT verbatim match is NOT allowed to
+    back a condemnation -- the source itself is uncertain (a misread glyph could fake
+    or break a match). Such findings are routed to human verify. OCR trust contract."""
     from .schema import Verdict
     notes: list[str] = []
     CONDEMNING = (Verdict.ARTIFACT_DEFECTIVE, Verdict.REDUCED, Verdict.PENDING)
@@ -120,7 +125,9 @@ def enforce_grounding(findings: list, source_text: str) -> list[str]:
         "negation_risk": "GROUNDING: la frase-fonte contiene una negazione/eccezione che la citazione omette -> possibile fuori-contesto",
         "fuzzy": "GROUNDING: presente solo in forma non-verbatim (impaginazione) -> verificare a mano",
         "absent": "GROUNDING: quote non trovata verbatim nella fonte -> possibile allucinazione",
+        "ocr_source": "GROUNDING: fonte da OCR (testo non certo) -> nessuna condanna su match verbatim; verifica umana",
     }
+    ocr_source = source_trust not in ("high", None)
     for f in findings:
         base = getattr(f.accusation, "base", None)
         base_val = base.value if hasattr(base, "value") else base
@@ -128,10 +135,11 @@ def enforce_grounding(findings: list, source_text: str) -> list[str]:
             continue
         quote = getattr(f, "quote", None) or getattr(f.accusation, "evidence", "") or ""
         label = classify(quote, source_text)
-        if label == "strict":
+        if label == "strict" and not ocr_source:
             continue
+        reason_key = "ocr_source" if (label == "strict" and ocr_source) else label
         if f.verdict in CONDEMNING:
             f.verdict = Verdict.NEEDS_READING
-        f.declared_limit = ((f.declared_limit + " | ") if f.declared_limit else "") + reasons[label]
-        notes.append(f"{f.id}: {label} -> NEEDS_READING")
+        f.declared_limit = ((f.declared_limit + " | ") if f.declared_limit else "") + reasons[reason_key]
+        notes.append(f"{f.id}: {reason_key} -> NEEDS_READING")
     return notes
