@@ -200,3 +200,22 @@ class MetaGovernor:
         return MetaAssessment(checks=checks, verdict=verdict,
                               residue_to_human=residue,
                               apparent_coherence_score=ac_score)
+
+    def falsification_type1(self, demolition_scores_valid, demolition_scores_invalid,
+                            *, threshold=0.5, k=1, m=1):
+        """negation_spectrometry integrated into the governor: turn "the auditor demolishes
+        too much" into a MEASURED number. Given the auditor's demolition SCORES on a control
+        battery (VALID artifacts that must survive + INVALID that must die), return the
+        false-demolition rate FDR (Type-I), power TDR, AUC, and the k-of-m persistence bound.
+        Domain-agnostic: the caller supplies the battery. See aae/negation_spectrometry.py."""
+        import importlib.util as _u, os as _os, sys as _sys
+        _p = _os.path.join(_os.path.dirname(__file__), "negation_spectrometry.py")
+        _sp = _u.spec_from_file_location("negation_spectrometry", _p)
+        _ns = _u.module_from_spec(_sp); _sys.modules["negation_spectrometry"] = _ns; _sp.loader.exec_module(_ns)
+        cal = _ns.calibrate(demolition_scores_valid, demolition_scores_invalid, threshold=threshold)
+        cal["type1_bound_kofm"] = _ns.binom_tail(k, m, cal["FDR"]) if m else None
+        cal["verdict"] = ("discriminative auditor" if cal["AUC"] >= 0.7 and cal["FDR"] <= 0.2
+                          else "over-demolition suspect / weak power")
+        cal["note"] = ("measured against an EXTERNAL control battery; with correlated auditors "
+                       "the assumption-free residual is >= the independence bound p^m")
+        return cal

@@ -132,3 +132,10 @@ persists across **k-of-m independent (different-vendor) auditors**; report the *
 residual Type-I (`empirical_type1`), which captures shared-blind-spot correlation that the
 `p^m` independence bound ignores. Theorem (binomial-tail control) is verified numerically by
 `python3 aae/negation_spectrometry.py`. Stdlib only.
+
+### 0.10.1 — negation-spectrometry integrated into the governor
+`MetaGovernor.falsification_type1(scores_valid, scores_invalid, k=, m=)` exposes the Type-I gate
+directly on the meta-epistemic governor: given the auditor's demolition scores on a control
+battery, it returns the measured false-demolition rate (FDR), power, AUC and the k-of-m
+persistence bound. Domain-agnostic (the caller supplies the battery). The method is now
+*integrated*, not just present.
