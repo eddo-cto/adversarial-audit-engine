@@ -122,3 +122,13 @@ configured on *your* machine.
 MIT (see `LICENSE`). See `DISCLAIMER.md`: the software is provided "as is", without
 warranties; it is not professional advice (legal, financial, medical). Its output
 must always be verified by a competent pers
+## 0.10.0 — Negation-spectrometry (Type-I gate against over-demolition)
+
+A powerful adversarial auditor can demolish *valid* artifacts too — the **Type-I error of
+falsification**. `aae/negation_spectrometry.py` turns "the engine demolishes too much" into a
+**measured, bounded number**: calibrate each auditor on a control battery (valid + broken
+artifacts) → false-demolition rate `FDR` / power `TDR` / `AUC`; admit a negation only if it
+persists across **k-of-m independent (different-vendor) auditors**; report the **assumption-free**
+residual Type-I (`empirical_type1`), which captures shared-blind-spot correlation that the
+`p^m` independence bound ignores. Theorem (binomial-tail control) is verified numerically by
+`python3 aae/negation_spectrometry.py`. Stdlib only.
