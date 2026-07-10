@@ -5,7 +5,7 @@ Nothing here is "validated": closing what remains open requires external expert 
 
 **Author:** Edoardo Gazzoni · independent researcher · ORCID: 0009-0004-2525-256X · **Date:** July 2026
 
-**Engine:** the adversarial audit procedure that produced and attacked this paper is open source: [`github.com/eddo-cto/adversarial-audit-engine`](https://github.com/eddo-cto/adversarial-audit-engine) (MIT, v0.10.1). **Companion:** *Managing epistemic circularity in self-referential evaluation: the survivor gate, and how three scientific ledgers resolve indeterminacy*, which applies the C₃ quantale and the interleaving distance developed here to three real reliability ledgers. **Archive:** both papers and the replication package are deposited on Zenodo, DOI ⟨DOI da inserire⟩.
+**Engine:** the adversarial audit procedure that produced and attacked this paper is open source: [`github.com/eddo-cto/adversarial-audit-engine`](https://github.com/eddo-cto/adversarial-audit-engine) (MIT, v0.10.1). **Companion:** *Managing epistemic circularity in self-referential evaluation: the survivor gate, and how three scientific ledgers resolve indeterminacy*, which applies the C₃ quantale and the interleaving distance developed here to three real reliability ledgers. **Archive:** both papers and the replication package are deposited on Zenodo, DOI 10.5281/zenodo.21288401.
 
 ---
 

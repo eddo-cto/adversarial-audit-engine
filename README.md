@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21288401.svg)](https://doi.org/10.5281/zenodo.21288401)
+
 # Adversarial Audit Engine
 
 > A hive of adversarial roles that **tries to falsify** a high-complexity
@@ -148,6 +150,5 @@ This repository also hosts the two papers that formalise what the engine produce
 
 - **`papers/managing-circularity/`** — *Managing epistemic circularity in self-referential evaluation: the survivor gate, and how three scientific ledgers resolve indeterminacy.* The main paper: the Survivor Gate, declared non-closure, and three real reliability ledgers (Kepler KOI, ClinVar/ACMG, NVD/CVE) — every figure from open endpoints, no LLM judgement in the scoring path.
 - **`papers/commensurability/`** — *Graded, asymmetric commensurability is not a quantale-enriched distributor: a transitivity obstruction, and a persistence-module alternative.* The formal companion (C₃ quantale, two negative results, interleaving distance).
-- **`papers/italian-edition/`** — Italian-language edition.
 
 Both papers and the replication package are archived on Zenodo with a permanent DOI (see `CITATION.cff`).

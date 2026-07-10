@@ -868,7 +868,7 @@ its own Type-I error and refuses to certify itself — the two commitments this 
 scripts, with **no LLM judgement anywhere in the scoring path**. The package below — scripts, ADQL and
 REST queries, raw outputs, the frozen pre-registration of arm 1, the failed pilot that fixed the
 inclusion criteria of §IV.5.1, and every negative result — is distributed with this paper and
-deposited, with a permanent DOI, on Zenodo ⟨DOI da inserire⟩. It is included in the engine
+deposited, with a permanent DOI, on Zenodo (concept DOI 10.5281/zenodo.21288401, resolving to the latest version). It is included in the engine
 repository under `papers/managing-circularity/`.
 
 | arm | archive | endpoint | script |
