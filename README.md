@@ -139,3 +139,15 @@ directly on the meta-epistemic governor: given the auditor's demolition scores o
 battery, it returns the measured false-demolition rate (FDR), power, AUC and the k-of-m
 persistence bound. Domain-agnostic (the caller supplies the battery). The method is now
 *integrated*, not just present.
+
+---
+
+## Papers
+
+This repository also hosts the two papers that formalise what the engine produces and test whether mature scientific communities do the same thing.
+
+- **`papers/managing-circularity/`** — *Managing epistemic circularity in self-referential evaluation: the survivor gate, and how three scientific ledgers resolve indeterminacy.* The main paper: the Survivor Gate, declared non-closure, and three real reliability ledgers (Kepler KOI, ClinVar/ACMG, NVD/CVE) — every figure from open endpoints, no LLM judgement in the scoring path.
+- **`papers/commensurability/`** — *Graded, asymmetric commensurability is not a quantale-enriched distributor: a transitivity obstruction, and a persistence-module alternative.* The formal companion (C₃ quantale, two negative results, interleaving distance).
+- **`papers/italian-edition/`** — Italian-language edition.
+
+Both papers and the replication package are archived on Zenodo with a permanent DOI (see `CITATION.cff`).

@@ -1,0 +1,61 @@
+=== TEOREMI ===
+[0] C3 quantale verificato esaustivamente: True
+[T1] two-sided (D*/B*) <-> partial homom : discordanze=0 => PROVATO
+[T1] catena singola     <-> partial homom : discordanze=3 => NON coincide
+[T1] ordine-prodotto==poset-V: True ; diverso da catena C3: True => tensione RISOLTA
+[T2] distributori validi=13, asimmetrici=11 => COSTRUITO
+[T3] sup resta distributore: True ; accumulo [0, 1, 2, 1, 0, 2, 1] -> [0, 1, 2, 2, 2, 2, 2] monotono: True
+[T3] &-distribuisce-su-sup su tutte le terne: True => sup=distributore e' TEOREMA
+[V5] stress 3-oggetti (500 prove): cat=500, dist=500, sup=dist=500, asimmetrici=346
+
+=== OSTRUZIONE (giro8) ===
+(E) MATEMATICA ADEGUATA: home = Q-Rel (matrici), non Dist(Q)
+================================================================================
+Q-Rel: join di matrici e' una matrice -> sup-reticolo completo. (chiusura banale, fondante)
+su base discreta ogni matrice e' distributore: True -> il 'weighted colimit' si riduce al JOIN.
+  Conseguenza (Freno): la casa adeguata e' l'umile sup-reticolo delle Q-relazioni + il profilo
+  di saturazione; il distributore statico e' una fetta chiusa, generi camente inadeguata (ostruzione B).
+
+=== INTERLEAVING (giro10) ===
+(1) NON-TRIVIALITA': interleaving distingue cio' che il join confonde
+    M satura t=3, N t=6; colimite uguale (top=2=2); d_I=3 (atteso 3)
+    => invariante non banale = DISTANZA fra traiettorie, non il join. Rischio-trivialita' CHIUSO.
+(2) diagramma su target-poset: modulo monotono -> solo nascite, nessuna morte
+    barre (nascite): [((0, 0, 1), 1), ((0, 0, 2), 2), ((0, 1, 1), 3), ((0, 1, 2), 4), ((1, 0, 1), 2), ((1, 0, 2), 3), ((1, 1, 1), 4)]
+    morti nel diagramma: False  => barcode DEGENERA nel profilo di saturazione (rivestimento, non invariante nuovo).
+(3) stabilita' soft (BdSS): d_I(M, M-ritardato-di-delta) <= delta
+    su 300 prove: <=delta in 300/300 (violazioni=0); ==delta in 300/300 -> CONFERMATA
+(4) d_I e' pseudometrica estesa
+    d(A,A)=0: 150/150 ; simmetria: 150/150 ; triangolare: 150/150 -> pseudometrica OK
+
+=== DIREZIONALE (giro11) ===
+  d_lax(M,N)=0 dice 'M e' sotto/prima di N' (M piu' avanti) ; d_lax(N,M)=3 misura il ritardo di N.
+  => l'asimmetria porta la DIREZIONE (chi e' avanti), che il simmetrico collassa nel max.
+  quasi-metrica: d_lax(A,A)=0 120/120 ; triangolare 120/120 ; casi asimmetrici 32/120
+  d_sym == max(d_lax(.,.), d_lax(.,.)) sempre:  True
+  => e' una QUASI-METRICA DI LAWVERE (asimmetrica, valori in [0,inf], triangolare):
+     la direzionalita' della commensurabilita' NON forza macchina nuova, RITORNA all'asimmetria
+     di Lawvere da cui il paper era partito (spazi metrici generalizzati). E' l'interleaving
+     su 'categorie con un flusso' (de Silva-Munch-Stefanou), gia' esistente. NODO CHIUSO.
+
+=== ESEMPIO REALE A+B ===
+  [k  ] Giugliano (NA) abitativo A/4       (Campania ) div=37%   range NON si sovrappongono  — divergenza materiale -> non-chiusura: 'non mediare'
+  [BOT] Stazzema (LU) terreno/bosco        (Toscana  ) div=n/a   oracolo OMI non pertinente  — astensione: rinvio a VAM/comparabili agricoli
+  [BOT] San Felice/Maranello (MO) area     (Emilia   ) div=n/a   valore di trasformazione, non OMI  — astensione: rinvio a valore di trasformazione
+
+conteggio valori C3 istanziati da dati reali: TOP=3  k=1  BOT=2
+tutti e tre i valori di C3 presenti in dati reali: True
+  => la commensurabilità a 3 valori del §2.2 NON è un artefatto del righello sintetico:
+     TOP = linee convergenti (banda comune); k = divergenza materiale = NON-CHIUSURA dichiarata
+     ('non mediare'); BOT = astensione = non-conoscenza dichiarata. È esattamente R⁺/R?/R⁻ del §2.1,
+     osservato su 6 beni reali con 2 linee indipendenti ciascuno.
+
+##########################################################################
+# LETTURA COMPLESSIVA (onesta)
+##########################################################################
+Robustezza: 7 beni reali, 6 territori, 2 famiglie di lenti (compliance + valutazione).
+ - Esempio A: accumulo monotono NON-ridondante + residuo dichiarato (astensione) su 1 caso ad alta fedeltà.
+ - Esempio B: i 3 valori di commensurabilità di C3 emergono da linee indipendenti reali su 6 beni,
+   con la non-chiusura (k) e l'astensione (BOT) come OUTPUT documentati, non buchi.
+Limite onesto: la commensurabilità è codificata (trasparente e verificabile sui file sorgente),
+non ancora validata da esiti d'asta reali (gap dichiarato dal motore stesso). È applicabilità, non validazione esterna.

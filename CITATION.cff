@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: "Adversarial Audit Engine, and: Managing epistemic circularity in self-referential evaluation"
+message: "If you use this software or these papers, please cite them as below."
+type: software
+authors:
+  - family-names: Gazzoni
+    given-names: Edoardo
+    affiliation: "Independent researcher"
+repository-code: "https://github.com/eddo-cto/adversarial-audit-engine"
+license: MIT
+date-released: 2026-07-09
+keywords:
+  - self-referential evaluation
+  - circularity
+  - philosophy of measurement
+  - adversarial audit
+  - reliability
+preferred-citation:
+  type: article
+  title: "Managing epistemic circularity in self-referential evaluation: the survivor gate, and how three scientific ledgers resolve indeterminacy"
+  authors:
+    - family-names: Gazzoni
+      given-names: Edoardo
+  year: 2026

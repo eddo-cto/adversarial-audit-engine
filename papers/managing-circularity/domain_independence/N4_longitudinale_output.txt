@@ -1,0 +1,8 @@
+righe: 6375497 | varianti nate-VUS (>=3 sub datate): 169218
+  DEF con EXPERT PANEL nel percorso : 1704/3209 = 53.1%
+  DEF PEER-ONLY (mai expert panel)  : 31015/166009 = 18.7%
+  peer-only, dose-risposta (n. sottomettitori distinti):
+     3-4 : 16893/120345 = 14.0%
+     5-9 : 11476/40257 = 28.5%
+     10+ : 2646/5407 = 48.9%
+  tempo medio a risoluzione (peer-only): 7.8 anni (n=31015)

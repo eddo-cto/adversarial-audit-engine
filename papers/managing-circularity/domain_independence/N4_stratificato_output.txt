@@ -1,0 +1,8 @@
+Snapshot year: 2026 | variabili peer-only born-VUS classificate: 166009
+
+TASSO DI RISOLUZIONE (%) — righe: eta'-nel-sistema (anni) ; colonne: n. sottomettitori
+eta'     | 3-4            | 5-9            | 10+            | (riga tutti)  
+0-2      |   6.4% (n= 10493) |  16.3% (n=   589) |  50.0% (n=     2) |   6.9% (n= 11084)
+3-5      |   6.3% (n= 46654) |  12.8% (n=  8508) |  25.4% (n=   177) |   7.3% (n= 55339)
+6-9      |  19.6% (n= 51079) |  29.5% (n= 20283) |  35.7% (n=  1963) |  22.8% (n= 73325)
+10+      |  27.0% (n= 12119) |  39.7% (n= 10877) |  58.2% (n=  3265) |  36.1% (n= 26261)
