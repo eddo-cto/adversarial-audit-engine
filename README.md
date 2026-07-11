@@ -135,6 +135,15 @@ residual Type-I (`empirical_type1`), which captures shared-blind-spot correlatio
 `p^m` independence bound ignores. Theorem (binomial-tail control) is verified numerically by
 `python3 aae/negation_spectrometry.py`. Stdlib only.
 
+### 0.11.0 — meta sub-layer: usage ledger over engine runs
+`aae/usage_ledger.py` adds the **persistence** layer for meta-analysis: one append-only JSON
+line per engine run, feeding the existing bias-resistant panel (`aae/run_metrics.py`). Three
+purposes kept separate — improvement telemetry, historical series, reflexive meta-level — under
+two invariants: **anti-Goodhart** (no ledger field may become a *target* of the gate, or the
+engine learns to produce good metrics instead of good audits) and **reflexive/non-validating**
+(the sub-layer is itself a self-referential evaluator, so it does not self-validate; closure
+belongs to the human eye). See `plugins/adversarial-audit-engine/USAGE_LEDGER.md`. Stdlib only.
+
 ### 0.10.1 — negation-spectrometry integrated into the governor
 `MetaGovernor.falsification_type1(scores_valid, scores_invalid, k=, m=)` exposes the Type-I gate
 directly on the meta-epistemic governor: given the auditor's demolition scores on a control
