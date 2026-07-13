@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "High-complexity verification and adversarial-audit tooling.",
-    "version": "0.11.0"
+    "version": "0.12.0"
   },
   "plugins": [
     {
       "name": "adversarial-audit-engine",
       "source": "./plugins/adversarial-audit-engine",
       "description": "A 5-layer adversarial-audit hive with a deterministic Python core. It never reports 'validated' on internal grounds: only a human eye validates.",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "keywords": ["audit", "verification", "adversarial", "peer-review", "epistemic", "falsification"]
     }
   ]
