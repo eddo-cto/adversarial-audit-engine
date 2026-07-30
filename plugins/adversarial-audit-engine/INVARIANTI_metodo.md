@@ -1,12 +1,15 @@
 # Invarianti di metodo — emendamento (admissibility + dichiarazione di classe)
 
-> **Abstract (EN).** Two method invariants, hardened empirically. (1) **Admissibility:**
+> **Abstract (EN).** Three method invariants, hardened empirically. (1) **Admissibility:**
 > a finding may be STRUCTURAL only if it exhibits a *reconstruction, from the artifact's own
 > stated inputs, that fails to reproduce the artifact's own output*; everything else is FLAG.
 > (2) **Class declaration:** every finding declares whether it rests on *reconstruction* (strong)
 > or *judgement* (weak), and domain-specific re-derivation is declared out of reach unless the
-> engine is given compute to execute it. The "falsification lens" is registered as a **derived
-> profile** of the engine, not a new layer.
+> engine is given compute to execute it. (3) **Intention gate:** before grading, the engine must
+> extract and cite the artifact's *declared intention*, and grade every apparent defect against
+> that intention as well as against generic norms — a finding survives only if it violates the
+> artifact's *own* stated goals or correctness itself, not a norm the artifact never adopted. The
+> "falsification lens" is registered as a **derived profile** of the engine, not a new layer.
 
 Questo documento estende gli invarianti già imposti dal nucleo (`aae/gates.py`, `aae/grounding.py`,
 defense-gate, macchina a stati dei verdetti) senza aggiungere un layer. Vale la regola del **freno**:
@@ -43,6 +46,36 @@ Ogni reperto dichiara la propria **classe**:
   dominio, riconoscere la patologia di una formula specialistica). **Vanno dichiarati fuori portata**,
   non spacciati per copertura, **finché il motore non riceve compute per eseguirli** (il passaggio "al
   codice"). Un "non trovato" qui è un **falso nullo**, non un'assoluzione.
+
+## 2-bis. Intention gate — graduare contro l'intenzione dichiarata, non contro una norma non adottata
+
+Prima di graduare, il motore deve **estrarre e citare l'intenzione dichiarata dell'artefatto** (scopo,
+profilo d'uso, filosofia di design, invarianti auto-dichiarati) e valutare ogni apparente difetto
+**contro quella intenzione**, oltre che contro le norme generiche. Un reperto sopravvive **solo se
+viola gli obiettivi che l'artefatto si è dato** — o la correttezza tout court — **non** una norma che
+l'artefatto non ha mai adottato.
+
+Perché è un invariante e non una cortesia: senza di esso il motore produce un failure mode **distinto
+dall'allucinazione** — un **falso positivo di cornice / normativo**. Il fatto osservato è reale e
+riproducibile (es. "questo modulo ha 2870 righe", "non c'è un package"); ciò che è non-grounded è la
+**premessa normativa implicita** ("*quindi* è un difetto", perché il sistema "dovrebbe" essere
+modulare / packaged / DRY / con CI). La **regola di admissibility (§1) NON lo intercetta**: la
+ricostruzione del *fatto* torna; a essere sbagliato è il *giudizio*. È più insidioso dell'allucinazione,
+perché è confidentemente errato in un modo che il proprietario del dominio percepisce all'istante come
+"non hai capito cosa sia".
+
+**Enforcement:** in testa a ogni corsa, un blocco "Intenzione dichiarata" con citazioni alla fonte.
+Ogni reperto porta un verdetto rispetto a essa: *viola un obiettivo proprio dell'artefatto* (sopravvive,
+spesso si rafforza) · *attacca una scelta deliberata e documentata* (ritirato/declassato) · *valido solo
+sotto un obiettivo non adottato* (neutro/condizionale, con la condizione dichiarata).
+
+**Origine empirica.** Emerso da un audit reale di una codebase in cui il motore, graduando contro norme
+generiche di ingegneria del software (packaging, DRY, decomposizione in microservizi), aveva marcato
+come "difetti" scelte di **semplicità deliberate e documentate** dal proprietario. La correzione ha
+**ritirato 8 reperti su 24** e rafforzato quelli che violavano davvero gli obiettivi propri
+dell'artefatto (un buco nel gate anti-allucinazione, soglie contro un invariante di trasparenza
+auto-dichiarato). Da notare la meccanica: il gap è stato rivelato dal **push-back di un occhio esterno**
+di identità diversa — cioè la **scala d'indipendenza che funziona come previsto**, non una precauzione.
 
 ## 3. La lente di falsificazione è un profilo, non un layer
 
