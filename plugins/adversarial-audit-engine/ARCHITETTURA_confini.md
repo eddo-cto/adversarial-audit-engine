@@ -38,3 +38,10 @@ plugin/
     run_core.py                  (da agganciare a aae: gate+verdetti+metriche)   [stub]
   ../aae/                        il nucleo deterministico Python (5 layer)
 ```
+
+## Invarianti di metodo (emendamento)
+Vedi [`INVARIANTI_metodo.md`](INVARIANTI_metodo.md): la **regola di admissibility** (STRUTTURALE solo
+con ricostruzione fallita esibita), la **dichiarazione di classe/competenza** dei reperti, e la
+registrazione della **lente di falsificazione come profilo derivato** — non un sesto layer. Con backing
+empirico: calibrazione a difetti innestati, errori reali via Matters Arising, e conferma
+inter-natura della scala d'indipendenza.
