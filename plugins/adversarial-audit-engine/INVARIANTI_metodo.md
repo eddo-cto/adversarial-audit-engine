@@ -5,11 +5,13 @@
 > stated inputs, that fails to reproduce the artifact's own output*; everything else is FLAG.
 > (2) **Class declaration:** every finding declares whether it rests on *reconstruction* (strong)
 > or *judgement* (weak), and domain-specific re-derivation is declared out of reach unless the
-> engine is given compute to execute it. (3) **Intention gate:** before grading, the engine must
-> extract and cite the artifact's *declared intention*, and grade every apparent defect against
-> that intention as well as against generic norms — a finding survives only if it violates the
-> artifact's *own* stated goals or correctness itself, not a norm the artifact never adopted. The
-> "falsification lens" is registered as a **derived profile** of the engine, not a new layer.
+> engine is given compute to execute it. (3) **Intention gate, scoped by normative nature:** first classify the
+> artifact as *self-normed* (personal tool, internal doc) or *externally-normed* (legal appraisal,
+> clinical study, filing, accountable to law/method/regulation regardless of the author's will). For
+> self-normed artifacts, grade against the *declared intention* + internal correctness; for
+> externally-normed ones, grade against the **external authority** (the declared intention is evidence,
+> and a self-serving intention aggravates rather than excuses). The gate never immunizes a violation of
+> an external standard. The "falsification lens" is a **derived profile** of the engine, not a new layer.
 
 Questo documento estende gli invarianti già imposti dal nucleo (`aae/gates.py`, `aae/grounding.py`,
 defense-gate, macchina a stati dei verdetti) senza aggiungere un layer. Vale la regola del **freno**:
@@ -68,6 +70,29 @@ perché è confidentemente errato in un modo che il proprietario del dominio per
 Ogni reperto porta un verdetto rispetto a essa: *viola un obiettivo proprio dell'artefatto* (sopravvive,
 spesso si rafforza) · *attacca una scelta deliberata e documentata* (ritirato/declassato) · *valido solo
 sotto un obiettivo non adottato* (neutro/condizionale, con la condizione dichiarata).
+
+### Distinzione di natura — a MONTE dell'intention gate (non negoziabile)
+L'intention gate **non è universale**: è il caso speciale degli artefatti **auto-normati**. Prima di
+applicarlo, il motore classifica la **natura normativa** dell'artefatto, e la classe sceglie il criterio:
+
+- **Auto-normato** (strumento personale, documento interno, opera, prototipo): nessuna autorità esterna
+  a cui l'artefatto sia tenuto a rispondere. Criterio = **intenzione dichiarata + correttezza interna**.
+  Qui l'intention gate si applica pieno. *(Es. PFP: nessuno impone a un tool personale di essere un
+  microservizio.)*
+- **Etero-normato** (perizia legale, studio clinico, dichiarazione fiscale, bilancio, progetto
+  ingegneristico): l'artefatto è **soggetto a un'autorità esterna** — la legge, il metodo scientifico,
+  il regolamento, la fisica, i principi contabili, l'imparzialità professionale — **indipendente dalla
+  volontà dell'autore**. Criterio = **congruenza con quell'autorità**. L'intenzione dichiarata è
+  **prova**, non metro; e un'intenzione che confligge con la norma esterna (es. una perizia intesa a
+  favorire una parte) è **essa stessa un reperto**, aggravante, non un'esimente.
+- **Misto** (es. un paper scientifico: dichiara un intento di test d'ipotesi, ma è vincolato alla
+  legge metodologica — validità statistica, no p-hacking): graduare contro **entrambi**; dove
+  confliggono, **prevale la norma esterna**.
+
+**Carve-out.** L'intention gate **non scusa mai** la violazione di uno standard autoritativo esterno.
+Un'intenzione auto-servente **non immunizza** un artefatto etero-normato — lo aggrava. Questo impedisce
+che l'intention gate diventi una scappatoia e lo tiene coerente con la **riga rossa** (per
+perizie/appalti: flag di incongruenza con la legge, mai accusa) e con l'oracolo legale del motore.
 
 **Origine empirica.** Emerso da un audit reale di una codebase in cui il motore, graduando contro norme
 generiche di ingegneria del software (packaging, DRY, decomposizione in microservizi), aveva marcato
