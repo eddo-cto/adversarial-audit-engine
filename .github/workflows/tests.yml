@@ -34,13 +34,15 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/plugins/adversarial-audit-engine
         run: python -m unittest discover -s tests -t . -v
 
-      - name: empirical claims reproduce from the versioned dataset
+      - name: empirical claims reproduce from the versioned datasets
         working-directory: plugins/adversarial-audit-engine
         run: |
-          # The calibration headline (present 14/16 vs absent 2/8, p=0.0047;
-          # 1 FP/42) recomputed from the anonymized per-item data. Fails the
-          # build if the data stops backing INVARIANTI_metodo.md §4.
+          # Synthetic calibration (present 14/16 vs absent 2/8, p=0.0047; 1 FP/42)
+          # and real-error validation (0 decoy FP; general-reasoning-only boundary;
+          # honest 88%->25% synthetic->real drop) recomputed from the anonymized
+          # per-item data. Fails the build if the data stops backing §4.
           python benchmarks/calibration/reproduce.py --strict
+          python benchmarks/real_errors/reproduce.py --strict
 
       - name: the engine must never self-certify
         working-directory: plugins/adversarial-audit-engine

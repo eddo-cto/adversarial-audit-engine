@@ -123,10 +123,19 @@ Due bracci di validazione, con verità a terra costruita e reale.
   dal dataset per-item anonimizzato (in CI a ogni push); provenienza e nota di anonimizzazione — gli
   innesti sono *sintetici*, le identità dei paper restano nei registri sigillati privati — in
   `benchmarks/calibration/README.md`.
-- **Errori reali** (via *Matters Arising*, verità a terra = confutazione formale di un esperto): il
-  confine tiene sul reale — i bersagli che richiedono **re-derivazione di dominio** vengono mancati
-  (fondamento di §2, "fuori portata"). Un blind-landing sulla causa reale di un ritiro conferma il lato
-  "ricostruttivo".
+- **Errori reali** (via *Matters Arising*, verità a terra = confutazione formale di un esperto esterno):
+  il confine **regge sul reale**, ed è più stretto di "presente/assente". Su 7 bersagli reali (audit
+  ciechi sul solo originale, aggiudicazione separata, ri-aggiudicata in cieco): **0 falsi positivi su 7
+  civette** cross-dominio (la specificità è il pregio forte, e transfer); la lente atterra **solo** sui
+  difetti ricostruibili col **ragionamento generale** (aritmetica, contraddizione interna, entailment) —
+  **1/1** — e **manca** quelli che richiedono **re-derivazione di dominio** (**0/3**) o dati esterni,
+  la classe "fuori portata" di §2. Un blind-landing sulla causa reale di un **ritiro** (contraddizione
+  Figura-vs-Tabella) conferma il lato ricostruttivo. La sensibilità reale di classe P è **1/4 = 25%**
+  contro l'88% sintetico: il **crollo è il segnale** — è ciò che tiene onesta la stima sintetica, non
+  la performance di un "detector". *n=7, nessuna significatività, nessun VALIDATED senza asse
+  inter-natura esterno.* **Verificabile:** `python benchmarks/real_errors/reproduce.py` (in CI);
+  provenienza e cornice — è **calibrazione di metodo**, non un foglio di accuratezza di prodotto — in
+  `benchmarks/real_errors/README.md`.
 - **Indipendenza di natura** (conferma empirica della scala d'indipendenza già imposta dal motore):
   su un'altra famiglia di modello, **il confine è riprodotto** (stesso pattern presente/assente: P=1/4,
   atterraggio solo sul difetto di contraddizione interna) e **la specificità sopravvive**
