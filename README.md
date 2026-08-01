@@ -3,8 +3,11 @@
 
 # Adversarial Audit Engine
 
-> A hive of adversarial roles that **tries to falsify** a high-complexity
-> artifact, with a deterministic Python core that enforces the discipline.
+> Audits a document or technical artifact by trying to **falsify** it: a
+> deterministic grounding gate that blocks any finding not backed by a verbatim
+> quote, blind adversarial review across **different model vendors**, and explicit
+> control of the falsifier's own **Type-I error**. A hive of adversarial roles
+> attacks the artifact; a dependency-free Python core enforces the discipline.
 > It never reports "validated" on internal grounds: **only a human validates.**
 
 **[Read the story — how it was built and hardened across seven adversarial rounds](STORY.md)**
@@ -156,9 +159,10 @@ persistence bound. Domain-agnostic (the caller supplies the battery). The method
 
 ## Papers
 
-This repository also hosts the two papers that formalise what the engine produces and test whether mature scientific communities do the same thing.
+This repository also hosts two papers and a runnable methodological note that formalise what the engine produces and test whether mature scientific communities do the same thing.
 
 - **`papers/managing-circularity/`** — *Managing epistemic circularity in self-referential evaluation: the survivor gate, and how three scientific ledgers resolve indeterminacy.* The main paper: the Survivor Gate, declared non-closure, and three real reliability ledgers (Kepler KOI, ClinVar/ACMG, NVD/CVE) — every figure from open endpoints, no LLM judgement in the scoring path.
 - **`papers/commensurability/`** — *Graded, asymmetric commensurability is not a quantale-enriched distributor: a transitivity obstruction, and a persistence-module alternative.* The formal companion (C₃ quantale, two negative results, interleaving distance).
+- **`papers/engineering-frontier/`** — *The engineering frontier of verification.* A short methodological note with a runnable demo (`frontier_demo.py`): machine verification reduces to engineering exactly up to the independence supply, and non-closure is the certificate that the supply has run out.
 
 Both papers and the replication package are archived on Zenodo with a permanent DOI (see `CITATION.cff`).
