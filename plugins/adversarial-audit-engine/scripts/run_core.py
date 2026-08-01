@@ -119,16 +119,77 @@ def metrics_report(out_dir: str) -> str:
             ("\n".join("- " + w for w in warns) if warns else "- nessuna firma degenere"))
 
 
-def main() -> int:
+USAGE = """\
+run_core.py — deterministic-core bridge (verdict state machine, defense-gate,
+coverage-gate, dedup, metrics, meta-epistemic governor).
+
+Usage:
+  run_core.py <findings.json>      run the core on a findings payload
+  run_core.py                      same, reading the payload from stdin
+  run_core.py --metrics [dir]      longitudinal, bias-resistant metrics panel
+  run_core.py --help               this message
+  run_core.py --version            print the engine version
+
+Environment:
+  AAE_OUT    output directory (default: ./aae_out)
+
+The payload schema is documented in the module docstring at the top of this
+file. The core NEVER reports VALIDATED on internal grounds: the best internal
+state is EXTERNAL_REVIEW_PENDING, and closure belongs to a human reviewer.
+"""
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
     out_dir = os.environ.get("AAE_OUT", os.path.join(os.getcwd(), "aae_out"))
+
+    if argv and argv[0] in ("-h", "--help", "help"):
+        print(USAGE)
+        return 0
+
+    if argv and argv[0] in ("-V", "--version"):
+        from aae import __version__
+        print(f"adversarial-audit-engine {__version__}")
+        return 0
+
     # longitudinal metrics mode:  run_core.py --metrics [out_dir]
-    if len(sys.argv) > 1 and sys.argv[1] == "--metrics":
-        if len(sys.argv) > 2:
-            out_dir = sys.argv[2]
+    if argv and argv[0] == "--metrics":
+        if len(argv) > 1:
+            out_dir = argv[1]
         print(metrics_report(out_dir))
         return 0
-    src = sys.argv[1] if len(sys.argv) > 1 else None
-    payload = json.load(open(src, encoding="utf-8")) if src else json.load(sys.stdin)
+
+    if argv and argv[0].startswith("-"):
+        print(f"run_core.py: unknown option {argv[0]!r}\n", file=sys.stderr)
+        print(USAGE, file=sys.stderr)
+        return 2
+
+    src = argv[0] if argv else None
+    try:
+        if src:
+            with open(src, encoding="utf-8") as fh:
+                payload = json.load(fh)
+        else:
+            if sys.stdin.isatty():
+                print("run_core.py: no payload given and stdin is a terminal.\n",
+                      file=sys.stderr)
+                print(USAGE, file=sys.stderr)
+                return 2
+            payload = json.load(sys.stdin)
+    except FileNotFoundError:
+        print(f"run_core.py: payload file not found: {src}", file=sys.stderr)
+        return 2
+    except json.JSONDecodeError as e:
+        where = src or "<stdin>"
+        print(f"run_core.py: {where} is not valid JSON (line {e.lineno}, "
+              f"column {e.colno}): {e.msg}", file=sys.stderr)
+        return 2
+
+    if not isinstance(payload, dict) or "findings" not in payload:
+        print("run_core.py: payload must be a JSON object containing a "
+              "'findings' list. See --help.", file=sys.stderr)
+        return 2
+
     result = run(payload, out_dir)
     print(result.summary())
     print(f"\nwritten to: {out_dir}")
