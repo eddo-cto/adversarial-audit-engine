@@ -1,0 +1,24 @@
+{
+  "_comment": "Inter-nature check: the same 7 real-error targets (Matters Arising ground truth) audited BLIND by three model natures — A = the engine's own nature, B and C = two different-vendor natures — then adjudicated by a fresh blind instance. This is the one test the engine cannot run on itself (all its own instances share a nature). It certifies whether the declarable boundary and the low-false-positive discipline are properties of the TASK or shared priors of one nature. Anonymized: no vendor names, no paper identities; only (mechanism, per-nature landing). reproduce.py recomputes every claim from the CSVs.",
+  "n_targets": 7,
+  "natures": ["nature_A", "nature_B", "nature_C"],
+  "boundary_reproduces_across_natures": {
+    "general_reasoning_landed_per_nature": {"nature_A": 1, "nature_B": 1, "nature_C": 1},
+    "general_reasoning_total": 1,
+    "domain_rederivation_landed_per_nature": {"nature_A": 0, "nature_B": 0, "nature_C": 0},
+    "domain_rederivation_total": 3,
+    "p_target_vectors_identical": true,
+    "note": "on all 4 P targets the three natures give the identical landing pattern: land only on the general-reasoning-reconstructible defect, miss all three that need domain re-derivation. The boundary is a property of the task, not of one nature."
+  },
+  "different_nature_adds_on_A_class": {
+    "external_data_landed_per_nature": {"nature_A": 0, "nature_B": 2, "nature_C": 3},
+    "external_data_total": 3,
+    "monotone_non_decreasing": true,
+    "note": "on the A-class (external-data) targets, different natures surface real findings the engine's own nature missed; the gain is not saturated (C adds one that B also missed). Confirms rho<1."
+  },
+  "specificity_survives": {
+    "decoy_false_positives_per_nature": {"nature_A": 0, "nature_B": 0, "nature_C": 0},
+    "n_decoys_per_nature": 7,
+    "note": "0 false positives on cross-domain decoys for every nature, incl. the fresh blind adjudicator: the does-not-hallucinate virtue is not a shared prior of the engine's nature."
+  }
+}

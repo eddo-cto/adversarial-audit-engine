@@ -136,13 +136,20 @@ Due bracci di validazione, con verità a terra costruita e reale.
   inter-natura esterno.* **Verificabile:** `python benchmarks/real_errors/reproduce.py` (in CI);
   provenienza e cornice — è **calibrazione di metodo**, non un foglio di accuratezza di prodotto — in
   `benchmarks/real_errors/README.md`.
-- **Indipendenza di natura** (conferma empirica della scala d'indipendenza già imposta dal motore):
-  su un'altra famiglia di modello, **il confine è riprodotto** (stesso pattern presente/assente: P=1/4,
-  atterraggio solo sul difetto di contraddizione interna) e **la specificità sopravvive**
-  (nessuna allucinazione: i reperti strutturali della natura diversa sono catture reali di incoerenza,
-  etichettate come tali). Il pregio forte — non allucinare — **non è un prior condiviso**: è una
-  proprietà del compito. Questo è il motivo per cui la scala d'indipendenza resta un invariante e non
-  una precauzione.
+- **Indipendenza di natura** — il test che il motore **non può fare su se stesso** (tutte le sue istanze
+  condividono natura). Gli **stessi 7 bersagli reali** sono stati auditati in cieco da **tre nature** (la
+  natura del motore + due modelli di vendor diverso), con **aggiudicazione da istanza fresca cieca**
+  (coppie rimappate + civette cross-dominio, nessun accesso ai risultati precedenti). Le tre predizioni
+  si confermano: (1) **il confine è nature-independent** — sui 4 bersagli P le tre nature danno il pattern
+  di landing **identico** (atterrano solo sul difetto ricostruibile col ragionamento generale, 1/1;
+  mancano tutti e 3 quelli di re-derivazione di dominio, 0/3); (2) **la natura diversa aggiunge** reperti
+  reali che la natura del motore mancava (A-class 0→2→3, ρ<1, guadagno non saturo); (3) **la specificità
+  sopravvive** — **0 falsi positivi su civette per ogni natura**, inclusa l'aggiudicatrice cieca. Il pregio
+  forte — non allucinare — **non è un prior condiviso**: è una proprietà del compito. Porta il risultato
+  reale dal livello 1-2 (natura sola) verso il **livello 3** (vendor diverso); la chiusura resta al
+  livello 4 (occhio umano esterno). **Verificabile:** `python benchmarks/inter_nature/reproduce.py` (in
+  CI); provenienza in `benchmarks/inter_nature/README.md`. Questo è il motivo per cui la scala
+  d'indipendenza resta un invariante e non una precauzione.
 
 ## 5. Cosa NON cambia
 
