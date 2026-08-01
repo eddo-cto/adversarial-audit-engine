@@ -117,8 +117,12 @@ Due bracci di validazione, con verità a terra costruita e reale.
 
 - **Calibrazione a difetti innestati** (crossover appaiato, aggiudicazione cieca con civette): la lente
   rileva **in proporzione al residuo ricostruibile**. Difetti *presenti-e-verificabili* vs difetti
-  d'*assenza*: **14/16 vs 2/8, Fisher p ≈ 0,005**. Falsi positivi su controlli a verità a terra:
-  **≈ 1/49** (limite superiore IC 95% ~12%). È il fondamento empirico di §1 e §2.
+  d'*assenza*: **14/16 vs 2/8, Fisher una coda p = 0,0047**. Falsi positivi su controlli a verità a
+  terra: **1/42 = 2,4%** (Wilson IC 95% 0,4–12,3%). È il fondamento empirico di §1 e §2.
+  **Verificabile con un comando:** `python benchmarks/calibration/reproduce.py` ricalcola ogni cifra
+  dal dataset per-item anonimizzato (in CI a ogni push); provenienza e nota di anonimizzazione — gli
+  innesti sono *sintetici*, le identità dei paper restano nei registri sigillati privati — in
+  `benchmarks/calibration/README.md`.
 - **Errori reali** (via *Matters Arising*, verità a terra = confutazione formale di un esperto): il
   confine tiene sul reale — i bersagli che richiedono **re-derivazione di dominio** vengono mancati
   (fondamento di §2, "fuori portata"). Un blind-landing sulla causa reale di un ritiro conferma il lato
