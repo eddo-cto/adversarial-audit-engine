@@ -33,7 +33,21 @@ from .meta_epistemic import (MetaGovernor, MetaAssessment, GovernorCheck,
 from .adapters import (OpenAICompatibleClient, GeminiClient,
                        independence_level_between)
 
-__version__ = "0.6.0"
+# --- deterministic controls added in 0.7.0 - 0.12.0 -----------------------
+# Exposed as SUBMODULES on purpose: several of them own a generic name
+# (compute, decide, classify) that would collide if re-exported flat.
+# `from aae import grounding` must work without an explicit submodule import.
+from . import (grounding, criterion, evidence_pairing, negation_spectrometry,
+               support_geometry, repr_validator, run_metrics, usage_ledger,
+               legal_oracle, normattiva_fetcher)
+# A few unambiguous symbols are lifted for convenience.
+from .grounding import is_grounded, enforce_grounding
+from .criterion import CriterionConfig, Decision
+from .legal_oracle import LegalOracle, VerificationResult
+from .usage_ledger import UsageRecord
+from .run_metrics import Panel, GroundTruth, bias_audit
+
+__version__ = "0.12.0"
 
 __all__ = [
     "AuditConfig", "LLMClient", "MockLLMClient", "AnthropicLLMClient",
@@ -48,4 +62,11 @@ __all__ = [
     "Scenario",
     "MetaGovernor", "MetaAssessment", "GovernorCheck", "ReliabilityVerdict",
     "OpenAICompatibleClient", "GeminiClient", "independence_level_between",
+    # deterministic controls (0.7.0 - 0.12.0)
+    "grounding", "criterion", "evidence_pairing", "negation_spectrometry",
+    "support_geometry", "repr_validator", "run_metrics", "usage_ledger",
+    "legal_oracle", "normattiva_fetcher",
+    "is_grounded", "enforce_grounding", "CriterionConfig", "Decision",
+    "LegalOracle", "VerificationResult", "UsageRecord", "Panel",
+    "GroundTruth", "bias_audit",
 ]

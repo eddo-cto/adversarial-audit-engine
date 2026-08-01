@@ -1,0 +1,67 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  core:
+    name: core invariants (py${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: no dependencies are installed on purpose
+        run: |
+          echo "The core is stdlib-only. Nothing is pip-installed here:"
+          echo "if the suite passes, the claim holds on this interpreter."
+          python -c "import sys; print(sys.version)"
+
+      - name: run the suite
+        working-directory: plugins/adversarial-audit-engine
+        env:
+          PYTHONPATH: ${{ github.workspace }}/plugins/adversarial-audit-engine
+        run: python -m unittest discover -s tests -t . -v
+
+      - name: the engine must never self-certify
+        working-directory: plugins/adversarial-audit-engine
+        env:
+          PYTHONPATH: ${{ github.workspace }}/plugins/adversarial-audit-engine
+        run: |
+          # End-to-end red line, checked outside the test runner too: with no
+          # human reviewer the CLI must not print VALIDATED, whatever happens
+          # inside. If this ever passes, the project's central claim is false.
+          cat > /tmp/payload.json <<'JSON'
+          {"artifact_name":"ci.md","internal_identity":"anthropic:claude",
+           "external_identity":null,"max_posta":"high",
+           "excluded_cells":{"premises":"n/a","inputs":"n/a","mechanisms":"n/a",
+                             "boundary":"n/a","interface":"n/a"},
+           "findings":[{"element":"totale","taxonomy_cell":"outputs",
+             "defect_class":"numeric","posta":"high",
+             "accusation":{"text":"il totale non riconcilia","base":"execution",
+                           "evidence":"1+1=3","sections":["A","B"]},
+             "defense":{"attempted":true,"present":false,"fact":null}}]}
+          JSON
+          AAE_OUT=/tmp/aae_out python scripts/run_core.py /tmp/payload.json > /tmp/out.txt
+          cat /tmp/out.txt
+          if grep -q "completion: VALIDATED" /tmp/out.txt; then
+            echo "::error::the core reported VALIDATED with no human reviewer"
+            exit 1
+          fi
+
+      - name: release surface agrees with itself
+        working-directory: plugins/adversarial-audit-engine
+        env:
+          PYTHONPATH: ${{ github.workspace }}/plugins/adversarial-audit-engine
+        run: python -m unittest tests.test_invariant_version -v

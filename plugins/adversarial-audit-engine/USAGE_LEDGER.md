@@ -25,3 +25,15 @@ append(UsageRecord(run_id="...", data=now_iso(), dominio="...",
                    n_astensioni=0, override_umani=0, note="..."))
 print(summarize())   # descriptive summary + bias flags
 ```
+
+## Where the ledger is written
+By default the ledger lives next to the package (`aae/usage_ledger.jsonl`). Set
+the `AAE_USAGE_LEDGER` environment variable to relocate it — required when the
+plugin is installed in a read-only directory, and good practice regardless so
+run data is not mixed with code:
+
+```bash
+export AAE_USAGE_LEDGER=/var/lib/aae/usage_ledger.jsonl
+```
+
+Absent the variable, behaviour is unchanged (in-package fallback).

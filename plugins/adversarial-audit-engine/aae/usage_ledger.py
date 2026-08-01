@@ -35,7 +35,13 @@ _CONDEMN = {"accusa_vince", "accusa_ridimensionata"}
 _ABSOLVE = {"artefatto_regge"}
 _ABSTAIN = {"da_leggere", "conteso", "pending"}
 
-DEFAULT_PATH = os.path.join(os.path.dirname(__file__), "usage_ledger.jsonl")
+# Ledger location. Honour AAE_USAGE_LEDGER so the run-log can live outside the
+# package directory (a plugin install dir may be read-only, and mixing run data
+# with code is undesirable). Falls back to the in-package path for compatibility.
+DEFAULT_PATH = os.environ.get(
+    "AAE_USAGE_LEDGER",
+    os.path.join(os.path.dirname(__file__), "usage_ledger.jsonl"),
+)
 
 
 @dataclass

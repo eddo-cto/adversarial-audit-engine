@@ -35,7 +35,7 @@ plugin/
   hooks/hooks.json               Stop -> governor_check
   scripts/
     governor_check.py            enforcement deterministico (mirror di aae.meta_epistemic)
-    run_core.py                  (da agganciare a aae: gate+verdetti+metriche)   [stub]
+    run_core.py                  ponte al nucleo: gate+verdetti+metriche (+ --metrics)
   ../aae/                        il nucleo deterministico Python (5 layer)
 ```
 
