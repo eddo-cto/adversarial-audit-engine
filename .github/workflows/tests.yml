@@ -43,6 +43,7 @@ jobs:
           # per-item data. Fails the build if the data stops backing §4.
           python benchmarks/calibration/reproduce.py --strict
           python benchmarks/real_errors/reproduce.py --strict
+          python benchmarks/inter_nature/reproduce.py --strict
 
       - name: the engine must never self-certify
         working-directory: plugins/adversarial-audit-engine

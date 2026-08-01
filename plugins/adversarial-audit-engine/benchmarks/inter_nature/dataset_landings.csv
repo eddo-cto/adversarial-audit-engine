@@ -1,0 +1,8 @@
+id,mechanism,nature_A,nature_B,nature_C
+T1,external_data,0,1,1
+T2,external_data,0,0,1
+T3,general_reasoning,1,1,1
+T4,domain_rederivation,0,0,0
+T5,domain_rederivation,0,0,0
+T6,external_data,0,1,1
+T7,domain_rederivation,0,0,0
