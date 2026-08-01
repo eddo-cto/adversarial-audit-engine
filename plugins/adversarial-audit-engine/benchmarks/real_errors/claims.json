@@ -1,0 +1,22 @@
+{
+  "_comment": "Real-error validation via published Matters Arising (third-party expert ground truth). This is METHOD CALIBRATION, not detector performance. The headline is the discipline: near-zero false positives and a declarable boundary. The 25% is the honest sensitivity of a GENERAL-REASONING auditor on real domain errors — it keeps the synthetic 88% honest, it is not the product's accuracy. reproduce.py recomputes every value from the anonymized per-target CSVs. n=7 is tiny by design (each target is a real, formally-refuted error); nothing here reaches significance, and nothing reaches VALIDATED without the external inter-nature axis.",
+  "n_targets": 7,
+  "n_decoys": 7,
+  "specificity": {
+    "decoy_false_positives": 0, "n_decoys": 7,
+    "note": "cross-domain decoys; independently confirmed across two blind adjudicators"
+  },
+  "boundary": {
+    "general_reasoning_landed": 1, "general_reasoning_total": 1,
+    "domain_rederivation_landed": 0, "domain_rederivation_total": 3,
+    "external_data_landed": 0, "external_data_total": 3,
+    "note": "the lens lands only on defects reconstructible from the text by general reasoning (arithmetic, internal contradiction, definitional entailment); it misses defects that need domain re-derivation or external data — the declared out-of-scope class"
+  },
+  "sensitivity_calibration": {
+    "real_P_landed": 1, "real_P_total": 4,
+    "synthetic_present_verifiable_landed": 14, "synthetic_present_verifiable_total": 16,
+    "note": "real P-class recall 1/4 vs synthetic 88% (see benchmarks/calibration): the synthetic→real drop is the honest calibration, not noise"
+  },
+  "adjudicator_dependent_targets": ["T6"],
+  "extraction_confounded_targets": ["T7"]
+}
