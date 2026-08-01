@@ -1,4 +1,5 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21288401.svg)](https://doi.org/10.5281/zenodo.21288401)
+[![tests](https://github.com/eddo-cto/adversarial-audit-engine/actions/workflows/tests.yml/badge.svg)](https://github.com/eddo-cto/adversarial-audit-engine/actions/workflows/tests.yml)
 
 # Adversarial Audit Engine
 
