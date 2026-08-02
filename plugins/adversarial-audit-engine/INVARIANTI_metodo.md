@@ -156,5 +156,10 @@ Due bracci di validazione, con verità a terra costruita e reale.
 - **Riga rossa**: mai consulenza; flag, mai accuse.
 - **Nessun VALIDATO su base interna**: stato massimo `EXTERNAL_REVIEW_PENDING`; chiusura solo con
   occhio umano esterno. La re-derivazione di dominio e le run inter-natura *rafforzano* questa regola,
-  non la sostituiscono.
+  non la sostituiscono. **Operazionalizzato come regola** (`aae/independence_ledger.py`,
+  `build_independence_ledger`): ogni corsa può ora *emettere* il proprio stato d'indipendenza —
+  livello raggiunto su tutte le identità partecipanti, se l'accordo è intra- o inter-natura, il tetto di
+  verdetto e il caveat ρ. Nessun layer nuovo: rende emettibile ciò che la scala d'indipendenza già
+  imponeva, così l'accordo non può essere spacciato per indipendenza. È il buco che il vicinato 2026
+  ("reliability without validity") ammette e non emette.
 - **Freno**: risposta proporzionata; niente layer nuovi per ciò che una regola o un profilo risolvono.
