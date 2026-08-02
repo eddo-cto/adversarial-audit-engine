@@ -1,0 +1,18 @@
+{
+  "_comment": "Positioning against open, same-task baselines on the 7 real-error targets. NOT a leaderboard: it isolates what the engine's DISCIPLINE (defense-gate, admissibility, declared boundary) adds over an undisciplined use of the same model. Anonymized: no vendor named; only finding counts, landing, and mechanism class. The 'vanilla' arm is a strong single-vendor LLM prompted 'find all the flaws, be thorough'; the 'disciplined' arm is the same model under the engine's protocol. statcheck is a deterministic OSS stats-consistency checker (GPL-3.0). reproduce.py recomputes every value.",
+  "n_targets": 7,
+  "llm_judge": {
+    "vanilla_sum": 620, "disciplined_sum": 124,
+    "overall_over_flagging_ratio": 5.00, "ratio_tol": 0.05,
+    "per_paper_ratio_mean": 5.16, "mean_tol": 0.05,
+    "per_paper_ratio_min": 2.5, "per_paper_ratio_max": 8.4, "range_tol": 0.2,
+    "landing_concordance": true,
+    "vanilla_landed": 4, "disciplined_landed": 4,
+    "domain_rederivation_missed_by_both": true,
+    "note": "discipline does NOT change WHICH targets are caught (landing identical, 4/7, same targets); it cuts the noise (~5x fewer findings) and adds a declared boundary. The 3 missed targets are exactly the domain-re-derivation class — missed even by the 155-finding firehose: the boundary is a property of the task, not of discipline."
+  },
+  "statcheck": {
+    "landed": 0, "n": 7,
+    "note": "deterministic OSS baseline: 0/7 on these targets. Its class (APA-style NHST p-value recomputation) is disjoint from these real defects, and it is format-fragile on full-text. Measures class-breadth, not a head-to-head."
+  }
+}
