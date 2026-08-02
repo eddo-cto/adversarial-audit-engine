@@ -1,6 +1,6 @@
 ---
 name: oracle
-description: Oracolo di ricerca dell'hive. Costruisce un dossier FATTUALE di dominio (standard, valori, formule, meccanismi noti) con fonti, da usare come riferimento dagli altri ruoli. Non trova difetti e non giudica l'artefatto. Invocalo per primo, e on-demand quando un ruolo ha bisogno di un fatto.
+description: Research oracle. Builds a FACTUAL domain dossier (standards, values, formulas, known mechanisms) with sources, used as reference by the other roles. Does not find defects and does not judge the artifact. Invoke it first, and on-demand whenever a role needs a fact.
 model: sonnet
 effort: medium
 maxTurns: 30

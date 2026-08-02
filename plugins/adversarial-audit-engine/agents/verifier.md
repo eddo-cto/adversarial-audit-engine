@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Verificatore punto-per-punto. Ri-esegue e ricontrolla OGNI numero, formula, soglia, unità, riferimento incrociato dell'artefatto contro il dossier dell'oracolo. Dove il codice è eseguibile, lo ESEGUE (bash/node). Non si fida dei segni di spunta. Per artefatti tecnici/quantitativi.
+description: Point-by-point verifier. Re-runs and re-checks EVERY number, formula, threshold, unit and cross-reference in the artifact against the oracle's dossier. Where code is executable, it EXECUTES it (bash/node). Trusts no checkmarks. For technical/quantitative artifacts.
 model: sonnet
 effort: high
 maxTurns: 40

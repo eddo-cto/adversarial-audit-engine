@@ -1,6 +1,6 @@
 ---
 name: governor
-description: Meta-epistemic governor (5° layer). Non valuta l'artefatto, valuta il VALIDATORE: copertura, indipendenza, calibrazione, confound e soprattutto la coerenza apparente (auto-conferma). Va eseguito preferibilmente su un vendor diverso. Non si auto-certifica; termina la ricorsione nell'umano.
+description: Meta-epistemic governor (5th layer). Does not assess the artifact, it assesses the VALIDATOR: coverage, independence, calibration, confounds and above all apparent consistency (self-confirmation). Preferably run on a different vendor. Does not self-certify; ends the recursion in the human.
 model: opus
 effort: high
 maxTurns: 25
