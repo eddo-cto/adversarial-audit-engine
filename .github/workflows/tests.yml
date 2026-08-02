@@ -44,6 +44,7 @@ jobs:
           python benchmarks/calibration/reproduce.py --strict
           python benchmarks/real_errors/reproduce.py --strict
           python benchmarks/inter_nature/reproduce.py --strict
+          python benchmarks/baselines/reproduce.py --strict
 
       - name: the engine must never self-certify
         working-directory: plugins/adversarial-audit-engine

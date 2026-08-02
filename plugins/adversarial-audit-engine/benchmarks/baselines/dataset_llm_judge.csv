@@ -1,0 +1,8 @@
+id,mechanism,n_vanilla,n_disciplined,landing_vanilla,landing_disciplined
+T1,external_data,78,14,1,1
+T2,external_data,99,19,1,1
+T3,general_reasoning,61,21,1,1
+T4,domain_rederivation,155,20,0,0
+T5,domain_rederivation,52,21,0,0
+T6,external_data,58,15,1,1
+T7,domain_rederivation,117,14,0,0

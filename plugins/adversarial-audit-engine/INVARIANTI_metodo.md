@@ -150,6 +150,15 @@ Due bracci di validazione, con verità a terra costruita e reale.
   livello 4 (occhio umano esterno). **Verificabile:** `python benchmarks/inter_nature/reproduce.py` (in
   CI); provenienza in `benchmarks/inter_nature/README.md`. Questo è il motivo per cui la scala
   d'indipendenza resta un invariante e non una precauzione.
+- **Posizionamento vs baseline** (stesso compito, sui 7 bersagli reali): confronto controllato **stesso
+  modello, prompt ingenuo vs disciplinato**. Il landing è **identico** (4/7, stessi bersagli) — la
+  disciplina **non dà più catture**; taglia il rumore **~5×** (~88 reperti/paper ingenuo vs ~18 disciplinato,
+  range 2,5–8,4×: il proxy dei falsi positivi che il defense-gate sopprime) e aggiunge un **confine
+  dichiarato**. I 3 bersagli mancati da entrambi sono quelli di re-derivazione di dominio — mancati perfino
+  da un firehose di 155 reperti: il confine è del **compito**, non della disciplina. Baseline deterministico
+  (statcheck, OSS): **0/7** (classe disgiunta + fragilità di formato). È il "reliability without validity"
+  del 2026 su dato reale. **Verificabile:** `python benchmarks/baselines/reproduce.py` (in CI);
+  `benchmarks/baselines/README.md`.
 
 ## 5. Cosa NON cambia
 
