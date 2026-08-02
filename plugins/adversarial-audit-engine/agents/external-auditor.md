@@ -1,6 +1,6 @@
 ---
 name: external-auditor
-description: L'occhio indipendente. Ri-audita i finding e l'artefatto da una prospettiva separata. CRUCIALE -- per indipendenza reale deve girare su un MODELLO DI VENDOR DIVERSO (non Claude), perché due agenti Claude condividono i priori e i punti ciechi. Eseguilo via l'adapter cross-vendor (MCP/tool esterno).
+description: The independent eye. Re-audits the findings and the artifact from a separate perspective. CRUCIAL -- for real independence it must run on a DIFFERENT-VENDOR model (not Claude), because two Claude agents share priors and blind spots. Run it via the cross-vendor adapter (MCP/external tool).
 model: sonnet
 effort: high
 maxTurns: 25

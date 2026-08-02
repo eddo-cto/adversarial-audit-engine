@@ -1,6 +1,6 @@
 ---
 name: audit
-description: Esegue un audit avversariale a 5 layer su un artefatto (codice, spec, paper, modello). Orchestra l'hive di ruoli, fa girare il nucleo deterministico Python per gate/verdetti/metriche, instrada l'occhio indipendente a un vendor diverso, e non dichiara mai "validato" senza revisione esterna.
+description: Runs a 5-layer adversarial audit on an artifact (code, spec, paper, model). Orchestrates the roles, runs the deterministic Python core for gates/verdicts/metrics, routes the independent eye to a different vendor, and never reports "validated" without external review.
 ---
 
 # /audit — orchestratore dell'hive avversariale

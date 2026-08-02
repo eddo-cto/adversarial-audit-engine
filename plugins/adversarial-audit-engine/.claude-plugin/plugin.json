@@ -1,7 +1,7 @@
 {
   "name": "adversarial-audit-engine",
   "version": "0.12.0",
-  "description": "A 5-layer adversarial-audit hive (destruens, construens, generative, deep-causal, meta-epistemic governor). Claude Code orchestrates roles and tools; the deterministic core stays in Python (aae, bundled); the independent eye can run on a different vendor. It never reports 'validated' on internal grounds: only a human validates.",
+  "description": "Cross-model audit engine for documents and technical artifacts. Blind adversarial roles try to falsify the artifact; a dependency-free Python core enforces the discipline (grounding gate on verbatim quotes, Type-I error control, verdict gates); the independent eye can run on a different model vendor. Never reports 'validated' on internal grounds: only a human does.",
   "author": { "name": "Capybara Media", "email": "hello@capybaramedia.com" },
   "homepage": "https://github.com/eddo-cto/adversarial-audit-engine",
   "repository": "https://github.com/eddo-cto/adversarial-audit-engine",

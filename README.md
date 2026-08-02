@@ -85,6 +85,10 @@ still a machine: level 4 — the human — is the only instance that validates.
    independence, "apparent coherence"). It does not self-certify: it terminates
    at the human.
 
+> The method keeps its terms of art (the Latin layer names, coined terms like
+> *negation spectrometry*). Every module and term is mapped to one plain-language
+> line in **[`plugins/adversarial-audit-engine/GLOSSARY.md`](plugins/adversarial-audit-engine/GLOSSARY.md)** — readable without the papers.
+
 ## Hybrid architecture
 
 Claude Code / Cowork orchestrates the roles (agents) and tools; the
