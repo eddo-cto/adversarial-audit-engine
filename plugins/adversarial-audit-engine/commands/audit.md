@@ -3,26 +3,26 @@ name: audit
 description: Runs a 5-layer adversarial audit on an artifact (code, spec, paper, model). Orchestrates the roles, runs the deterministic Python core for gates/verdicts/metrics, routes the independent eye to a different vendor, and never reports "validated" without external review.
 ---
 
-# /audit — orchestratore dell'hive avversariale
+# /audit — orchestrator of the adversarial hive
 
-Sei l'ARBITRO/SINTETIZZATORE. Coordini i ruoli ma **non** sei tu a imporre la disciplina: quella la impone il codice Python (`aae`). Argomento: il percorso/artefatto da auditare (e, se è un'idea/spazio, la modalità construens/discovery).
+You are the ARBITER/SYNTHESIZER. You coordinate the roles but you do **not** enforce the discipline — the Python code (`aae`) does. Argument: the path/artifact to audit (and, if it is an idea/space, the construens/discovery mode).
 
-## Confine non negoziabile (perché esiste questo plugin)
-- **Orchestrazione + tool (qui, Claude Code):** spawn dei ruoli, esecuzione reale (bash/node), ricerca (web), raccolta dei finding.
-- **Disciplina deterministica (Python `aae`):** schema del ledger, macchina a stati dei verdetti, defense-gate, gate di copertura, metriche, **meta-governor**. Invocala via `scripts/run_core.py` e `scripts/governor_check.py`. NON reimplementare i gate come prompt.
-- **Indipendenza (cross-vendor):** l'`external-auditor` e/o il `governor` vanno eseguiti su un **modello di vendor diverso** (vedi `agents/external-auditor.md`). Due agenti Claude NON contano come indipendenti.
+## Non-negotiable boundary (why this plugin exists)
+- **Orchestration + tools (here, Claude Code):** spawn the roles, real execution (bash/node), search (web), collection of findings.
+- **Deterministic discipline (Python `aae`):** the ledger schema, the verdict state machine, the defense-gate, the coverage-gate, metrics, the **meta-governor**. Invoke it via `scripts/run_core.py` and `scripts/governor_check.py`. Do NOT reimplement the gates as prompts.
+- **Independence (cross-vendor):** the `external-auditor` and/or the `governor` must run on a **different-vendor model** (see `agents/external-auditor.md`). Two Claude agents do NOT count as independent.
 
-## Flusso
-1. **Triage** (checklist fissa di dimensioni: premesse, input, meccanismi, output, condizioni-limite, interfaccia). Decidi quali ruoli specialisti attivare; giustifica le esclusioni.
-2. **Oracolo** (`agents/oracle.md`): dossier di fatti/meccanismi di dominio (mai verdetti). Su dominio normato/quantitativo, ricerca reale.
-3. **Ruoli ostili in parallelo**, ciechi tra loro, ciascuno col **defense-gate** (tenta la difesa più forte prima di condannare): `verifier` (esegui il codice — bash/node — non fidarti dei ✓), `propagator` (non-locali: una scelta qui rompe una garanzia là), + reasoner/specialisti se il triage li attiva.
-4. **Deep-causal** (opzionale, artefatti a struttura ricca): clustering per causa-radice, chiasmo forward/backward, scenari gated.
-5. **Nucleo deterministico**: passa i finding raccolti a `scripts/run_core.py` → ledger validato, verdetti via macchina a stati, deduplica, metriche. Niente verdetto "ARTEFATTO_DIFETTOSO" senza difesa registrata.
-6. **Indipendenza**: esegui l'`external-auditor` su vendor diverso (o registra che non è disponibile).
-7. **Meta-governor** (`agents/governor.md` + `scripts/governor_check.py`): valida il *validatore* — copertura, indipendenza, calibrazione, confound, **coerenza apparente**. Il governor NON si auto-certifica e instrada il residuo all'umano.
+## Flow
+1. **Triage** (fixed checklist of dimensions: premises, inputs, mechanisms, outputs, boundary conditions, interface). Decide which specialist roles to activate; justify the exclusions.
+2. **Oracle** (`agents/oracle.md`): a dossier of domain facts/mechanisms (never verdicts). On regulated/quantitative domains, real search.
+3. **Hostile roles in parallel**, blind to each other, each with the **defense-gate** (attempt the strongest defense before condemning): `verifier` (execute the code — bash/node — trust no ✓), `propagator` (non-local: a choice here breaks a guarantee there), + reasoner/specialists if triage activates them.
+4. **Deep-causal** (optional, richly-structured artifacts): root-cause clustering, forward/backward chiasm, gated scenarios.
+5. **Deterministic core**: pass the collected findings to `scripts/run_core.py` → validated ledger, verdicts via the state machine, dedup, metrics. No ARTIFACT_DEFECTIVE verdict without a recorded defense.
+6. **Independence**: run the `external-auditor` on a different vendor (or record that it is unavailable).
+7. **Meta-governor** (`agents/governor.md` + `scripts/governor_check.py`): validates the *validator* — coverage, independence, calibration, confounds, **apparent consistency**. The governor does NOT self-certify and routes the residual to the human.
 
-## Regola d'oro
-Il completamento **non** può essere "VALIDATO" su base interna. Lo stato massimo interno è `EXTERNAL_REVIEW_PENDING` / `RELIABLE_WITH_RESERVATIONS`. L'hook `Stop` fa rispettare questo.
+## Golden rule
+Completion can **not** be "VALIDATED" on internal grounds. The maximum internal state is `EXTERNAL_REVIEW_PENDING` / `RELIABLE_WITH_RESERVATIONS`. The `Stop` hook enforces this.
 
 ## Output
-Ledger JSON + riepilogo (completion, metriche, bite-rate, livello d'indipendenza, flag di coerenza-apparente) + residuo per l'esperto umano.
+JSON ledger + summary (completion, metrics, bite-rate, independence level, apparent-consistency flags) + residual for the human expert.
