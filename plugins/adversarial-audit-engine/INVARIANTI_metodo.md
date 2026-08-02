@@ -162,4 +162,12 @@ Due bracci di validazione, con verità a terra costruita e reale.
   verdetto e il caveat ρ. Nessun layer nuovo: rende emettibile ciò che la scala d'indipendenza già
   imponeva, così l'accordo non può essere spacciato per indipendenza. È il buco che il vicinato 2026
   ("reliability without validity") ammette e non emette.
+- **Aggiudicazione anti-bias, come garanzia verificabile** (`aae/adjudication_guard.py`,
+  `assess_adjudication`): la prassi di aggiudicazione cieca (coppie rimappate, civette cross-dominio,
+  istanza fresca) è resa **immunità nominate e testabili** — *self-preference* (l'aggiudicatore non è tra
+  gli auditor), *posizione* (la decisione è invariante al riordino dei candidati), *lunghezza* (il SÌ non
+  correla con la lunghezza), *chiusura* (solo inter-natura o umano alza il tetto, delegata al ledger, così
+  le due regole compongono). Sono i bias che la letteratura LLM-as-judge 2026 nomina (position/length/
+  self-preference) e che il multi-agente same-nature **amplifica**: qui una corsa può *certificare* di
+  esserne immune, invece di asserirlo. Regola/profilo, nessuna facoltà nuova.
 - **Freno**: risposta proporzionata; niente layer nuovi per ciò che una regola o un profilo risolvono.
