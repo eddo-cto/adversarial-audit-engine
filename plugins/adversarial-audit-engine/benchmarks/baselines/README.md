@@ -70,6 +70,11 @@ for false positives (the landing findings and the arithmetic structurals are rea
 the proxy is the ~70 speculative findings per paper the defense-gate would
 downgrade). The over-flagging ratio **varies with the paper** (lowest where the
 honest answer is already cautious, or the paper is genuinely broken; highest on
-complex-but-sound papers) — reported *with* its range. Adjudication is by the
-coordinator, to be re-confirmed blind by a fresh instance. No number reaches
-VALIDATED without the external human eye.
+complex-but-sound papers) — reported *with* its range. The landing calls have
+been **re-adjudicated blind by a fresh, isolated instance** (relabelled pairs,
+targets neutralised, no key, no class labels): it reproduced the per-paper
+landing **identically** to the coordinator on all pairs, so the recall and the
+0-false-positive figures do not rest on coordinator judgment. What remains
+un-blinded is only **closure**: two same-nature adjudicators dissolve the
+coordinator bias but stay at independence level 1–2 — no number reaches VALIDATED
+without the different-nature axis and, ultimately, the external human eye.
