@@ -141,13 +141,48 @@ class NeverValidatedInternally(unittest.TestCase):
         self.assertEqual("CROSS_MODEL_REVIEWED", st.state)
         self.assertNotEqual("VALIDATED", st.state)
 
-    def test_only_a_human_validates(self):
+    def test_only_a_human_validates_via_out_of_band_attestation(self):
         led = self._clean_ledger()
         st = evaluate_completion(led, max_posta=Posta.HIGH,
-                                 external_identity="human:perito estimatore",
-                                 internal_identity="anthropic:claude")
+                                 external_identity=None,
+                                 internal_identity="anthropic:claude",
+                                 human_attestation="perito estimatore")
         self.assertEqual("VALIDATED", st.state)
         self.assertEqual(IndependenceLevel.HUMAN_DOMAIN_EXPERT,
+                         led.independence_level)
+
+    def test_human_string_in_payload_does_NOT_validate(self):
+        # F-HUMAN regression: the model authors external_identity, so a string
+        # beginning with 'human' must never be enough for VALIDATED.
+        for spoof in ("human:perito", "human", "humanoid-model-v2", "HUMAN reviewer"):
+            led = self._clean_ledger()
+            st = evaluate_completion(led, max_posta=Posta.HIGH,
+                                     external_identity=spoof,
+                                     internal_identity="anthropic:claude")
+            self.assertNotEqual("VALIDATED", st.state,
+                                f"{spoof!r} must not reach VALIDATED")
+
+    def test_same_vendor_is_intra_vendor_not_cross_model(self):
+        # F-VENDOR regression: a same-vendor different model is level 2, not the
+        # cross-vendor claim, and never VALIDATED.
+        led = self._clean_ledger()
+        st = evaluate_completion(led, max_posta=Posta.HIGH,
+                                 external_identity="anthropic:claude-sonnet-4",
+                                 internal_identity="anthropic:claude-opus-4")
+        self.assertEqual("INTRA_VENDOR_REVIEWED", st.state)
+        self.assertNotEqual("CROSS_MODEL_REVIEWED", st.state)
+        self.assertNotEqual("VALIDATED", st.state)
+        self.assertEqual(IndependenceLevel.DIFFERENT_MODEL_SAME_VENDOR,
+                         led.independence_level)
+
+    def test_bare_token_is_not_counted_as_a_cross_model_reviewer(self):
+        # F-VENDOR regression: 'x' is not a well-formed vendor:model identity.
+        led = self._clean_ledger()
+        st = evaluate_completion(led, max_posta=Posta.HIGH,
+                                 external_identity="x",
+                                 internal_identity="anthropic:claude")
+        self.assertEqual("EXTERNAL_REVIEW_PENDING", st.state)
+        self.assertEqual(IndependenceLevel.SAME_INSTANCE_ROLES,
                          led.independence_level)
 
     def test_open_blockers_beat_everything_including_a_human(self):

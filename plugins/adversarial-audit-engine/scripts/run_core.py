@@ -39,7 +39,6 @@ from aae import metrics as metrics_mod
 from aae import run_metrics as rmx
 from aae.triage import TriageResult
 from aae.meta_epistemic import MetaGovernor
-from aae.adapters import independence_level_between
 
 
 def run(payload: dict, out_dir: str) -> AuditResult:
@@ -52,6 +51,11 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     ledger.adjudicate_all()
     enforce_defense_gate(ledger)
     enforce_coverage_gate(ledger)
+    # F-SECTIONS fix: the schema's structural checks (e.g. a non-local class
+    # needs >=2 cited sections; at least one declared limit) only run via
+    # integrity_report(). Call it on the documented path and surface problems
+    # as flags, so the rule is enforced where the operator actually runs.
+    ledger.flags.extend(f"INTEGRITY: {p}" for p in ledger.integrity_report())
     # anti-hallucination: a condemning finding whose quote is not verbatim in the
     # source text is downgraded (possible fabrication). Pass the artifact text in
     # payload["source_text"] to activate it.
@@ -66,14 +70,19 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     except ValueError:
         max_posta = Posta.HIGH
 
+    # F-HUMAN fix: human closure is OUT OF BAND. The attestation comes from the
+    # operator's environment (a secret the orchestrating model cannot author),
+    # NOT from the payload. Only its presence unlocks VALIDATED.
+    human_attestation = os.environ.get("AAE_HUMAN_ATTESTATION") or None
+
     completion = evaluate_completion(ledger, max_posta=max_posta,
                                     external_identity=external,
-                                    internal_identity=internal)
-    # honest independence level from the two model identities, UNLESS a human
-    # external eye was recorded — in which case evaluate_completion already set
-    # the ledger to HUMAN_DOMAIN_EXPERT (level 4) and we must not overwrite it.
-    if not (external and external.lower().startswith("human")):
-        ledger.independence_level = independence_level_between(internal, external)
+                                    internal_identity=internal,
+                                    human_attestation=human_attestation)
+    # evaluate_completion has already set ledger.independence_level (vendor-aware,
+    # or HUMAN_DOMAIN_EXPERT when attested). Persist the completion state so the
+    # Stop hook can enforce non-closure on the artifact.
+    ledger.completion_state = completion.state
 
     m = metrics_mod.compute(ledger)
     result = AuditResult(ledger=ledger,

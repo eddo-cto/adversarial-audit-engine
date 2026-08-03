@@ -234,6 +234,8 @@ class Ledger:
     independence_level: IndependenceLevel = IndependenceLevel.SAME_INSTANCE_ROLES
     created_at: float = field(default_factory=time.time)
     flags: list[str] = field(default_factory=list)
+    completion_state: str = ""   # set by run_core after evaluate_completion; the
+                                 # Stop hook reads it to enforce non-closure
 
     def add(self, finding: Finding) -> None:
         self.findings.append(finding)
@@ -265,6 +267,7 @@ class Ledger:
             "covered_cells": self.covered_cells,
             "excluded_cells": self.excluded_cells,
             "flags": self.flags,
+            "completion_state": self.completion_state,
             "findings": [f.to_dict() for f in self.findings],
         }
         return json.dumps(payload, indent=indent, ensure_ascii=False)

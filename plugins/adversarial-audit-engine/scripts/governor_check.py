@@ -10,8 +10,14 @@ internal grounds can NEVER reach "VALIDATED".
 It mirrors aae.meta_epistemic deterministically and is self-contained so it can
 run as a hook without importing the package; if `aae` is importable it is used.
 
-Exit code is always 0 (a Stop hook should inform, not crash the session); the
-message is printed to stdout/stderr for the operator and the model to see.
+Enforcement (F-HOOK fix): the hook reads the persisted completion_state and, if
+it is VALIDATED without an OUT-OF-BAND human attestation (AAE_HUMAN_ATTESTATION
+in the operator's environment at Stop time), it DOWNGRADES the ledger on disk to
+EXTERNAL_REVIEW_PENDING and records the correction. It runs in the operator's
+environment, which the model cannot forge, so this is a genuine second lock.
+
+Exit code is always 0 (a Stop hook must not crash the session); enforcement is
+by CORRECTING the persisted artifact, not by failing the run.
 """
 from __future__ import annotations
 import glob
@@ -69,8 +75,29 @@ def main() -> int:
         print("  no ledger found in", out_dir, "— nothing to check.")
         return 0
     led = json.load(open(ledgers[-1], encoding="utf-8"))
+
+    # F-HOOK enforcement: a VALIDATED completion is only legitimate if a human
+    # attested OUT OF BAND (operator environment). If not, correct the artifact.
+    completion_state = led.get("completion_state", "")
+    attested = bool(os.environ.get("AAE_HUMAN_ATTESTATION"))
+    downgraded = False
+    if completion_state == "VALIDATED" and not attested:
+        led["completion_state"] = "EXTERNAL_REVIEW_PENDING"
+        led.setdefault("flags", []).append(
+            "HOOK-DOWNGRADE: completion was VALIDATED without an out-of-band human "
+            "attestation (AAE_HUMAN_ATTESTATION unset at Stop time) — downgraded to "
+            "EXTERNAL_REVIEW_PENDING. Internal grounds can never reach VALIDATED.")
+        with open(ledgers[-1], "w", encoding="utf-8") as fh:
+            json.dump(led, fh, ensure_ascii=False, indent=2)
+        downgraded = True
+
     verdict, ac, notes = verdict_from_ledger(led)
     print(f"  artifact: {led.get('artifact_name','?')}")
+    if completion_state:
+        print(f"  completion state: {led.get('completion_state', completion_state)}")
+    if downgraded:
+        print("  ⚠ HOOK ENFORCEMENT: downgraded an unattested VALIDATED "
+              "→ EXTERNAL_REVIEW_PENDING (artifact corrected on disk).")
     print(f"  reliability verdict: {verdict}  (apparent-coherence {ac:.2f})")
     for n in notes:
         print(f"   - {n}")

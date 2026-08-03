@@ -180,3 +180,28 @@ Due bracci di validazione, con verità a terra costruita e reale.
   self-preference) e che il multi-agente same-nature **amplifica**: qui una corsa può *certificare* di
   esserne immune, invece di asserirlo. Regola/profilo, nessuna facoltà nuova.
 - **Freno**: risposta proporzionata; niente layer nuovi per ciò che una regola o un profilo risolvono.
+
+## 6. Round 9 — indurimento della chiusura (il motore ha auditato se stesso)
+
+Un'istanza indipendente del motore (altro account, natura diversa) auditando la bozza del paper di
+sistema ha sostenuto **quattro accuse contro le garanzie di chiusura** del motore stesso — che erano
+codice *narrato*, non enforced. Tutte corrette e fissate da test di regressione
+(`tests/test_gates_and_verdicts.py`, `tests/test_closure_hardening.py`, `tests/test_benchmarks_guards.py`):
+
+- **F-VENDOR** — `evaluate_completion` faceva `external != internal` (disuguaglianza di stringa), mai un
+  check di vendor. Ora è **vendor-aware**: `CROSS_MODEL_REVIEWED` solo a livello 3 (vendor diverso);
+  same-vendor → nuovo stato `INTRA_VENDOR_REVIEWED` (livello 2, priori condivisi, non validato).
+- **F-HUMAN** — `VALIDATED` era `startswith("human")`, e il payload lo scrive il modello. Ora la
+  chiusura umana è **fuori-banda**: richiede `AAE_HUMAN_ATTESTATION` dall'ambiente operatore, che il
+  modello non può fabbricare. Rende *vera in codice* la frase "il processo non può auto-validarsi"
+  (in linea con la sorveglianza umana effettiva, cfr. AI Act art. 14).
+- **F-HOOK** — lo Stop hook `governor_check.py` informava e usciva sempre 0. Ora **legge lo stato
+  persistito e declassa** su disco un `VALIDATED` privo di attestazione fuori-banda (secondo lucchetto,
+  nell'ambiente operatore). Enforcement senza bloccare la sessione.
+- **F-SECTIONS** — la regola "≥2 sezioni per un non-locale" viveva solo in `orchestrator.integrity_report`,
+  inerte sul percorso documentato. Ora `run_core` chiama `integrity_report()` e ne emette i problemi come flag.
+
+Nessun layer nuovo: le tre famiglie di gate (defense, coverage, indipendenza/chiusura) restano; la
+chiusura passa da *convenzione su stringa* a *codice enforced in due punti* (macchina a stati + hook).
+Prima del round 9 "la disciplina è codice" reggeva per due gate su tre; il motore ha trovato il buco in
+sé e chiuderlo ha reso la tesi vera su tutte e tre.
