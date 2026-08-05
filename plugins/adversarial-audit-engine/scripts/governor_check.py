@@ -83,10 +83,16 @@ def main() -> int:
     downgraded = False
     if completion_state == "VALIDATED" and not attested:
         led["completion_state"] = "EXTERNAL_REVIEW_PENDING"
+        # The independence level must fall with the completion state: leaving it
+        # at HUMAN_DOMAIN_EXPERT would keep the ledger presenting as human-closed
+        # to every downstream reader, including this governor's own low_ind rule.
+        if int(led.get("independence_level", 1)) >= 4:
+            led["independence_level"] = 1
         led.setdefault("flags", []).append(
             "HOOK-DOWNGRADE: completion was VALIDATED without an out-of-band human "
             "attestation (AAE_HUMAN_ATTESTATION unset at Stop time) — downgraded to "
-            "EXTERNAL_REVIEW_PENDING. Internal grounds can never reach VALIDATED.")
+            "EXTERNAL_REVIEW_PENDING and independence reset to 1. Internal grounds "
+            "can never reach VALIDATED.")
         with open(ledgers[-1], "w", encoding="utf-8") as fh:
             json.dump(led, fh, ensure_ascii=False, indent=2)
         downgraded = True

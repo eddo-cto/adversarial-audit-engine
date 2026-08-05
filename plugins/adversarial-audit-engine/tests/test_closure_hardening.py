@@ -63,8 +63,8 @@ class FSections(unittest.TestCase):
 class FHook(unittest.TestCase):
     """The Stop hook downgrades an unattested VALIDATED on disk."""
 
-    def _write_ledger(self, d, completion_state):
-        led = {"artifact_name": "t", "independence_level": 1, "flags": [],
+    def _write_ledger(self, d, completion_state, independence_level=1):
+        led = {"artifact_name": "t", "independence_level": independence_level, "flags": [],
                "completion_state": completion_state,
                "findings": [{"verdict": "artefatto_regge", "declared_limit": "x",
                              "action": ""}]}
@@ -100,6 +100,17 @@ class FHook(unittest.TestCase):
             after = json.load(open(p, encoding="utf-8"))
             self.assertEqual("EXTERNAL_REVIEW_PENDING", after["completion_state"])
             self.assertTrue(any("HOOK-DOWNGRADE" in f for f in after["flags"]))
+
+    def test_downgrade_also_resets_independence_level(self):
+        # Round-10 B1: a downgraded ledger must not keep independence_level 4
+        # (HUMAN_DOMAIN_EXPERT), or it still presents as human-closed downstream.
+        with tempfile.TemporaryDirectory() as d:
+            p = self._write_ledger(d, "VALIDATED", independence_level=4)
+            rc = self._run_hook(d, attest=None)
+            self.assertEqual(0, rc)
+            after = json.load(open(p, encoding="utf-8"))
+            self.assertEqual("EXTERNAL_REVIEW_PENDING", after["completion_state"])
+            self.assertLess(int(after["independence_level"]), 4)
 
     def test_attested_validated_is_left_alone(self):
         with tempfile.TemporaryDirectory() as d:

@@ -10,7 +10,7 @@ in CI. Its single advantage over the theory papers: every claim below maps to a 
 test you can run (the one exception, the blind re-adjudication of §6, is attested rather than public and
 is flagged as such in §8), so it is falsifiable, from inside, without waiting for the external eye.*
 
-**Artifact.** `github.com/eddo-cto/adversarial-audit-engine` (MIT), at commit `5f6e4d4`. Four
+**Artifact.** `github.com/eddo-cto/adversarial-audit-engine` (MIT), at tag `v1.0.2`. Four
 reproducible benchmarks under `plugins/adversarial-audit-engine/benchmarks/`, each with a
 `reproduce.py --strict` (pure standard library) checked in CI on `main` and every pull request,
 across Python 3.10–3.13.
@@ -145,15 +145,17 @@ assigns the verdict. The `Verdict` enum is fixed (`ARTIFACT_DEFECTIVE`, `REDUCED
 | no valid external identity | `EXTERNAL_REVIEW_PENDING` |
 
 **Only a human returns `VALIDATED`, and only out of band.** The attestation is a secret the operator
-supplies from outside the model's reach (an environment token): because the orchestrating model authors
-the payload, a string beginning with `"human"` is explicitly *not* enough — this is the round-9
-F-HUMAN fix, and it is what makes "the process cannot self-report validated" true in code rather than in
-prose. A different-vendor reviewer raises independence to level 3 but still cannot validate ("a machine
-sharing the ultimate limit"); a same-vendor model is level 2, not cross-vendor. A `Stop` hook then runs
+supplies through a channel the payload does not touch (an environment token). The guarantee is relative
+to a stated threat model: it holds for an operator who does not export the secret into the agent's
+shell, and it moves forgery from a field the model authors by design to a variable it must deliberately
+set. It is not a cryptographic barrier — see §7. Because the orchestrating model authors the payload, a
+string beginning with `"human"` is explicitly *not* enough — this is the round-9 F-HUMAN fix. A
+different-vendor reviewer raises independence to level 3 but still cannot validate ("a machine sharing
+the ultimate limit"); a same-vendor model is level 2, not cross-vendor. A `Stop` hook then runs
 `governor_check.py` **in the operator's environment** and, if it finds a `VALIDATED` lacking that
 out-of-band attestation, **downgrades the ledger on disk** and records the correction. Non-closure is
-not a posture here: it is enforced in code at two independent points — the completion state machine and
-the hook.
+not a posture here: it is checked in code at write time and re-checked at Stop time, both against the
+same operator secret — one mechanism at two moments, not two independent mechanisms.
 
 ## 5. The honest point about the technology
 
@@ -164,7 +166,7 @@ the governor; each with an effort budget, a turn cap, and write tools removed) w
 Python band. Keeping them apart is the entire design.
 
 Where it is solid: the gates, the verdict state machine, the metrics, the dedup, and the governor's
-deterministic check are pure functions with tests (144 passing); they behave identically every run, and
+deterministic check are pure functions with tests (145 passing); they behave identically every run, and
 the four benchmarks reproduce to the digit in CI.
 
 Where it is fragile, plainly: (i) the discovery band is a language model, so *which* candidate defects
@@ -241,17 +243,26 @@ paper included, is a **survivor**: two same-nature adjudicators dissolve coordin
 independence level 1–2; no number reaches `VALIDATED` without the different-nature axis and, ultimately,
 the external human eye. That is the engine's own thesis applied to itself.
 
+Two closure guarantees are, as of this version, conventions rather than proofs, and we state them as
+residue rather than let a reader discover them. Human closure requires a non-empty operator token whose
+value is never verified: the guarantee holds against a model that authors the payload, not against one
+that exports an environment variable into its own shell. And the reviewer's vendor is read from a
+payload field rather than attested by the adapter that made the call, so independence level 3 is
+*claimed*, not proven — a string of the form `vendor:model` with any unfamiliar vendor part is currently
+sufficient. Both are one commit each and both are round-11 work; neither is load-bearing for the §6
+measurements, which were produced under level 1–2 and are reported as such.
+
 ## 8. Reproducibility statement
 
 Everything quantitative above recomputes from versioned, anonymized data with the standard library and
 no install:
 
 ```bash
-git clone https://github.com/eddo-cto/adversarial-audit-engine && cd adversarial-audit-engine
+git clone --branch v1.0.2 https://github.com/eddo-cto/adversarial-audit-engine && cd adversarial-audit-engine
 for b in calibration real_errors inter_nature baselines; do
   python3 plugins/adversarial-audit-engine/benchmarks/$b/reproduce.py --strict || echo "DIVERGED: $b"
 done
-python3 -m unittest discover -s plugins/adversarial-audit-engine/tests   # 137 tests
+python3 -m unittest discover -s plugins/adversarial-audit-engine/tests   # 145 tests
 ```
 
 Each `reproduce.py --strict` exits non-zero on any divergence from its `claims.json`; each benchmark's
@@ -267,20 +278,27 @@ does not accuse.
 ## 9. The engine audited itself (round-9 hardening)
 
 The claims in §3–§4 above are stronger than they would have been a revision ago, and the reason is worth
-telling because it *is* the method. An independent instance of the engine — run on a separate account, a
-genuinely different-nature check — was pointed at this paper's own draft. It returned a disciplined
-ledger (with defense attempts, reduced findings, and every self-reported figure independently
-recomputed) and it **upheld four accusations against the engine's own closure guarantees**: independence
+telling because it *is* the method. A separate instance of the engine — a distinct session on a separate
+account, but the **same vendor as the engine's own roles, so independence level 1–2 and explicitly not a
+different nature** — was pointed at this paper's own draft. It returned a disciplined ledger (defense
+attempted on every accusation, four accusations withdrawn against a verifiable fact, and every
+self-reported figure independently recomputed by execution rather than accepted) and it **upheld four
+accusations against the engine's own closure guarantees**: independence
 was a string inequality, not vendor-aware (F-VENDOR); human validation was a `"human"` prefix the
 orchestrating model could author (F-HUMAN); the `Stop` hook informed but never enforced (F-HOOK); and
 the ≥2-sections rule was inert on the documented entry point (F-SECTIONS). Each is now fixed and pinned
 by a regression test (`tests/test_gates_and_verdicts.py`, `tests/test_closure_hardening.py`):
-vendor-aware completion states, an out-of-band human attestation the model cannot forge, a hook that
-downgrades an unattested `VALIDATED` on disk, and integrity checks wired into `run_core`.
+vendor-aware completion states, an out-of-band human attestation, a hook that downgrades an unattested
+`VALIDATED` on disk, and integrity checks wired into `run_core`. That the finder sat at the *minimum*
+independence level is the point worth keeping: same-nature auditing is weak by construction, and it
+still located four defects the authors had not seen.
 
 This is the paper's thesis surviving its own instrument. Before round 9, "the discipline is code" held
 for the defense-gate and coverage-gate and quietly failed for closure — which was string convention. The
-engine located that gap *in itself*, and closing it made the claim true across all three gate-families.
+engine located that gap *in itself*. Closing it made the claim fully true for the sections-gate and for
+vendor-awareness, and reduced human-closure forgery from a payload field to an operator secret whose
+strength is the operator's own hygiene — a contraction of the attack surface, not its elimination. The
+residue is stated in §7.
 We report it here, rather than quietly patching, because a system whose entire value is adversarial
 honesty must show the audit that caught it.
 
