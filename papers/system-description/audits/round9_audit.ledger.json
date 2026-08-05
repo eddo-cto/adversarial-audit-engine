@@ -1,0 +1,359 @@
+{
+  "artifact_name": "PAPER_system_description (draft v1) — bottom-up systems paper on AAE @5f6e4d4",
+  "created_at": 1785792698.7804277,
+  "independence_level": 1,
+  "covered_cells": [
+    "boundary",
+    "inputs",
+    "interface",
+    "mechanisms",
+    "outputs",
+    "premises"
+  ],
+  "excluded_cells": {},
+  "flags": [],
+  "findings": [
+    {
+      "id": "propagator-?",
+      "element": "§1 premise: 'the discipline is code, not prompts' / 'it lives in code'",
+      "taxonomy_cell": "premises",
+      "defect_class": "epistemic",
+      "posta": "high",
+      "accusation": {
+        "text": "The paper's load-bearing premise is that the guarantees are enforced in deterministic Python. Executed against the repo, the two guarantees the paper calls decisive (vendor independence, human-only VALIDATED) are enforced by string comparison, and a third (non-local >=2 sections) is never invoked in the documented entry point. The premise holds for the defense-gate and coverage-gate but not for the closure guarantees.",
+        "base": "execution",
+        "evidence": "Direct execution of scripts/run_core.py and aae/gates.py:evaluate_completion; see F-VENDOR, F-HUMAN, F-SECTIONS.",
+        "sections": [
+          "§1 introduction (iii)",
+          "§4 crux",
+          "aae/gates.py:68-110"
+        ]
+      },
+      "defense": {
+        "attempted": true,
+        "present": false,
+        "fact": null
+      },
+      "verdict": "accusa_vince",
+      "cost_to_fix": "medium",
+      "action": "Restate the premise with the scope the code supports: two of the three gates are code; the closure conditions are conventions on an operator-supplied string.",
+      "action_state": "open",
+      "discard_justification": null,
+      "declared_limit": "This audit is single-nature (independence level 1) and cannot close its own verdict.",
+      "source_role": "propagator",
+      "sources": [],
+      "severity": "alta"
+    },
+    {
+      "id": "verifier-?",
+      "element": "§4 table, row 'external identity present, different vendor, not human -> CROSS_MODEL_REVIEWED'",
+      "taxonomy_cell": "mechanisms",
+      "defect_class": "non_local_mechanical",
+      "posta": "high",
+      "accusation": {
+        "text": "evaluate_completion computes has_external = bool(external_identity) and external_identity != internal_identity. There is no vendor check. Running the full documented pipeline with internal_identity='anthropic:claude-opus-4' and external_identity='anthropic:claude-sonnet-4' returns CROSS_MODEL_REVIEWED and prints the literal justification 'Reviewed by a different-vendor model'. The arbitrary string 'x' also returns CROSS_MODEL_REVIEWED. The vendor-aware code exists (aae/independence_ledger.py::_vendor, aae/adapters.py::independence_level_between) but is never consulted by evaluate_completion; run_core.py sets independence_level=2 correctly AFTER the completion state has already been assigned. The deterministic core therefore emits a false factual claim about its own independence — the exact failure mode the engine exists to prevent.",
+        "base": "execution",
+        "evidence": "Executed: python3 scripts/run_core.py with a same-vendor payload -> 'completion: CROSS_MODEL_REVIEWED — Reviewed by a different-vendor model anthropic:claude-sonnet-4 (!= anthropic:claude-opus-4)'; independence_level in the emitted ledger = 2.",
+        "sections": [
+          "§4 independence-gate table",
+          "aae/gates.py:82",
+          "aae/independence_ledger.py:37"
+        ]
+      },
+      "defense": {
+        "attempted": true,
+        "present": false,
+        "fact": null
+      },
+      "verdict": "accusa_vince",
+      "cost_to_fix": "trivial",
+      "action": "Wire _vendor()/independence_level_between into evaluate_completion; emit CROSS_MODEL_REVIEWED only at level 3, and INTRA_NATURE_REVIEWED (or EXTERNAL_REVIEW_PENDING) at level 2. Then correct the §4 table row.",
+      "action_state": "open",
+      "discard_justification": null,
+      "declared_limit": null,
+      "source_role": "verifier",
+      "sources": [],
+      "severity": "alta"
+    },
+    {
+      "id": "verifier-?",
+      "element": "§4 'Only a human external eye returns VALIDATED'",
+      "taxonomy_cell": "boundary",
+      "defect_class": "epistemic",
+      "posta": "high",
+      "accusation": {
+        "text": "The single non-negotiable rule of the whole system is implemented as external_identity.lower().startswith('human'). Executed end-to-end, external_identity='humanoid-model-v2' returns VALIDATED with the message 'Human external review by humanoid-model-v2 recorded' and sets independence to HUMAN_DOMAIN_EXPERT. Since the payload (including external_identity) is authored by the orchestrating model per SKILL.md step 5, the claim in §4 that 'the process cannot self-report validated' is not enforced by the code: any string beginning with 'human' closes the loop.",
+        "base": "execution",
+        "evidence": "Executed: run_core.py with external_identity='humanoid-model-v2' -> 'completion: VALIDATED'. Same prefix flaw duplicated at aae/independence_ledger.py::_is_human.",
+        "sections": [
+          "§4 crux",
+          "§5 honest point",
+          "aae/gates.py:83"
+        ]
+      },
+      "defense": {
+        "attempted": true,
+        "present": false,
+        "fact": null
+      },
+      "verdict": "accusa_vince",
+      "cost_to_fix": "low",
+      "action": "Require a structured human attestation (e.g. reserved 'human:' scheme plus a non-empty reviewer field and a timestamp) rather than a prefix; document that the operator, not the model, must supply it.",
+      "action_state": "open",
+      "discard_justification": null,
+      "declared_limit": null,
+      "source_role": "verifier",
+      "sources": [],
+      "severity": "alta"
+    },
+    {
+      "id": "propagator-?",
+      "element": "§4 'Non-closure is not a posture here; it is a hook that fails the run'",
+      "taxonomy_cell": "mechanisms",
+      "defect_class": "non_local_mechanical",
+      "posta": "high",
+      "accusation": {
+        "text": "The Stop hook never fails a run. scripts/governor_check.py states in its own docstring 'Exit code is always 0 (a Stop hook should inform, not crash the session)' and main() returns 0 unconditionally. Moreover governor_check.py never reads the completion state: run on the ledger that had just been stamped VALIDATED via a fake human identity, it printed 'RELIABLE_WITH_RESERVATIONS' and the rule text 'internal grounds can never reach VALIDATED' while exiting 0. The hook informs; it does not enforce.",
+        "base": "execution",
+        "evidence": "Executed: python3 scripts/governor_check.py on the VALIDATED ledger -> verdict RELIABLE_WITH_RESERVATIONS, exit=0. Source: scripts/governor_check.py lines 13-15 and main().",
+        "sections": [
+          "§4 crux",
+          "scripts/governor_check.py docstring",
+          "hooks/hooks.json"
+        ]
+      },
+      "defense": {
+        "attempted": true,
+        "present": false,
+        "fact": null
+      },
+      "verdict": "accusa_vince",
+      "cost_to_fix": "low",
+      "action": "Either make the hook read completion_state and exit non-zero on an unsupported VALIDATED, or rewrite §4 as 'a hook that reports, outside the model's turn' and drop 'fails the run'.",
+      "action_state": "open",
+      "discard_justification": null,
+      "declared_limit": null,
+      "source_role": "propagator",
+      "sources": [],
+      "severity": "alta"
+    },
+    {
+      "id": "verifier-?",
+      "element": "§3 'A non-local class with fewer than two cited sections is rejected by the schema as ill-formed'",
+      "taxonomy_cell": "mechanisms",
+      "defect_class": "non_local_mechanical",
+      "posta": "medium",
+      "accusation": {
+        "text": "Finding.validate() does contain the >=2 sections rule, but validate() is only reached via Ledger.integrity_report(), which is called solely from aae/orchestrator.py:194. The documented entry point scripts/run_core.py calls adjudicate_all, enforce_defense_gate, enforce_coverage_gate, enforce_grounding and evaluate_completion, and never integrity_report(). Constructing a NON_LOCAL_MECHANICAL finding with sections=['s1'] succeeds and survives the pipeline. The rule is written but inert on the path the paper and the SKILL tell a reader to run.",
+        "base": "execution",
+        "evidence": "grep of all non-test callers of integrity_report()/validate(); direct construction test; sed of run_core.py:45-70.",
+        "sections": [
+          "§3 unit of work",
+          "aae/schema.py:182-202",
+          "scripts/run_core.py:52-58"
+        ]
+      },
+      "defense": {
+        "attempted": true,
+        "present": false,
+        "fact": null
+      },
+      "verdict": "accusa_vince",
+      "cost_to_fix": "trivial",
+      "action": "Call ledger.integrity_report() inside run_core.run() and surface the problems as flags; or downgrade the §3 wording to 'flagged by the integrity report'.",
+      "action_state": "open",
+      "discard_justification": null,
+      "declared_limit": null,
+      "source_role": "verifier",
+      "sources": [],
+      "severity": "media"
+    },
+    {
+      "id": "verifier-?",
+      "element": "§3 'A PATTERN-only accusation may flag but never condemn; the schema enforces it'",
+      "taxonomy_cell": "mechanisms",
+      "defect_class": "idiosyncratic_local",
+      "posta": "low",
+      "accusation": {
+        "text": "Attribution imprecise: the schema does not reject a pattern-based condemnation at construction time (a Finding with base=PATTERN and verdict=ARTIFACT_DEFECTIVE can be built and the defense-gate does not touch it).",
+        "base": "execution",
+        "evidence": "Direct construction test.",
+        "sections": [
+          "§3",
+          "aae/schema.py:145-155"
+        ]
+      },
+      "defense": {
+        "attempted": true,
+        "present": true,
+        "fact": "The substantive claim holds in the pipeline: Finding.adjudicate() Rule 1 forces NEEDS_READING for any PATTERN base, and run_core.py:52 calls adjudicate_all() before any gate. A pattern-only accusation genuinely cannot condemn on the documented path. Only the phrase 'the schema enforces it' is misplaced — it is the verdict state machine."
+      },
+      "verdict": "artefatto_regge",
+      "cost_to_fix": "trivial",
+      "action": "Reword to 'the verdict state machine enforces it (adjudicate, Rule 1)'.",
+      "action_state": "open",
+      "discard_justification": null,
+      "declared_limit": null,
+      "source_role": "verifier",
+      "sources": [],
+      "severity": "bassa"
+    },
+    {
+      "id": "propagator-?",
+      "element": "§1 'every claim below maps to a file you can read or a test you can run, so it is falsifiable line by line'",
+      "taxonomy_cell": "boundary",
+      "defect_class": "epistemic",
+      "posta": "medium",
+      "accusation": {
+        "text": "The universal quantifier is false for two of the paper's own load-bearing claims. (a) The blind re-adjudication of the 14 pairs (§6) has no artifact in the repo: benchmarks/real_errors and benchmarks/inter_nature contain only the coordinator's landing/decoy datasets, and §8 states the blind audits live in private sealed registers. (b) §8's assertion that each benchmark guard is 'verified non-vacuous by perturbing one datum' corresponds to no test: no file under tests/ or benchmarks/ contains a perturbation check. Anonymization does not require absence — the blind pass could ship as a second anonymized column exactly like the first.",
+        "base": "execution",
+        "evidence": "ls of both benchmark dirs; grep -rl for perturb/vacuous across tests/ and benchmarks/ returns nothing.",
+        "sections": [
+          "§1 contribution (i)-(ii)",
+          "§6 blind re-adjudication",
+          "§8 reproducibility"
+        ]
+      },
+      "defense": {
+        "attempted": true,
+        "present": false,
+        "fact": null
+      },
+      "verdict": "accusa_vince",
+      "cost_to_fix": "low",
+      "action": "Either ship the blind pass as an anonymized column plus a guard test for non-vacuity, or soften §1 to 'every quantitative claim in §6 recomputes; the blind pass is attested, not reproducible'.",
+      "action_state": "open",
+      "discard_justification": null,
+      "declared_limit": null,
+      "source_role": "propagator",
+      "sources": [],
+      "severity": "media"
+    },
+    {
+      "id": "verifier-?",
+      "element": "§6 two-frontier table, column 'recovered by a different nature: yes (3/3, incl. one the primary nature missed)'",
+      "taxonomy_cell": "outputs",
+      "defect_class": "numeric",
+      "posta": "medium",
+      "accusation": {
+        "text": "The primary nature missed 3/3 external-data targets, not one. The 3/3 figure belongs to nature_C alone; nature_B scores 2/3. The binary column collapses a monotone gradient (A 0/3 <= B 2/3 <= C 3/3, monotonicity asserted True by the benchmark) that is a stronger and more interesting result than the yes/no dichotomy the table presents.",
+        "base": "execution",
+        "evidence": "benchmarks/inter_nature/reproduce.py --strict output: nature_A 0/3, nature_B 2/3, nature_C 3/3, 'monotone non-decreasing A<=B<=C: True'.",
+        "sections": [
+          "§6 dissociation table",
+          "benchmarks/inter_nature/claims.json"
+        ]
+      },
+      "defense": {
+        "attempted": true,
+        "present": false,
+        "fact": null
+      },
+      "verdict": "accusa_vince",
+      "cost_to_fix": "trivial",
+      "action": "Replace the binary column with the 0/3, 2/3, 3/3 vector and state the monotonicity; it strengthens the independence-frontier claim rather than weakening it.",
+      "action_state": "open",
+      "discard_justification": null,
+      "declared_limit": null,
+      "source_role": "verifier",
+      "sources": [],
+      "severity": "media"
+    },
+    {
+      "id": "verifier-?",
+      "element": "§6 'a 155-finding vanilla firehose also misses'",
+      "taxonomy_cell": "outputs",
+      "defect_class": "numeric",
+      "posta": "low",
+      "accusation": {
+        "text": "155 reads as a global figure but is the per-paper vanilla count for target T4 only; the aggregate is 620 findings across 7 papers (mean 88.6).",
+        "base": "execution",
+        "evidence": "benchmarks/baselines/dataset_llm_judge.csv line 5 (T4,domain_rederivation,155,...); reproduce.py output 'vanilla 620 (mean 88.6)'.",
+        "sections": [
+          "§6 dissociation",
+          "benchmarks/baselines"
+        ]
+      },
+      "defense": {
+        "attempted": true,
+        "present": true,
+        "fact": "The figure is traceable to the versioned dataset and the same phrasing appears in benchmarks/baselines/README.md; T4 is a domain-re-derivation target, so it is the pertinent case for the sentence's argument. Only the referent is ambiguous to a reader."
+      },
+      "verdict": "artefatto_regge",
+      "cost_to_fix": "trivial",
+      "action": "Write 'a vanilla firehose of up to 155 findings on that very target'.",
+      "action_state": "open",
+      "discard_justification": null,
+      "declared_limit": null,
+      "source_role": "verifier",
+      "sources": [],
+      "severity": "bassa"
+    },
+    {
+      "id": "verifier-?",
+      "element": "§2 'checked on every push across Python 3.10-3.13'",
+      "taxonomy_cell": "interface",
+      "defect_class": "lookup",
+      "posta": "low",
+      "accusation": {
+        "text": "The workflow triggers on push only for branches [main], plus pull_request and workflow_dispatch — not on every push.",
+        "base": "reading",
+        "evidence": ".github/workflows/tests.yml lines 3-7.",
+        "sections": [
+          "§2 artifact note",
+          ".github/workflows/tests.yml"
+        ]
+      },
+      "defense": {
+        "attempted": true,
+        "present": true,
+        "fact": "pull_request is unrestricted, so any branch that opens a PR is covered; the matrix ['3.10','3.11','3.12','3.13'] and all four --strict benchmarks plus the 137-test suite are genuinely in the workflow. The claim's substance (every merged state is checked on four interpreters) holds."
+      },
+      "verdict": "artefatto_regge",
+      "cost_to_fix": "trivial",
+      "action": "Say 'on main and on every pull request'.",
+      "action_state": "open",
+      "discard_justification": null,
+      "declared_limit": null,
+      "source_role": "verifier",
+      "sources": [],
+      "severity": "bassa"
+    },
+    {
+      "id": "verifier-?",
+      "element": "§2/§5 quantitative self-description: commit, module count, LOC, test count, benchmark reproduction",
+      "taxonomy_cell": "inputs",
+      "defect_class": "numeric",
+      "posta": "medium",
+      "accusation": {
+        "text": "Checked whether the paper's self-reported figures overstate the artifact.",
+        "base": "execution",
+        "evidence": "Cloned github.com/eddo-cto/adversarial-audit-engine: HEAD = 5f6e4d47ebd935f1636bae1c1d6b78341eb609b1 (matches the cited 5f6e4d4).",
+        "sections": [
+          "§2",
+          "§5",
+          "§8"
+        ]
+      },
+      "defense": {
+        "attempted": true,
+        "present": true,
+        "fact": "All figures verified by execution and none is inflated: 30 .py modules under aae/ and 4244 total lines (paper: '~4,200 across 30 small modules'); 'Ran 137 tests ... OK' (paper: 137 passing); all four reproduce.py --strict exit 0 from a clean clone with no install; §6's numbers all recompute (P recall 1/4=25%, decoy FP 0/7 on all three natures, synthetic 14/16=88%, over-flagging 5.00x overall with range 2.5x-8.4x, disciplined mean 17.7 vs vanilla 88.6, landing 4/7 identical per-paper, statcheck 0/7); the DefectClass and Verdict enums quoted in §3-§4 match aae/schema.py; the agent front-matter (sonnet for hostile roles, opus for governor, disallowedTools Write/Edit, effort and maxTurns) matches agents/*.md; the defense-gate downgrades an undefended condemnation to NEEDS_EXPERT and the coverage-gate flags 5 uncovered dimensions, both as described. I also perturbed the load-bearing columns myself: flipping a 'landed' value and injecting a decoy false positive each make reproduce.py --strict exit 2, so the guards are non-vacuous where it counts.",
+        "sources": [
+          "https://github.com/eddo-cto/adversarial-audit-engine"
+        ]
+      },
+      "verdict": "artefatto_regge",
+      "cost_to_fix": "trivial",
+      "action": "",
+      "action_state": "open",
+      "discard_justification": null,
+      "declared_limit": "Verified single-nature and single-run; recall variance across runs (the paper's own declared fragility) is not testable from a clone.",
+      "source_role": "verifier",
+      "sources": [
+        "https://github.com/eddo-cto/adversarial-audit-engine"
+      ],
+      "severity": "bassa"
+    }
+  ]
+}

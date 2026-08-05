@@ -25,6 +25,8 @@ credentials.*
 aae_out/
 *.ledger.json
 *.summary.txt
+# ...but the paper's committed self-audit trail is deliberately versioned source
+!papers/system-description/audits/*.ledger.json
 
 # --- Packaged archives ---
 *.zip

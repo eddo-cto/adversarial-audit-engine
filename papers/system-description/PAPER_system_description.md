@@ -10,7 +10,7 @@ in CI. Its single advantage over the theory papers: every claim below maps to a 
 test you can run (the one exception, the blind re-adjudication of §6, is attested rather than public and
 is flagged as such in §8), so it is falsifiable, from inside, without waiting for the external eye.*
 
-**Artifact.** `github.com/eddo-cto/adversarial-audit-engine` (MIT), at tag `v1.0.2`. Four
+**Artifact.** `github.com/eddo-cto/adversarial-audit-engine` (MIT), at tag `v1.0.3`. Four
 reproducible benchmarks under `plugins/adversarial-audit-engine/benchmarks/`, each with a
 `reproduce.py --strict` (pure standard library) checked in CI on `main` and every pull request,
 across Python 3.10–3.13.
@@ -258,7 +258,7 @@ Everything quantitative above recomputes from versioned, anonymized data with th
 no install:
 
 ```bash
-git clone --branch v1.0.2 https://github.com/eddo-cto/adversarial-audit-engine && cd adversarial-audit-engine
+git clone --branch v1.0.3 https://github.com/eddo-cto/adversarial-audit-engine && cd adversarial-audit-engine
 for b in calibration real_errors inter_nature baselines; do
   python3 plugins/adversarial-audit-engine/benchmarks/$b/reproduce.py --strict || echo "DIVERGED: $b"
 done
@@ -275,7 +275,7 @@ Paper identities (PMCIDs, DOIs, the sealed Matters-Arising targets) stay private
 a "missed defect" adds nothing to any statistic and risks misreading. Red line: the engine flags, it
 does not accuse.
 
-## 9. The engine audited itself (round-9 hardening)
+## 9. The engine audited itself (round-9 and round-10 hardening)
 
 The claims in §3–§4 above are stronger than they would have been a revision ago, and the reason is worth
 telling because it *is* the method. A separate instance of the engine — a distinct session on a separate
@@ -293,14 +293,32 @@ vendor-aware completion states, an out-of-band human attestation, a hook that do
 independence level is the point worth keeping: same-nature auditing is weak by construction, and it
 still located four defects the authors had not seen.
 
-This is the paper's thesis surviving its own instrument. Before round 9, "the discipline is code" held
-for the defense-gate and coverage-gate and quietly failed for closure — which was string convention. The
-engine located that gap *in itself*. Closing it made the claim fully true for the sections-gate and for
-vendor-awareness, and reduced human-closure forgery from a payload field to an operator secret whose
-strength is the operator's own hygiene — a contraction of the attack surface, not its elimination. The
-residue is stated in §7.
-We report it here, rather than quietly patching, because a system whose entire value is adversarial
-honesty must show the audit that caught it.
+Then the same engine, again at independence level 1, was pointed at *this hardened version* and returned
+four more. One sat **inside the round-9 fix itself**: the hook downgraded a spoofed `VALIDATED`'s
+completion state but left its independence level at `HUMAN_DOMAIN_EXPERT`, so the corrected ledger still
+read as human-closed to every downstream reader — now reset to level 1, with a regression test that
+asserts *both* fields, since asserting only the completion state is what had let the defect through. The
+other three were the paper's own honesty debts, not the engine's: the artifact pinned a commit that
+predated its own corrections (now pinned to an immutable tag); §4 called two checks "independent" when
+both read the same operator secret, ρ = 1 (now "one mechanism at two moments"); and this very section had
+called the round-9 audit "a genuinely different-nature check" — a self-assigned independence upgrade in
+the paper whose thesis is that such upgrades are the failure mode. All corrected; two residues (an
+unvalidated human token, a claimed rather than attested vendor level) are declared in §7 rather than left
+for a reader to find.
+
+This is the paper's thesis surviving its own instrument, twice. A level-1 engine found four closure
+defects; the author closed them in code; the same engine returned and found four more, one *inside the
+previous fix*; the author closed those too and declared the two he could not yet close. Before round 9,
+"the discipline is code" held for the defense-gate and coverage-gate and quietly failed for closure —
+string convention; closing it made the claim fully true for the sections-gate and for vendor-awareness,
+and contracted human-closure forgery from a payload field to an operator secret whose strength is the
+operator's own hygiene rather than eliminating it. Both audit trails — the round-9 ledger and the
+round-10 work order — are committed under `papers/system-description/audits/`; they are self-audits at
+independence level 1 and validate nothing, which is exactly why they are shown rather than summarized.
+
+We report all of it here, rather than quietly patching, because a system whose entire value is
+adversarial honesty must show the audits that caught it — including the one that caught the previous
+audit's fix, and the one that caught this section overclaiming.
 
 ## 10. Relation to the two theory papers
 
@@ -316,6 +334,7 @@ shows both are real because it runs.
 
 ---
 
-*Draft v1 — for internal review before submission. Venue target: a systems / reproducibility track.
-Author to confirm the code excerpts (§3–§4), the two-frontier table (§6), and the companion framing
-(§9) before the version-note on the engineering frontier is filed.*
+*Revision v1.0.3 — post round-9 and round-10 hardening; targets a systems / reproducibility track. The
+companion framing is §10; the self-audit trail is §9, with its two ledgers under `audits/`. Open item
+before submission: the version-note on the engineering frontier pointing forward to the capability
+frontier of §6.*
