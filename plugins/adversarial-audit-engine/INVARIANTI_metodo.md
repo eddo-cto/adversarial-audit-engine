@@ -205,3 +205,25 @@ Nessun layer nuovo: le tre famiglie di gate (defense, coverage, indipendenza/chi
 chiusura passa da *convenzione su stringa* a *codice enforced in due punti* (macchina a stati + hook).
 Prima del round 9 "la disciplina è codice" reggeva per due gate su tre; il motore ha trovato il buco in
 sé e chiuderlo ha reso la tesi vera su tutte e tre.
+
+## 7. Round 11 — chiusura crittografica (primo audit di natura diversa, livello 3)
+
+Il primo audit di **vendor diverso** (livello 3, non-Anthropic) ha mostrato che le due garanzie di
+chiusura che il round-10 aveva solo *dichiarato* come residui (C1, C2) erano ancora convenzioni. Ora
+sono **enforced in codice** (`aae/attestation.py`, `gates.py`, `run_core.py`, `governor_check.py`;
+test in `test_gates_and_verdicts.py`, `test_closure_hardening.py`):
+
+- **C2 — chiusura umana crittografica.** `VALIDATED` richiede un **HMAC** valido sul digest del ledger
+  (`content_digest` su nome-artefatto + reperti) con una chiave operatore fuori-banda (`AAE_HUMAN_KEY`),
+  che il modello non possiede. Un token non-firma non valida più nulla; l'hook `Stop` **ri-verifica**
+  l'HMAC e declassa qualsiasi `VALIDATED` non firmato. Il modello autore del payload **non può**
+  auto-validarsi, punto — non per convenzione ma per crittografia.
+- **C1 — indipendenza attestata, non dichiarata.** Il livello 3 (`CROSS_MODEL_REVIEWED`) è accreditato
+  **solo** dall'identità che l'adapter ha davvero chiamato (`AAE_EXTERNAL_ATTESTED_IDENTITY`). Un'identità
+  di vendor diverso presente solo nel payload è `CROSS_MODEL_CLAIMED` e la sua indipendenza **non è
+  accreditata** (livello 1). Chiude il buco `notanthropic:whatever → livello 3`.
+
+Nessun layer nuovo: stessa macchina a stati, due nuovi stati onesti (`CROSS_MODEL_CLAIMED`) e una verifica
+crittografica al posto di un controllo di presenza-stringa. È l'indipendenza di natura diversa che, come
+previsto dalla scala, ha trovato ciò che gli audit stesso-vendor non vedevano — e stavolta su una
+garanzia di chiusura, non solo sul testo del paper.

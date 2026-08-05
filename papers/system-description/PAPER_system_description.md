@@ -10,7 +10,7 @@ in CI. Its single advantage over the theory papers: every claim below maps to a 
 test you can run (the one exception, the blind re-adjudication of §6, is attested rather than public and
 is flagged as such in §8), so it is falsifiable, from inside, without waiting for the external eye.*
 
-**Artifact.** `github.com/eddo-cto/adversarial-audit-engine` (MIT), at tag `v1.0.3`. Four
+**Artifact.** `github.com/eddo-cto/adversarial-audit-engine` (MIT), at tag `v1.0.4`. Four
 reproducible benchmarks under `plugins/adversarial-audit-engine/benchmarks/`, each with a
 `reproduce.py --strict` (pure standard library) checked in CI on `main` and every pull request,
 across Python 3.10–3.13.
@@ -37,11 +37,11 @@ without trusting the authors. (iii) It separates cleanly the part that is a lang
 non-deterministic — from the part that is ordinary Python — deterministic, boring, trustworthy — a
 distinction the theory papers blur and every prospective user needs.
 
-The empirical payoff (§6) is a result the theory papers do not have: the engine's behaviour is governed
-by **two orthogonal frontiers**, and — this is the new finding — the two are **dissociated by the data**,
-not merely asserted. One class of real defect is recovered by *no* model nature (a capability frontier);
-a different class is recovered precisely by a *different* nature (an independence frontier); a third sits
-inside both and is always caught.
+The empirical payoff (§6) is a small-sample observation the theory papers do not have: a **descriptive
+dissociation** between two candidate axes — capability and independence. One class of real defect is
+recovered by *no* model nature; a different class is recovered by a *different* nature; a third is always
+caught. We present this as hypothesis-generating (n=7, one run per nature), **not** as two identified
+orthogonal frontiers — a scoping forced by the round-11 different-vendor review (§9).
 
 ## 2. The graph, as it actually runs
 
@@ -114,8 +114,13 @@ class DefectClass(str, Enum):
     PHENOMENOLOGICAL = "phenomenological"          # lived-experience / perception failure
 ```
 
-This taxonomy is not decoration: §6 shows the engine's empirical boundary is drawn exactly along these
-class lines. A non-local class with fewer than two cited sections is flagged by the integrity report,
+This is the production classifier. Note (round-11 F-03): §6's *empirical* study uses a coarser,
+experiment-specific grouping — general-reasoning / external-data / domain-re-derivation — **not** these
+nine `DefectClass` values, and no crosswalk between the two is shipped. So §6 describes a boundary in its
+own labels; it does not by itself show that this production enum carves that boundary. Connecting the two
+(an explicit crosswalk, or re-running §6 over the production classes) is deferred work.
+
+A non-local class with fewer than two cited sections is flagged by the integrity report,
 which the documented `run_core` path runs (round-9 F-SECTIONS fix); a conceptual-novel defect is
 marked the residual limit and routed to a human. The data structure already encodes what the engine
 can and cannot close.
@@ -139,21 +144,21 @@ assigns the verdict. The `Verdict` enum is fixed (`ARTIFACT_DEFECTIVE`, `REDUCED
 | condition (in the code) | completion state |
 |---|---|
 | open `NEEDS_READING` / `NEEDS_EXPERT` findings | `BLOCKED_OPEN_ITEMS` |
-| out-of-band human attestation present (operator environment, *not* the payload) | `VALIDATED` |
-| reviewer is a genuinely different **vendor** (independence level 3) | `CROSS_MODEL_REVIEWED` — *"reliability improved — but NOT validated"* |
-| reviewer is a same-vendor different model (level 2) | `INTRA_VENDOR_REVIEWED` — *"shared priors, not cross-vendor, not validated"* |
-| no valid external identity | `EXTERNAL_REVIEW_PENDING` |
+| **verified** human attestation: a valid HMAC of the ledger digest under the operator key | `VALIDATED` |
+| **adapter-attested** different **vendor** (independence level 3) | `CROSS_MODEL_REVIEWED` — *"reliability improved — but NOT validated"* |
+| different-vendor identity **claimed only in the payload** | `CROSS_MODEL_CLAIMED` — *"independence NOT credited (level 1)"* |
+| same-vendor different model (level 2) | `INTRA_VENDOR_REVIEWED` — *"shared priors, not cross-vendor"* |
+| no attested external identity | `EXTERNAL_REVIEW_PENDING` |
 
-**Only a human returns `VALIDATED`, and only out of band.** The attestation is a secret the operator
-supplies through a channel the payload does not touch (an environment token). The guarantee is relative
-to a stated threat model: it holds for an operator who does not export the secret into the agent's
-shell, and it moves forgery from a field the model authors by design to a variable it must deliberately
-set. It is not a cryptographic barrier — see §7. Because the orchestrating model authors the payload, a
-string beginning with `"human"` is explicitly *not* enough — this is the round-9 F-HUMAN fix. A
-different-vendor reviewer raises independence to level 3 but still cannot validate ("a machine sharing
-the ultimate limit"); a same-vendor model is level 2, not cross-vendor. A `Stop` hook then runs
-`governor_check.py` **in the operator's environment** and, if it finds a `VALIDATED` lacking that
-out-of-band attestation, **downgrades the ledger on disk** and records the correction. Non-closure is
+**Only a human returns `VALIDATED`, and closure is cryptographic (round 11).** The attestation is an
+**HMAC of the ledger digest under a key the operator holds outside the model's reach** (`AAE_HUMAN_KEY`);
+a bare token that does not verify closes nothing. Because the model authors the payload but not the key,
+it *cannot* produce the signature — "the process cannot self-report validated" is now enforced by
+cryptography, not by an honesty convention. Independence is **attested, not claimed**: level 3 is
+credited only from the identity the calling adapter actually reports; a different-vendor identity present
+only in the payload is `CROSS_MODEL_CLAIMED` and its independence is not credited. A `Stop` hook then
+runs `governor_check.py` **in the operator's environment**, **re-verifies the HMAC**, and if a
+`VALIDATED` does not verify it **downgrades the ledger on disk** and resets independence. Non-closure is
 not a posture here: it is checked in code at write time and re-checked at Stop time, both against the
 same operator secret — one mechanism at two moments, not two independent mechanisms.
 
@@ -166,7 +171,7 @@ the governor; each with an effort budget, a turn cap, and write tools removed) w
 Python band. Keeping them apart is the entire design.
 
 Where it is solid: the gates, the verdict state machine, the metrics, the dedup, and the governor's
-deterministic check are pure functions with tests (145 passing); they behave identically every run, and
+deterministic check are pure functions with tests (148 passing); they behave identically every run, and
 the four benchmarks reproduce to the digit in CI.
 
 Where it is fragile, plainly: (i) the discovery band is a language model, so *which* candidate defects
@@ -176,11 +181,15 @@ vendor's API) the operator must wire up — absent it the external-auditor is th
 so; (iii) the "5-layer" framing describes five roles, not five guarantees — the guarantees are the
 three gates, fewer and humbler than any marketing.
 
-## 6. What actually happens — two frontiers, dissociated by the data
+## 6. What actually happens — a descriptive dissociation, and its limits
 
-The theory papers name **one** frontier: independence (ρ). Running the engine on real errors revealed a
-**second, orthogonal** one, and the two turn out to be separable in the measurements — which is the
-strongest evidence that they are genuinely two things and not one.
+The theory papers name **one** frontier: independence (ρ). Running the engine on real errors surfaced a
+candidate **second axis — capability**, and the two show *distinct landing patterns* in a small sample.
+We report this as a **descriptive dissociation** and hypothesis-generating evidence, **not** a causal
+decomposition: `n` is seven, there is one run per nature, and "nature" confounds vendor with model
+capability, tool access, and run-to-run variance. What the data license is a suggestive separation of
+*where the lens lands*, not two identified orthogonal frontiers. (This scoping is the result of the
+round-11 different-vendor review; see §9.)
 
 **Setup (benchmarks `real_errors`, `inter_nature`, `baselines`).** Seven real published papers that
 later received a formal *Matters Arising* supply third-party ground truth: each has a known, formally
@@ -190,8 +199,9 @@ Adjudication of whether a produced finding *lands* on the sealed target uses a s
 *locus* in the paper **and** same *mechanism* — and has been **re-adjudicated blind** by a fresh,
 isolated instance (relabelled pairs, neutralised targets, no key, no class labels); it reproduced the
 per-pair result **identically** to the coordinator on all 14 pairs (P landing 1/4, A landing 3/3, decoy
-false-positives 0/7). The coordinator-bias confound is therefore dissolved; what remains un-blinded is
-only closure, by construction.
+false-positives 0/7). This **reduces direct coordinator-label dependence** — it does not dissolve shared
+same-vendor rubric, target-definition, or paper-selection bias; what remains un-blinded is closure, by
+construction.
 
 **The dissociation.** Group the real targets by defect mechanism and ask which model natures recover
 them:
@@ -202,14 +212,16 @@ them:
 | **external-data** | a claim resolvable only against an outside source (ORIG_01/02/06) | **0/3** | **monotone: A 0/3 ≤ B 2/3 ≤ C 3/3** | **independence** frontier — recovery *rises with nature-distance* (ρ<1) |
 | **domain-re-derivation** | re-integrate the equations, recompute a physical quantity (ORIG_04/05/07) | 0/3 | **0/3 for every nature** | **capability** frontier — *no* nature recovers it |
 
-The two frontiers fall out cleanly. The **capability** frontier is the class that **no** nature
-recovers — and that a vanilla firehose of up to 155 findings *on that very target* also misses — because it requires *executing* a
-domain re-derivation, which no text-only auditor does; it is a property of the *task*, orthogonal to how
-many independent eyes you add. The **independence** frontier is the class that a **different** nature
-*does* recover: this is `engineering-frontier`'s Proposition 2 turned from an argument into a
-measurement — internal agreement cannot separate genuine from coordinated consensus, an external
-(different-nature, ρ<1) draw can. That a single dataset separates "no nature helps" from "a different
-nature helps" is exactly why the two frontiers are two.
+Two patterns stand out, and a permutation test over the class labels gives **p = 0.007** against
+arbitrary assignment — so the segregation is not noise. The **capability-limited** pattern is the class
+**no** nature recovers — and that a vanilla firehose of up to 155 findings *on that very target* also
+misses — because it needs *executing* a domain re-derivation, which no text-only auditor does; this reads
+as a property of the *task*. The **independence-sensitive** pattern is the class a *different* nature
+does recover (monotone across natures), echoing `engineering-frontier`'s Proposition 2 — internal
+agreement cannot separate genuine from coordinated consensus, an external draw can. But calling these
+two *orthogonal frontiers* would require holding capability and tools fixed while varying independence,
+which this design does not do. So the honest reading is: two mechanism classes landed differently across
+three model runs — a descriptive dissociation, not an identified pair of causal axes.
 
 **The honest sensitivity numbers.** On a single nature, real class-P recall is **1/4 (25%)** with
 **0/7** decoy false-positives — the number the synthetic calibration (88% present-verifiable; see
@@ -219,16 +231,21 @@ domain errors.
 
 **What the discipline buys (baseline, `benchmarks/baselines`).** Against the same strong model run
 *without* the protocol, discipline does **not** change *which* targets are caught (landing identical,
-4/7, same targets) — it cuts the noise **~5×** (≈18 findings per paper vs ≈88, per-paper range
-2.5×–8.4×) and declares a boundary the vanilla judge does not. A deterministic OSS baseline (statcheck)
-lands 0/7: its class (APA-style NHST p-values) is disjoint from these defects. This is the literature's
-"reliability without validity" grounded on real errors: the value is calibration — fewer false alarms
-and a declared boundary — not a recall crown.
+4/7, same targets) — it **emits ~5× fewer findings** (≈18 per paper vs ≈88, per-paper range 2.5×–8.4×)
+and declares a boundary the vanilla judge does not. This is a false-alarm **proxy**, not a measured
+false-positive rate: the non-target findings are not each adjudicated, so the honest claim is *lower
+finding volume with the same landing*, and the ≈70 extra vanilla findings per paper are largely
+speculative objections the defense-gate would downgrade. A deterministic OSS baseline (statcheck) lands
+0/7: its class (APA-style NHST p-values) is disjoint from these defects. This grounds the literature's
+"reliability without validity" on real errors: the value is calibration and a declared boundary, not a
+recall crown.
 
-Put the frontiers together and the footprint is exact: the engine closes a defect **iff** it is
-general-reasoning-reconstructible (inside the capability frontier) **and** you have supplied the right
-independence (inside the independence frontier); everything else it routes to the human, by
-construction, and it says which frontier it hit.
+Put it together as a **bounded, described footprint on seven targets**, not a theorem: the engine landed
+on the general-reasoning-reconstructible defect; a *different* nature additionally recovered the
+external-data class; the domain-re-derivation class was missed by every nature. It does **not** follow
+that the engine routes "everything else" to a human — the code auto-routes only the conceptual-novel
+class, and other classes receive internal verdicts. What the engine reliably reports is *which* class a
+given defect fell in, and it declares the classes it did not reach.
 
 ## 7. Honest limits
 
@@ -239,18 +256,20 @@ false-positive rate, and it varies with the paper (reported with its range). Two
 wrinkles: one external-data target is adjudicator-dependent (which is the ρ<1 phenomenon itself, not a
 judgment error), and one re-derivation target was confounded by text extraction dropping the governing
 equation (irrelevant to recall, since that class is missed regardless). And the whole apparatus, this
-paper included, is a **survivor**: two same-nature adjudicators dissolve coordinator bias but stay at
+paper included, is a **survivor**: two same-nature adjudicators reduce coordinator-label dependence but stay at
 independence level 1–2; no number reaches `VALIDATED` without the different-nature axis and, ultimately,
 the external human eye. That is the engine's own thesis applied to itself.
 
-Two closure guarantees are, as of this version, conventions rather than proofs, and we state them as
-residue rather than let a reader discover them. Human closure requires a non-empty operator token whose
-value is never verified: the guarantee holds against a model that authors the payload, not against one
-that exports an environment variable into its own shell. And the reviewer's vendor is read from a
-payload field rather than attested by the adapter that made the call, so independence level 3 is
-*claimed*, not proven — a string of the form `vendor:model` with any unfamiliar vendor part is currently
-sufficient. Both are one commit each and both are round-11 work; neither is load-bearing for the §6
-measurements, which were produced under level 1–2 and are reported as such.
+Two closure guarantees were, through round 10, conventions rather than proofs; **round 11 made them
+enforced** (see §9). Human closure is now cryptographic: `VALIDATED` requires a valid HMAC of the ledger
+digest under an operator key the model cannot reach, so a model that authors the payload can no longer
+self-report validation. And independence level 3 is now **attested by the calling adapter**, not read
+from a payload string: an unattested different-vendor identity is `CROSS_MODEL_CLAIMED`, its independence
+uncredited. One honest caveat survives and is load-bearing precisely where the earlier draft said it was
+not: the **§6 inter-nature data were collected before round 11**, so the vendor identities behind
+`nature_A/B/C` rest on a private register's attestation, not on the new adapter check. The independence
+*interpretation* of §6 is therefore still privately attested (see §6 and §8), even though the code that
+would attest a future run is now in place.
 
 ## 8. Reproducibility statement
 
@@ -258,11 +277,11 @@ Everything quantitative above recomputes from versioned, anonymized data with th
 no install:
 
 ```bash
-git clone --branch v1.0.3 https://github.com/eddo-cto/adversarial-audit-engine && cd adversarial-audit-engine
+git clone --branch v1.0.4 https://github.com/eddo-cto/adversarial-audit-engine && cd adversarial-audit-engine
 for b in calibration real_errors inter_nature baselines; do
   python3 plugins/adversarial-audit-engine/benchmarks/$b/reproduce.py --strict || echo "DIVERGED: $b"
 done
-python3 -m unittest discover -s plugins/adversarial-audit-engine/tests   # 145 tests
+python3 -m unittest discover -s plugins/adversarial-audit-engine/tests   # 148 tests
 ```
 
 Each `reproduce.py --strict` exits non-zero on any divergence from its `claims.json`; each benchmark's
@@ -275,7 +294,7 @@ Paper identities (PMCIDs, DOIs, the sealed Matters-Arising targets) stay private
 a "missed defect" adds nothing to any statistic and risks misreading. Red line: the engine flags, it
 does not accuse.
 
-## 9. The engine audited itself (round-9 and round-10 hardening)
+## 9. The engine audited itself (round-9, round-10 and round-11 hardening)
 
 The claims in §3–§4 above are stronger than they would have been a revision ago, and the reason is worth
 telling because it *is* the method. A separate instance of the engine — a distinct session on a separate
@@ -316,17 +335,32 @@ operator's own hygiene rather than eliminating it. Both audit trails — the rou
 round-10 work order — are committed under `papers/system-description/audits/`; they are self-audits at
 independence level 1 and validate nothing, which is exactly why they are shown rather than summarized.
 
+Then the paper went to a genuinely **different vendor** — the first review at independence **level 3**,
+the axis §7 said the system could not supply for itself. It reproduced the four benchmark guards, then
+attacked the central result and won. §6's *"two orthogonal frontiers, dissociated by the data,"* its
+*"iff"* footprint, and §3's claim that the boundary runs *"exactly along"* the production `DefectClass`
+taxonomy were over-claims: n=7 with one run per nature cannot separate capability from independence, and
+the empirical labels are not the production classes. §6, §3 and the abstract are scoped to a *descriptive
+dissociation* accordingly. And the different vendor confirmed that the two closure guarantees round 10
+had only *declared* as residue (C1, C2) were still conventions — so this time we **built** them: human
+closure is now a cryptographic HMAC the model cannot forge, and independence level 3 is credited only
+from the adapter that made the call (round-11; §4, §7, `aae/attestation.py`). The level-3 work order is
+committed under `audits/` beside the level-1 ledgers. The asymmetry is the point: a different-vendor eye
+caught the headline over-claim two same-vendor rounds had missed — the independence scale doing its job.
+
 We report all of it here, rather than quietly patching, because a system whose entire value is
 adversarial honesty must show the audits that caught it — including the one that caught the previous
-audit's fix, and the one that caught this section overclaiming.
+audit's fix, the one that caught this section overclaiming, and the different-vendor one that caught the
+paper's headline over-claim and forced two closure guarantees from convention into code.
 
 ## 10. Relation to the two theory papers
 
 This is the **empirical/architectural companion** the theory papers lacked. *Managing epistemic
 circularity* proves the survivor gate and non-closure in the C₃ quantale; here the same non-closure is a
 `Stop` hook and a completion state machine you can run. *The engineering frontier* argues one
-independence frontier (ρ); here a second — **capability** — is dissociated from it by the data, and the
-first is instrumented rather than assumed. Nothing in the published papers is retracted or corrected;
+independence frontier (ρ); here a candidate second axis — **capability** — shows a *descriptive
+dissociation* from it in a small sample (§6), and the first is instrumented rather than assumed. Nothing
+in the published papers is retracted or corrected;
 they are theoretically sound and honestly limited. A light Zenodo version-note on the engineering
 frontier can point forward to the capability frontier developed here. The three papers together are one
 object seen thrice: the algebra of the residue, the coordinate of the frontier, and the machine that
@@ -334,7 +368,7 @@ shows both are real because it runs.
 
 ---
 
-*Revision v1.0.3 — post round-9 and round-10 hardening; targets a systems / reproducibility track. The
-companion framing is §10; the self-audit trail is §9, with its two ledgers under `audits/`. Open item
-before submission: the version-note on the engineering frontier pointing forward to the capability
-frontier of §6.*
+*Revision v1.0.4 — post round-9/10/11 hardening. Round 11 = the first different-vendor / level-3 review:
+§6 scoped to a descriptive dissociation, and human-closure plus vendor-independence made cryptographic
+(`aae/attestation.py`). Targets a systems / reproducibility track. Companion framing §10; self-audit
+trail §9, with its ledgers under `audits/`. Open item: the version-note on the engineering frontier.*

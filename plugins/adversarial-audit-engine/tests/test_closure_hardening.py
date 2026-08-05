@@ -21,6 +21,8 @@ _PLUGIN = os.path.dirname(_HERE)
 _SCRIPTS = os.path.join(_PLUGIN, "scripts")
 sys.path.insert(0, _PLUGIN)  # aae importable
 
+from aae.attestation import content_digest, make_human_token  # noqa: E402
+
 
 def _load(name):
     spec = importlib.util.spec_from_file_location(name, os.path.join(_SCRIPTS, name + ".py"))
@@ -73,49 +75,60 @@ class FHook(unittest.TestCase):
             json.dump(led, fh)
         return p
 
-    def _run_hook(self, out_dir, attest):
+    def _valid_token(self, key):
+        # the HMAC an honest operator would compute for the ledger _write_ledger makes
+        digest = content_digest("t", [{"verdict": "artefatto_regge"}])
+        return make_human_token(digest, key)
+
+    def _run_hook(self, out_dir, token=None, key=None):
         gc = _load("governor_check")
-        old_out = os.environ.get("AAE_OUT")
-        old_att = os.environ.get("AAE_HUMAN_ATTESTATION")
+        saved = {k: os.environ.get(k) for k in
+                 ("AAE_OUT", "AAE_HUMAN_ATTESTATION", "AAE_HUMAN_KEY")}
         os.environ["AAE_OUT"] = out_dir
-        if attest is None:
-            os.environ.pop("AAE_HUMAN_ATTESTATION", None)
-        else:
-            os.environ["AAE_HUMAN_ATTESTATION"] = attest
+        for var, val in (("AAE_HUMAN_ATTESTATION", token), ("AAE_HUMAN_KEY", key)):
+            os.environ.pop(var, None) if val is None else os.environ.__setitem__(var, val)
         try:
             rc = gc.main()
         finally:
-            os.environ.pop("AAE_OUT", None) if old_out is None else os.environ.__setitem__("AAE_OUT", old_out)
-            if old_att is None:
-                os.environ.pop("AAE_HUMAN_ATTESTATION", None)
-            else:
-                os.environ["AAE_HUMAN_ATTESTATION"] = old_att
+            for var, val in saved.items():
+                os.environ.pop(var, None) if val is None else os.environ.__setitem__(var, val)
         return rc
 
-    def test_unattested_validated_is_downgraded(self):
+    def test_no_attestation_validated_is_downgraded(self):
         with tempfile.TemporaryDirectory() as d:
             p = self._write_ledger(d, "VALIDATED")
-            rc = self._run_hook(d, attest=None)
+            rc = self._run_hook(d, token=None, key=None)
             self.assertEqual(0, rc)  # informs, does not crash
             after = json.load(open(p, encoding="utf-8"))
             self.assertEqual("EXTERNAL_REVIEW_PENDING", after["completion_state"])
             self.assertTrue(any("HOOK-DOWNGRADE" in f for f in after["flags"]))
+
+    def test_plain_token_no_longer_counts(self):
+        # Round-11 (C2): a non-empty but non-HMAC token must NOT preserve VALIDATED.
+        with tempfile.TemporaryDirectory() as d:
+            p = self._write_ledger(d, "VALIDATED")
+            rc = self._run_hook(d, token="dr-rossi-2026", key="operator-secret")
+            self.assertEqual(0, rc)
+            after = json.load(open(p, encoding="utf-8"))
+            self.assertEqual("EXTERNAL_REVIEW_PENDING", after["completion_state"])
 
     def test_downgrade_also_resets_independence_level(self):
         # Round-10 B1: a downgraded ledger must not keep independence_level 4
         # (HUMAN_DOMAIN_EXPERT), or it still presents as human-closed downstream.
         with tempfile.TemporaryDirectory() as d:
             p = self._write_ledger(d, "VALIDATED", independence_level=4)
-            rc = self._run_hook(d, attest=None)
+            rc = self._run_hook(d, token=None, key=None)
             self.assertEqual(0, rc)
             after = json.load(open(p, encoding="utf-8"))
             self.assertEqual("EXTERNAL_REVIEW_PENDING", after["completion_state"])
             self.assertLess(int(after["independence_level"]), 4)
 
-    def test_attested_validated_is_left_alone(self):
+    def test_verified_hmac_validated_is_left_alone(self):
+        # Round-11: a VALIDATED backed by a valid HMAC under the operator key stays.
         with tempfile.TemporaryDirectory() as d:
+            key = "operator-secret"
             p = self._write_ledger(d, "VALIDATED")
-            rc = self._run_hook(d, attest="dr-rossi-2026")
+            rc = self._run_hook(d, token=self._valid_token(key), key=key)
             self.assertEqual(0, rc)
             after = json.load(open(p, encoding="utf-8"))
             self.assertEqual("VALIDATED", after["completion_state"])

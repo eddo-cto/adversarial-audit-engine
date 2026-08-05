@@ -39,6 +39,7 @@ from aae import metrics as metrics_mod
 from aae import run_metrics as rmx
 from aae.triage import TriageResult
 from aae.meta_epistemic import MetaGovernor
+from aae.attestation import content_digest, verify_human_attestation
 
 
 def run(payload: dict, out_dir: str) -> AuditResult:
@@ -70,18 +71,29 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     except ValueError:
         max_posta = Posta.HIGH
 
-    # F-HUMAN fix: human closure is OUT OF BAND. The attestation comes from the
-    # operator's environment (a secret the orchestrating model cannot author),
-    # NOT from the payload. Only its presence unlocks VALIDATED.
-    human_attestation = os.environ.get("AAE_HUMAN_ATTESTATION") or None
+    # Round-11: closure is ENFORCED, not conventional.
+    #  * Human closure = a valid HMAC over the ledger digest under an operator key
+    #    the model cannot reach (AAE_HUMAN_KEY). A bare token does NOT validate.
+    #  * Independence level 3 is credited only from the adapter-attested identity
+    #    (AAE_EXTERNAL_ATTESTED_IDENTITY), never from the model-authored payload.
+    digest = content_digest(ledger.artifact_name,
+                            [{"element": f.element, "verdict": f.verdict.value}
+                             for f in ledger.findings])
+    ledger.content_digest = digest
+    key = os.environ.get("AAE_HUMAN_KEY")
+    token = os.environ.get("AAE_HUMAN_ATTESTATION")
+    human_verified = verify_human_attestation(digest, token, key)
+    human_claimed = bool(token) and not human_verified
+    attested_identity = os.environ.get("AAE_EXTERNAL_ATTESTED_IDENTITY") or None
 
     completion = evaluate_completion(ledger, max_posta=max_posta,
                                     external_identity=external,
                                     internal_identity=internal,
-                                    human_attestation=human_attestation)
-    # evaluate_completion has already set ledger.independence_level (vendor-aware,
-    # or HUMAN_DOMAIN_EXPERT when attested). Persist the completion state so the
-    # Stop hook can enforce non-closure on the artifact.
+                                    human_verified=human_verified,
+                                    human_claimed=human_claimed,
+                                    attested_identity=attested_identity)
+    # evaluate_completion has set ledger.independence_level. Persist the completion
+    # state and digest so the Stop hook can re-verify and enforce on the artifact.
     ledger.completion_state = completion.state
 
     m = metrics_mod.compute(ledger)

@@ -134,22 +134,50 @@ class NeverValidatedInternally(unittest.TestCase):
                                  internal_identity="anthropic:claude")
         self.assertNotEqual("VALIDATED", st.state)
 
-    def test_different_vendor_raises_independence_but_not_to_validated(self):
-        st = evaluate_completion(self._clean_ledger(), max_posta=Posta.HIGH,
-                                 external_identity="google:gemini-1.5-flash",
-                                 internal_identity="anthropic:claude")
-        self.assertEqual("CROSS_MODEL_REVIEWED", st.state)
-        self.assertNotEqual("VALIDATED", st.state)
-
-    def test_only_a_human_validates_via_out_of_band_attestation(self):
+    def test_attested_different_vendor_is_cross_model_reviewed(self):
+        # Round-11: level 3 is credited only from the ADAPTER-attested identity.
         led = self._clean_ledger()
         st = evaluate_completion(led, max_posta=Posta.HIGH,
                                  external_identity=None,
                                  internal_identity="anthropic:claude",
-                                 human_attestation="perito estimatore")
+                                 attested_identity="google:gemini-1.5-flash")
+        self.assertEqual("CROSS_MODEL_REVIEWED", st.state)
+        self.assertNotEqual("VALIDATED", st.state)
+        self.assertEqual(IndependenceLevel.DIFFERENT_MODEL_DIFFERENT_VENDOR,
+                         led.independence_level)
+
+    def test_claimed_different_vendor_is_not_credited(self):
+        # Round-11 (F-05): a different-vendor identity that comes only from the
+        # model-authored payload is CLAIMED, not attested — independence NOT credited.
+        led = self._clean_ledger()
+        st = evaluate_completion(led, max_posta=Posta.HIGH,
+                                 external_identity="google:gemini-1.5-flash",
+                                 internal_identity="anthropic:claude")
+        self.assertEqual("CROSS_MODEL_CLAIMED", st.state)
+        self.assertNotEqual("VALIDATED", st.state)
+        self.assertEqual(IndependenceLevel.SAME_INSTANCE_ROLES,
+                         led.independence_level)
+
+    def test_only_a_verified_human_hmac_validates(self):
+        led = self._clean_ledger()
+        st = evaluate_completion(led, max_posta=Posta.HIGH,
+                                 external_identity=None,
+                                 internal_identity="anthropic:claude",
+                                 human_verified=True)
         self.assertEqual("VALIDATED", st.state)
         self.assertEqual(IndependenceLevel.HUMAN_DOMAIN_EXPERT,
                          led.independence_level)
+
+    def test_unverified_human_claim_does_not_validate(self):
+        # Round-11 (C2/F-08): a presented-but-unverified attestation must not close,
+        # and must be recorded as unverified.
+        led = self._clean_ledger()
+        st = evaluate_completion(led, max_posta=Posta.HIGH,
+                                 external_identity=None,
+                                 internal_identity="anthropic:claude",
+                                 human_claimed=True)
+        self.assertNotEqual("VALIDATED", st.state)
+        self.assertTrue(any("UNVERIFIED human attestation" in f for f in led.flags))
 
     def test_human_string_in_payload_does_NOT_validate(self):
         # F-HUMAN regression: the model authors external_identity, so a string

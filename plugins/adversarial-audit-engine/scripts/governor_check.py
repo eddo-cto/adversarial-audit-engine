@@ -21,9 +21,33 @@ by CORRECTING the persisted artifact, not by failing the run.
 """
 from __future__ import annotations
 import glob
+import hashlib
+import hmac
 import json
 import os
 import sys
+
+
+# Self-contained mirror of aae.attestation (the hook must run without imports).
+# MUST stay byte-identical to aae.attestation.content_digest.
+def _content_digest(led: dict) -> str:
+    norm = [{"element": str(f.get("element", "")), "verdict": str(f.get("verdict", ""))}
+            for f in led.get("findings", [])]
+    blob = json.dumps({"artifact_name": str(led.get("artifact_name", "")),
+                       "findings": norm}, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def _human_attestation_verifies(led: dict) -> bool:
+    """True iff AAE_HUMAN_ATTESTATION is a valid HMAC of the ledger digest under
+    AAE_HUMAN_KEY — the same test run_core applied. Missing key/token → False."""
+    key = os.environ.get("AAE_HUMAN_KEY")
+    token = os.environ.get("AAE_HUMAN_ATTESTATION")
+    if not key or not token:
+        return False
+    expected = hmac.new(key.encode("utf-8"), _content_digest(led).encode("utf-8"),
+                        hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, token.strip())
 
 
 def verdict_from_ledger(led: dict) -> tuple[str, float, list[str]]:
@@ -79,9 +103,9 @@ def main() -> int:
     # F-HOOK enforcement: a VALIDATED completion is only legitimate if a human
     # attested OUT OF BAND (operator environment). If not, correct the artifact.
     completion_state = led.get("completion_state", "")
-    attested = bool(os.environ.get("AAE_HUMAN_ATTESTATION"))
+    verified = _human_attestation_verifies(led)
     downgraded = False
-    if completion_state == "VALIDATED" and not attested:
+    if completion_state == "VALIDATED" and not verified:
         led["completion_state"] = "EXTERNAL_REVIEW_PENDING"
         # The independence level must fall with the completion state: leaving it
         # at HUMAN_DOMAIN_EXPERT would keep the ledger presenting as human-closed
@@ -89,9 +113,9 @@ def main() -> int:
         if int(led.get("independence_level", 1)) >= 4:
             led["independence_level"] = 1
         led.setdefault("flags", []).append(
-            "HOOK-DOWNGRADE: completion was VALIDATED without an out-of-band human "
-            "attestation (AAE_HUMAN_ATTESTATION unset at Stop time) — downgraded to "
-            "EXTERNAL_REVIEW_PENDING and independence reset to 1. Internal grounds "
+            "HOOK-DOWNGRADE: completion was VALIDATED without a verifiable human "
+            "attestation (no valid HMAC under AAE_HUMAN_KEY at Stop time) — downgraded "
+            "to EXTERNAL_REVIEW_PENDING and independence reset to 1. Internal grounds "
             "can never reach VALIDATED.")
         with open(ledgers[-1], "w", encoding="utf-8") as fh:
             json.dump(led, fh, ensure_ascii=False, indent=2)
@@ -102,7 +126,7 @@ def main() -> int:
     if completion_state:
         print(f"  completion state: {led.get('completion_state', completion_state)}")
     if downgraded:
-        print("  ⚠ HOOK ENFORCEMENT: downgraded an unattested VALIDATED "
+        print("  ⚠ HOOK ENFORCEMENT: downgraded an unverified VALIDATED "
               "→ EXTERNAL_REVIEW_PENDING (artifact corrected on disk).")
     print(f"  reliability verdict: {verdict}  (apparent-coherence {ac:.2f})")
     for n in notes:
