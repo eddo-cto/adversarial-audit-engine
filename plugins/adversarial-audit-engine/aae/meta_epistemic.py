@@ -154,7 +154,9 @@ class MetaGovernor:
         checks, ac_score = self._structural_checks(
             total_findings=m.total_findings, holds=holds, defective=defective,
             needs_expert=m.needs_expert, declared_limits=m.declared_limits,
-            coverage_flags=len(led.flags), independence=led.independence_level,
+            coverage_flags=sum(1 for fl in led.flags
+                               if str(fl).startswith("COVERAGE INCOMPLETE")),
+            independence=led.independence_level,
             false_positives=m.false_positive_guard)
 
         # optional qualitative confound pass

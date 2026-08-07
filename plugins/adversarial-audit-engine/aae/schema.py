@@ -242,6 +242,7 @@ class Ledger:
                                  # human attestation is an HMAC of this (round 11)
     run_manifest: dict = field(default_factory=dict)   # execution manifest (round 13):
                                  # which layers RAN / NOT_APPLICABLE / MISSING
+    source_grade_coverage: dict = field(default_factory=dict)  # per-grade finding count (round 14)
 
     def add(self, finding: Finding) -> None:
         self.findings.append(finding)
@@ -276,6 +277,7 @@ class Ledger:
             "completion_state": self.completion_state,
             "content_digest": self.content_digest,
             "run_manifest": self.run_manifest,
+            "source_grade_coverage": self.source_grade_coverage,
             "findings": [f.to_dict() for f in self.findings],
         }
         return json.dumps(payload, indent=indent, ensure_ascii=False)

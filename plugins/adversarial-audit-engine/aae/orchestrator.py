@@ -36,7 +36,7 @@ from .triadic import TriadicLayer, TriadicResult
 from .construens import ConstruensLayer, ConstruensResult
 from .meta_epistemic import MetaGovernor, MetaAssessment
 from .schema import (Finding, Ledger, Accusation, Defense, DefectClass,
-                     EvidenceBase, Posta, CostToFix, Verdict)
+                     EvidenceBase, Posta, CostToFix, Verdict, ActionState)
 
 
 # --------------------------------------------------------------------------
@@ -84,6 +84,8 @@ def parse_finding(raw: dict, *, role_key: str) -> Finding | None:
         sources=list(raw.get("sources", []) or []),
         severity=str(raw.get("severity", "")),
         source_grade=int(raw.get("source_grade", 9) or 9),
+        action_state=_enum(ActionState, raw.get("action_state"), ActionState.OPEN),
+        discard_justification=raw.get("discard_justification"),
     )
 
 

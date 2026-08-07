@@ -121,6 +121,8 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     # run_validity is RECORD_ONLY — this measures, it does not yet enforce A+B.
     manifest = build_manifest(ledger, payload.get("execution"))
     ledger.run_manifest = manifest.to_dict()
+    # Round-14: record the per-grade breakdown (the import was previously dead).
+    ledger.source_grade_coverage = source_grade_coverage(ledger)
 
     m = metrics_mod.compute(ledger)
     result = AuditResult(ledger=ledger,
@@ -142,7 +144,9 @@ def run(payload: dict, out_dir: str) -> AuditResult:
         fh.write(json.dumps({"artifact": ledger.artifact_name, "verdicts": rec.verdicts,
                              "grounding_downgrades": rec.grounding_downgrades,
                              "by_class": rec.by_class,
-                             "run_manifest": ledger.run_manifest}, ensure_ascii=False) + "\n")
+                             "run_manifest": ledger.run_manifest,
+                             "source_grade_coverage": ledger.source_grade_coverage,
+                             "flags": ledger.flags}, ensure_ascii=False) + "\n")
     return result
 
 
