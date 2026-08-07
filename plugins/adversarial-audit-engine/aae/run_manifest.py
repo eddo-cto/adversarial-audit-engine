@@ -177,23 +177,24 @@ def build_manifest(ledger, execution: dict | None = None, *,
             continue
         if layer == "governor" and governor_ran:
             m.record("governor", LayerStatus.RAN, findings=0, measured=True); continue
-        # OPTIONAL layer the triage did NOT select -> data-driven NOT_APPLICABLE.
-        # Never applied to a REQUIRED layer: triage cannot deselect the minimum core
-        # (a required layer that did not run stays MISSING -> INVALID).
-        if deploy and layer not in REQUIRED_LAYERS and layer not in deploy:
-            m.record(layer, LayerStatus.NOT_APPLICABLE, measured=True,
-                     justification="not selected by triage"); continue
-        # fallback: the run's declared status
+        # An explicit declaration WINS over the triage deduction — it is more
+        # informative (round-17 fix: external_auditor is NOT_APPLICABLE for
+        # INDEPENDENCE, not merely because triage did not select it; the auto-rule
+        # was overwriting that truer reason). Declared status first:
         d = declared.get(layer, {})
         st = _norm(d.get("status"))
         if st == "ran":
             m.record(layer, LayerStatus.RAN, findings=0,
-                     justification=str(d.get("justification", "")))
-        elif st in ("not_applicable", "na", "n_a"):
+                     justification=str(d.get("justification", ""))); continue
+        if st in ("not_applicable", "na", "n_a"):
             m.record(layer, LayerStatus.NOT_APPLICABLE, findings=0,
-                     justification=str(d.get("justification", "")))
-        else:
-            m.record(layer, LayerStatus.MISSING)
+                     justification=str(d.get("justification", ""))); continue
+        # OPTIONAL layer with NO declaration that triage did not select -> data-driven
+        # NOT_APPLICABLE. Never a REQUIRED layer (that stays MISSING -> INVALID).
+        if deploy and layer not in REQUIRED_LAYERS and layer not in deploy:
+            m.record(layer, LayerStatus.NOT_APPLICABLE, measured=True,
+                     justification="not selected by triage"); continue
+        m.record(layer, LayerStatus.MISSING)
 
     for role, n in counts.items():
         if role not in DECLARED_LAYERS:

@@ -174,6 +174,23 @@ class MeasuredScaffolding(unittest.TestCase):
         self.assertIn("triage", m.layers["deep_causal"].justification)
         self.assertEqual("VALID", m.run_validity)
 
+    def test_declared_justification_wins_over_triage_deduction(self):
+        # Round-17 regression: external_auditor is N/A for INDEPENDENCE (declared),
+        # not "not selected by triage" — an explicit declaration must not be
+        # overwritten by the auto-rule even when the layer is also unselected.
+        led = _ledger(["verifier", "reasoner", "propagator"])
+        m = build_manifest(led, {"layers": {
+                "oracle": {"status": "ran"}, "governor": {"status": "ran"},
+                "external_auditor": {"status": "not_applicable",
+                                     "justification": "single-vendor (level 1)"}}},
+            triage={"deploy_roles": ["verifier", "reasoner", "propagator"]})
+        ea = m.layers["external_auditor"]
+        self.assertEqual(LayerStatus.NOT_APPLICABLE, ea.status)
+        self.assertIn("single-vendor", ea.justification)
+        self.assertNotIn("triage", ea.justification)
+        # a genuinely undeclared optional still gets the data-driven reason
+        self.assertEqual("not selected by triage", m.layers["deep_causal"].justification)
+
     def test_triage_cannot_deselect_a_required_layer(self):
         # triage omits propagator (required); it neither runs nor is declared -> MISSING
         led = _ledger(["verifier", "reasoner"])
