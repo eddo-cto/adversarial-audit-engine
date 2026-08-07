@@ -5,17 +5,20 @@ Purpose: make "a run" a checkable object with an execution contract, so the
 "loses pieces" failure mode becomes impossible to hide. For each declared stage
 it records RAN / NOT_APPLICABLE(justified) / MISSING.
 
-This version RECORDS, it does not ENFORCE. `REQUIRED_LAYERS` is left EMPTY on
-purpose: the minimum core must be POPULATED FROM MEASUREMENT (which layers
-actually earn their keep across artifact classes), not assumed from the current
-module sprawl. Freezing an unmeasured minimum is the one misstep to avoid. While
-`REQUIRED_LAYERS` is empty, `run_validity` is always RECORD_ONLY.
-
-The A+B rule the manifest will eventually enforce, once REQUIRED is populated:
+`REQUIRED_LAYERS` is now POPULATED FROM MEASUREMENT (round 15, five artifact
+classes; see the constant below) — never assumed from the module sprawl, because
+freezing an unmeasured minimum is the one misstep to avoid. So the A+B judgment is
+LIVE:
   * condition A — no REQUIRED layer is MISSING;
   * condition B — no declared layer is left un-adjudicated (every one is either
     RAN or NOT_APPLICABLE with a justification — the 0/1 certification).
-`run_validity` then becomes VALID / INVALID (A fails) / INCOMPLETE (B fails).
+`run_validity` is VALID / INVALID (A fails) / INCOMPLETE (B fails) — RECORD_ONLY
+only if REQUIRED were emptied again.
+
+Enforcement is by JUDGMENT, not yet by refusal: run_core records `run_validity`
+on the artifact but does not (yet) hard-refuse an INVALID run. The non-bypassable
+refuse-to-emit, and making the scaffolding layers' execution *measured* rather
+than self-declared, are the remaining steps toward a fully enforced method.
 
 Honesty of measurement: layers that EMIT findings are marked RAN from the DATA
 (their `source_role` on the ledger), not from self-report — the model cannot lie
@@ -34,8 +37,16 @@ DECLARED_LAYERS: tuple = (
     "deep_causal", "external_auditor", "governor",
 )
 
-# Populated ONLY after cross-class measurement. Empty ⇒ record-only (no gate).
-REQUIRED_LAYERS: tuple = ()
+# Populated from the round-15 cross-class measurement (5 classes: finance, code,
+# spec, auction, paper — each with the corrected v0.12.1 instrument). These six
+# ran in 100% of classes: verifier/reasoner/propagator by measured findings,
+# triage/oracle/governor as the always-run scaffolding. `deep_causal` (contextual,
+# 4/5) and `external_auditor` (independence-only, 0/5 under single vendor) stay
+# OPTIONAL — adjudicated per run. This is a first minimum (n=1 per class, single
+# vendor): revisable as the manifest accumulates more runs.
+REQUIRED_LAYERS: tuple = (
+    "triage", "oracle", "verifier", "reasoner", "propagator", "governor",
+)
 
 
 class LayerStatus(str, Enum):

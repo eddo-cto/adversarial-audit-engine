@@ -44,7 +44,9 @@ class Manifest(unittest.TestCase):
         self.assertEqual(2, m.layers["verifier"].findings)
         self.assertEqual(1, m.layers["propagator"].findings)
         self.assertEqual("finance", m.artifact_class)
-        self.assertEqual("RECORD_ONLY", m.run_validity)
+        # required scaffolding (triage/oracle/reasoner/governor) neither emitted
+        # nor declared here -> A+B judgment is live -> INVALID
+        self.assertEqual("INVALID", m.run_validity)
 
     def test_non_emitting_layers_take_declared_status(self):
         m = build_manifest(_ledger(["verifier"]), {"layers": {
@@ -60,9 +62,28 @@ class Manifest(unittest.TestCase):
         m = build_manifest(_ledger(["verifier", "epistemologo"]), None)
         self.assertEqual(1, m.specialists.get("epistemologo"))
 
-    def test_gate_is_dormant_until_required_populated(self):
-        self.assertEqual((), RM.REQUIRED_LAYERS)   # empty by design
-        self.assertEqual("RECORD_ONLY", build_manifest(_ledger(["verifier"]), None).run_validity)
+    def test_required_is_populated_from_measurement(self):
+        self.assertEqual(
+            ("triage", "oracle", "verifier", "reasoner", "propagator", "governor"),
+            RM.REQUIRED_LAYERS)
+
+    def test_fully_adjudicated_run_is_valid(self):
+        layers = {"triage": {"status": "ran"}, "oracle": {"status": "ran"},
+                  "governor": {"status": "ran"},
+                  "deep_causal": {"status": "not_applicable", "justification": "thin artifact"},
+                  "external_auditor": {"status": "not_applicable", "justification": "single-vendor"}}
+        m = build_manifest(_ledger(["verifier", "reasoner", "propagator"]), {"layers": layers})
+        self.assertEqual("VALID", m.run_validity)
+
+    def test_missing_required_layer_is_invalid(self):
+        # propagator is required; here it neither emits nor is declared -> MISSING
+        layers = {"triage": {"status": "ran"}, "oracle": {"status": "ran"},
+                  "governor": {"status": "ran"},
+                  "deep_causal": {"status": "not_applicable", "justification": "x"},
+                  "external_auditor": {"status": "not_applicable", "justification": "x"}}
+        m = build_manifest(_ledger(["verifier", "reasoner"]), {"layers": layers})
+        self.assertEqual("INVALID", m.run_validity)
+        self.assertTrue(any("propagator" in g for g in m.gaps))
 
     def test_AB_gate_fires_once_required_is_populated(self):
         old = RM.REQUIRED_LAYERS
@@ -89,23 +110,38 @@ class RunCoreEmitsManifest(unittest.TestCase):
         spec.loader.exec_module(mod)
         return mod
 
-    def test_run_core_emits_record_only_manifest(self):
+    def _finding(self, fid, role):
+        return {"id": fid, "element": "e", "taxonomy_cell": "mechanisms",
+                "defect_class": "numeric", "posta": "high",
+                "accusation": {"text": "t", "base": "execution", "evidence": "ev",
+                               "sections": ["s1"]},
+                "defense": {"attempted": True}, "action": "fix",
+                "declared_limit": "x", "source_role": role, "source_grade": 1}
+
+    def test_run_core_emits_live_validity_valid(self):
+        rc = self._load_run_core()
+        payload = {"artifact_name": "t", "internal_identity": "anthropic:opus",
+                   "execution": {"artifact_class": "finance", "layers": {
+                       "triage": {"status": "ran"}, "oracle": {"status": "ran"},
+                       "governor": {"status": "ran"}, "reasoner": {"status": "ran"},
+                       "deep_causal": {"status": "not_applicable", "justification": "thin"},
+                       "external_auditor": {"status": "not_applicable", "justification": "single-vendor"}}},
+                   "findings": [self._finding("V-1", "verifier"),
+                                self._finding("P-1", "propagator")]}
+        with tempfile.TemporaryDirectory() as d:
+            man = rc.run(payload, d).ledger.run_manifest
+            self.assertEqual("finance", man["artifact_class"])
+            self.assertTrue(man["layers"]["verifier"]["measured"])
+            self.assertEqual("VALID", man["run_validity"])
+
+    def test_run_core_flags_an_incomplete_run(self):
         rc = self._load_run_core()
         payload = {"artifact_name": "t", "internal_identity": "anthropic:opus",
                    "execution": {"artifact_class": "finance"},
-                   "findings": [{"id": "V-1", "element": "e", "taxonomy_cell": "mechanisms",
-                                 "defect_class": "numeric", "posta": "high",
-                                 "accusation": {"text": "t", "base": "execution",
-                                                "evidence": "ev", "sections": ["s1"]},
-                                 "defense": {"attempted": True}, "action": "fix",
-                                 "declared_limit": "x", "source_role": "verifier"}]}
+                   "findings": [self._finding("V-1", "verifier")]}
         with tempfile.TemporaryDirectory() as d:
-            res = rc.run(payload, d)
-            man = res.ledger.run_manifest
-            self.assertEqual("RECORD_ONLY", man["run_validity"])
-            self.assertEqual("finance", man["artifact_class"])
-            self.assertEqual("ran", man["layers"]["verifier"]["status"])
-            self.assertTrue(man["layers"]["verifier"]["measured"])
+            man = rc.run(payload, d).ledger.run_manifest
+            self.assertEqual("INVALID", man["run_validity"])   # required scaffolding missing
 
 
 if __name__ == "__main__":
