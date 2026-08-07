@@ -35,6 +35,7 @@ from aae.schema import Ledger, Posta, ActionState
 from aae.orchestrator import parse_finding, AuditResult
 from aae.gates import enforce_defense_gate, enforce_coverage_gate, evaluate_completion
 from aae.source_grade import enforce_source_grade_gate, source_grade_coverage
+from aae.run_manifest import build_manifest
 from aae.grounding import enforce_grounding
 from aae import metrics as metrics_mod
 from aae import run_metrics as rmx
@@ -114,6 +115,13 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     # state and digest so the Stop hook can re-verify and enforce on the artifact.
     ledger.completion_state = completion.state
 
+    # Round-13 execution manifest (record-only): which layers RAN / NOT_APPLICABLE /
+    # MISSING. Emitting layers are measured from the data (source_role); non-emitting
+    # ones from the run's declared `execution` block. REQUIRED_LAYERS is empty, so
+    # run_validity is RECORD_ONLY — this measures, it does not yet enforce A+B.
+    manifest = build_manifest(ledger, payload.get("execution"))
+    ledger.run_manifest = manifest.to_dict()
+
     m = metrics_mod.compute(ledger)
     result = AuditResult(ledger=ledger,
                          triage=TriageResult(dimensions_present=[], deploy_roles=[]),
@@ -133,7 +141,8 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     with open(os.path.join(out_dir, "_runs.jsonl"), "a", encoding="utf-8") as fh:
         fh.write(json.dumps({"artifact": ledger.artifact_name, "verdicts": rec.verdicts,
                              "grounding_downgrades": rec.grounding_downgrades,
-                             "by_class": rec.by_class}, ensure_ascii=False) + "\n")
+                             "by_class": rec.by_class,
+                             "run_manifest": ledger.run_manifest}, ensure_ascii=False) + "\n")
     return result
 
 

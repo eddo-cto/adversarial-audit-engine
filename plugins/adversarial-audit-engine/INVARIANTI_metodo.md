@@ -250,3 +250,24 @@ Invariante di metodo che ne discende: **niente layer che una misura mostra inert
 barare passando per la prosa**. La sequenza dichiarata è *strumenta → misura → pota → rendi obbligatorio
 il core minimo*; questo è lo `strumenta`. Il meta-livello che rende il nucleo **non bypassabile** e la
 potatura dei layer non portanti sono i passi successivi — da fare dopo aver misurato, non prima.
+
+### Round 13 — manifesto d'esecuzione (step 2: la *misura*)
+
+`aae/run_manifest.py`. Definisce, verso la regola-metodo *"è una run **sse e solo se** (A) il core
+minimo è girato **e** (B) ogni altro layer porta un verdetto applicabile/no giustificato"*, il
+**contenitore**: per ogni stage dichiarato uno stato `RAN | NOT_APPLICABLE(giustificato) | MISSING`, e
+un `run_validity`. Due scelte non negoziabili:
+
+- **Misura, non impone.** `REQUIRED_LAYERS` è lasciato **vuoto** di proposito → `run_validity =
+  RECORD_ONLY`. Il minimo va **popolato dalla misura** (quali layer guadagnano il posto tra le classi
+  d'artefatto), non assunto dallo sprawl attuale. Congelare un minimo non misurato è l'unico passo falso.
+  La logica A+B è scritta ma **dormiente** finché `REQUIRED` non è popolato.
+- **I layer emittenti sono misurati dal *dato* (`source_role`), non auto-dichiarati** (`measured=True`):
+  sul loro contributo il modello non può mentire. I non-emittenti (oracolo, triage, governor,
+  external-auditor) restano dichiarati, ma ora **registrati e contestabili** — è la condizione B resa
+  visibile. Rende misurabili anche i layer che non producono findings, il buco che `source_role` da solo
+  lasciava cieco.
+
+Prossimo passo (non ancora fatto): far emettere il manifesto a più run reali di **classi diverse**,
+leggere il contributo per layer, **poi** popolare `REQUIRED` e accendere la IFF A+B in `run_core`
+(il gate non-bypassabile). Solo allora la regola diventa metodo, non prototipo con un vestito da metodo.

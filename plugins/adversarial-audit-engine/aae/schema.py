@@ -240,6 +240,8 @@ class Ledger:
                                  # Stop hook reads it to enforce non-closure
     content_digest: str = ""     # SHA-256 over (artifact_name, findings); the
                                  # human attestation is an HMAC of this (round 11)
+    run_manifest: dict = field(default_factory=dict)   # execution manifest (round 13):
+                                 # which layers RAN / NOT_APPLICABLE / MISSING
 
     def add(self, finding: Finding) -> None:
         self.findings.append(finding)
@@ -273,6 +275,7 @@ class Ledger:
             "flags": self.flags,
             "completion_state": self.completion_state,
             "content_digest": self.content_digest,
+            "run_manifest": self.run_manifest,
             "findings": [f.to_dict() for f in self.findings],
         }
         return json.dumps(payload, indent=indent, ensure_ascii=False)
