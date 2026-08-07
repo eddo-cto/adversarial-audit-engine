@@ -37,15 +37,16 @@ DECLARED_LAYERS: tuple = (
     "deep_causal", "external_auditor", "governor",
 )
 
-# Populated from the round-15 cross-class measurement (5 classes: finance, code,
-# spec, auction, paper — each with the corrected v0.12.1 instrument). These six
-# ran in 100% of classes: verifier/reasoner/propagator by measured findings,
-# triage/oracle/governor as the always-run scaffolding. `deep_causal` (contextual,
-# 4/5) and `external_auditor` (independence-only, 0/5 under single vendor) stay
-# OPTIONAL — adjudicated per run. This is a first minimum (n=1 per class, single
-# vendor): revisable as the manifest accumulates more runs.
+# Populated from measurement and CORRECTED by the round-18 ten-run consolidation.
+# verifier + propagator emit in 10/10 runs across every class; triage/oracle/governor
+# are the always-run scaffolding. reasoner (8/10) and deep_causal (7/10) turned out
+# CONTEXTUAL — reasoner produced nothing in the two runs whose defects verifier+
+# propagator already covered — so both are OPTIONAL, adjudicated per run.
+# external_auditor (0/10) is independence-conditional. This corrected the round-15
+# over-inclusion of reasoner that the smaller 5-run sample had wrongly frozen —
+# exactly why the hard gate was not switched on until the minimum was consolidated.
 REQUIRED_LAYERS: tuple = (
-    "triage", "oracle", "verifier", "reasoner", "propagator", "governor",
+    "triage", "oracle", "verifier", "propagator", "governor",
 )
 
 

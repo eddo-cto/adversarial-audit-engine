@@ -133,6 +133,19 @@ def run(payload: dict, out_dir: str) -> AuditResult:
                               governor_ran=result.meta is not None)
     ledger.run_manifest = manifest.to_dict()
 
+    # Round-18: NON-BYPASSABLE REFUSAL. A run that fails the A+B execution rule is
+    # not a valid AAE run and cannot be closed — its completion is forced to
+    # INVALID_RUN, overriding any prior state (not even a human attestation can
+    # validate a structurally incomplete audit). main() exits non-zero. This is
+    # what makes the discipline non-bypassable: a run can no longer cheat by
+    # narrating the pipeline in prose or under-declaring its layers.
+    if manifest.run_validity != "VALID":
+        ledger.completion_state = "INVALID_RUN"
+        ledger.flags.append(
+            f"INVALID_RUN ({manifest.run_validity}): the run does not satisfy the "
+            f"A+B execution rule and cannot be closed. Gaps: {manifest.gaps}. "
+            "Run, or declare (ran / not_applicable+justification), the missing layers.")
+
     os.makedirs(out_dir, exist_ok=True)
     stem = "".join(c if c.isalnum() else "_" for c in ledger.artifact_name)
     with open(os.path.join(out_dir, f"{stem}.ledger.json"), "w", encoding="utf-8") as fh:
@@ -248,6 +261,10 @@ def main(argv: list[str] | None = None) -> int:
     result = run(payload, out_dir)
     print(result.summary())
     print(f"\nwritten to: {out_dir}")
+    if result.ledger.run_manifest.get("run_validity") != "VALID":
+        print("\nINVALID_RUN: the run failed the A+B execution rule (see flags). "
+              "It is written for inspection but cannot be closed.", file=sys.stderr)
+        return 3
     return 0
 
 

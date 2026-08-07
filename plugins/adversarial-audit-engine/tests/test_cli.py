@@ -24,6 +24,9 @@ PAYLOAD = {
     "max_posta": "high",
     "excluded_cells": {d: "fuori perimetro" for d in
                        ("premises", "inputs", "mechanisms", "boundary", "interface")},
+    # round-18: a complete run (A+B satisfied) so run_core exits 0
+    "triage": {"dimensions_present": ["outputs"],
+               "deploy_roles": ["verifier", "propagator"]},
     "findings": [{
         "element": "totale",
         "taxonomy_cell": "outputs",
@@ -34,6 +37,17 @@ PAYLOAD = {
                        "evidence": "121000+4500+52000=177500 != 175000",
                        "sections": ["§3", "§5"]},
         "defense": {"attempted": True, "present": False, "fact": None},
+        "source_role": "verifier", "sources": ["perizia.md §3"], "source_grade": 1,
+    }, {
+        "element": "premessa vs dispositivo",
+        "taxonomy_cell": "outputs",
+        "defect_class": "non_local_mechanical",
+        "posta": "high",
+        "accusation": {"text": "una premessa contraddice il dispositivo",
+                       "base": "execution", "evidence": "§2 ↔ §6",
+                       "sections": ["§2", "§6"]},
+        "defense": {"attempted": True, "present": False, "fact": None},
+        "source_role": "propagator", "sources": ["perizia.md §2"], "source_grade": 1,
     }],
 }
 

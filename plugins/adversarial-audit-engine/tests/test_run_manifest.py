@@ -63,9 +63,11 @@ class Manifest(unittest.TestCase):
         self.assertEqual(1, m.specialists.get("epistemologo"))
 
     def test_required_is_populated_from_measurement(self):
+        # round-18: reasoner dropped to optional after the 10-run consolidation
         self.assertEqual(
-            ("triage", "oracle", "verifier", "reasoner", "propagator", "governor"),
+            ("triage", "oracle", "verifier", "propagator", "governor"),
             RM.REQUIRED_LAYERS)
+        self.assertNotIn("reasoner", RM.REQUIRED_LAYERS)
 
     def test_fully_adjudicated_run_is_valid(self):
         layers = {"triage": {"status": "ran"}, "oracle": {"status": "ran"},
@@ -134,14 +136,18 @@ class RunCoreEmitsManifest(unittest.TestCase):
             self.assertTrue(man["layers"]["verifier"]["measured"])
             self.assertEqual("VALID", man["run_validity"])
 
-    def test_run_core_flags_an_incomplete_run(self):
+    def test_run_core_refuses_an_incomplete_run(self):
+        # round-18: a run that fails A+B is INVALID and CANNOT be closed —
+        # completion is forced to INVALID_RUN (non-bypassable refusal).
         rc = self._load_run_core()
         payload = {"artifact_name": "t", "internal_identity": "anthropic:opus",
                    "execution": {"artifact_class": "finance"},
                    "findings": [self._finding("V-1", "verifier")]}
         with tempfile.TemporaryDirectory() as d:
-            man = rc.run(payload, d).ledger.run_manifest
-            self.assertEqual("INVALID", man["run_validity"])   # required scaffolding missing
+            res = rc.run(payload, d)
+            self.assertEqual("INVALID", res.ledger.run_manifest["run_validity"])
+            self.assertEqual("INVALID_RUN", res.ledger.completion_state)
+            self.assertTrue(any("INVALID_RUN" in fl for fl in res.ledger.flags))
 
 
 class MeasuredScaffolding(unittest.TestCase):
