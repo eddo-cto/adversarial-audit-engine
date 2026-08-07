@@ -83,6 +83,7 @@ def parse_finding(raw: dict, *, role_key: str) -> Finding | None:
         source_role=role_key,
         sources=list(raw.get("sources", []) or []),
         severity=str(raw.get("severity", "")),
+        source_grade=int(raw.get("source_grade", 9) or 9),
     )
 
 

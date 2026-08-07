@@ -227,3 +227,26 @@ Nessun layer nuovo: stessa macchina a stati, due nuovi stati onesti (`CROSS_MODE
 crittografica al posto di un controllo di presenza-stringa. È l'indipendenza di natura diversa che, come
 previsto dalla scala, ha trovato ciò che gli audit stesso-vendor non vedevano — e stavolta su una
 garanzia di chiusura, non solo sul testo del paper.
+
+## 8. Round 12 — standardizzazione, step 1 (dai run di dominio-finanza)
+
+Run reali su dominio etero-normato (finanza) hanno mostrato la fragilità che conta per uscire dal
+prototipo: **il nucleo in codice è bypassabile** — una run può *narrare* i gate invece di *eseguirli*,
+e allora perde pezzi (oracolo che non chiude il ciclo, metriche non emesse, denominatore ignoto). Primo
+passo di standardizzazione, indurito da un prototipo prodotto in parallelo dal motore stesso:
+
+- **Source-grade gate** (`aae/source_grade.py`, §7.1): l'oracolo indifferente al *grado* della fonte non
+  è uno scudo anti-falsi-positivi, è un amplificatore (dà a un errore di terzi l'autorità del "fatto
+  documentato"). Regola enforced in codice: una condanna (`ARTIFACT_DEFECTIVE`) che poggia su un dato di
+  grado > primario, quando un documento primario è reperibile, è declassata a `NEEDS_READING`.
+  **Data-driven**: il grado è un campo sul `Finding` (`source_grade`), letto dal payload, non una tabella
+  a posteriori. L'operatore può dichiarare `source_primary_reachable=false` (nessuna primaria esiste) e
+  il gate si astiene.
+- **Flag di auto-strumentazione** (`run_core`, §7.6): una run ad alta posta che non registra **nessuna
+  ipotesi scartata** (`action_state=deliberately_discarded`) ha un denominatore generato/scartato ignoto
+  → la disciplina sui falsi positivi è *asserita, non misurata*. Il buco silenzioso diventa un flag.
+
+Invariante di metodo che ne discende: **niente layer che una misura mostra inerte, niente run che possa
+barare passando per la prosa**. La sequenza dichiarata è *strumenta → misura → pota → rendi obbligatorio
+il core minimo*; questo è lo `strumenta`. Il meta-livello che rende il nucleo **non bypassabile** e la
+potatura dei layer non portanti sono i passi successivi — da fare dopo aver misurato, non prima.

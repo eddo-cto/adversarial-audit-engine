@@ -139,6 +139,8 @@ class Finding:
     source_role: str = ""
     sources: list[str] = field(default_factory=list)   # cited URLs / clauses
     severity: str = ""                                  # alta/media/bassa (free text)
+    source_grade: int = 9   # SourceGrade of the load-bearing datum (1 primary-filed,
+                            # 2 institutional, 3 generalist, 9 undeclared) — round 12
 
     # ---- state machine -------------------------------------------------
 

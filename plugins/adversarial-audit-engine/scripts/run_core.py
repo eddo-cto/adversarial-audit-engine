@@ -31,9 +31,10 @@ import sys
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(_HERE, "..", "..")))  # -> aae parent
 
-from aae.schema import Ledger, Posta
+from aae.schema import Ledger, Posta, ActionState
 from aae.orchestrator import parse_finding, AuditResult
 from aae.gates import enforce_defense_gate, enforce_coverage_gate, evaluate_completion
+from aae.source_grade import enforce_source_grade_gate, source_grade_coverage
 from aae.grounding import enforce_grounding
 from aae import metrics as metrics_mod
 from aae import run_metrics as rmx
@@ -51,6 +52,11 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     ledger.excluded_cells = dict(payload.get("excluded_cells", {}))
     ledger.adjudicate_all()
     enforce_defense_gate(ledger)
+    # Round-12 source-grade gate (§7.1): a condemnation resting on a non-primary
+    # datum, when a primary is reachable, is downgraded to NEEDS_READING. The
+    # operator may declare no primary exists via source_primary_reachable=false.
+    primary_reachable = bool(payload.get("source_primary_reachable", True))
+    ledger.flags.extend(enforce_source_grade_gate(ledger, primary_reachable=primary_reachable))
     enforce_coverage_gate(ledger)
     # F-SECTIONS fix: the schema's structural checks (e.g. a non-local class
     # needs >=2 cited sections; at least one declared limit) only run via
@@ -70,6 +76,18 @@ def run(payload: dict, out_dir: str) -> AuditResult:
         max_posta = Posta(payload.get("max_posta", "high"))
     except ValueError:
         max_posta = Posta.HIGH
+
+    # Round-12 self-instrumentation check (§7.6): a high-stakes run that records
+    # NO deliberately-discarded hypotheses has an unknown generated/discarded
+    # denominator — the false-positive discipline is then asserted, not measured.
+    discarded = sum(1 for f in ledger.findings
+                    if f.action_state == ActionState.DELIBERATELY_DISCARDED)
+    if max_posta == Posta.HIGH and discarded == 0:
+        ledger.flags.append(
+            "SELF-INSTRUMENTATION: no discarded hypotheses recorded on a high-stakes "
+            "run — the generated/discarded denominator is unknown, so the false-"
+            "positive rate is asserted, not measured. Record killed hypotheses with "
+            "action_state=deliberately_discarded.")
 
     # Round-11: closure is ENFORCED, not conventional.
     #  * Human closure = a valid HMAC over the ledger digest under an operator key
