@@ -12,7 +12,7 @@
 
 **[Read the story — how it was built and hardened across seven adversarial rounds](STORY.md)**
 
-**Status: research preview (v0.13.0).** Tested across seven adversarial rounds and
+**Status: research preview (v0.13.1).** Tested across seven adversarial rounds and
 on real cases (a consensus protocol, incident RCA, threat modeling, multi-regulation
 conflicts, scientific peer review). It is not an oracle: it is a tool that
 *multiplies* a competent human reviewer — it does not replace one.

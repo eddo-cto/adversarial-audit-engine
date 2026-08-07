@@ -119,15 +119,38 @@ class RunManifest:
         }
 
 
-def build_manifest(ledger, execution: dict | None = None) -> RunManifest:
+def _distinct_sources(ledger) -> set:
+    out = set()
+    for f in ledger.findings:
+        for src in (getattr(f, "sources", []) or []):
+            if src:
+                out.add(str(src))
+    return out
+
+
+def build_manifest(ledger, execution: dict | None = None, *,
+                   triage: dict | None = None, governor_ran: bool = False) -> RunManifest:
     """Build the manifest from the ledger (data) plus the run's declared
-    `execution` block (for non-emitting layers). `execution` shape:
+    `execution` block. Round-16 — the scaffolding layers are now MEASURED from
+    their real outputs, not self-declared, and the triage decision optimizes the
+    optional layers (one effort, two things counted):
+
+      * governor — measured iff a meta verdict was produced (`governor_ran`);
+      * oracle   — measured from the grounding it supplied: the distinct cited
+                   sources across the findings;
+      * triage   — measured from its decision record `triage`
+                   ({"dimensions_present": [...], "deploy_roles": [...]}), and any
+                   OPTIONAL layer NOT in `deploy_roles` is auto-marked
+                   NOT_APPLICABLE ("not selected by triage") — a data-driven 0/1,
+                   not a self-report, and the run does not waste an unselected layer.
+
+    `execution` shape (fallback for whatever is not measured):
         {"artifact_class": "finance",
-         "layers": {"oracle": {"status": "ran"},
-                    "external_auditor": {"status": "not_applicable",
+         "layers": {"external_auditor": {"status": "not_applicable",
                                          "justification": "single-vendor run"}}}
     """
     execution = execution or {}
+    triage = triage or {}
     m = RunManifest(artifact_name=getattr(ledger, "artifact_name", ""),
                     artifact_class=str(execution.get("artifact_class", "")))
 
@@ -135,12 +158,32 @@ def build_manifest(ledger, execution: dict | None = None) -> RunManifest:
                      if getattr(f, "source_role", ""))
     declared = {_norm(k): (v or {}) for k, v in (execution.get("layers", {}) or {}).items()}
 
+    dims = list(triage.get("dimensions_present") or [])
+    deploy = {_norm(r) for r in (triage.get("deploy_roles") or [])}
+    triage_measured = bool(dims or deploy)
+    sources = _distinct_sources(ledger)
+
     for layer in DECLARED_LAYERS:
         n = counts.get(layer, 0)
-        if n > 0:
-            # measured from data — the model cannot lie about an emitting layer
+        if n > 0:                                   # emitting: measured from data
             m.record(layer, LayerStatus.RAN, findings=n, measured=True)
             continue
+        # measured scaffolding
+        if layer == "triage" and triage_measured:
+            m.record("triage", LayerStatus.RAN, findings=len(dims) or len(deploy),
+                     measured=True); continue
+        if layer == "oracle" and sources:
+            m.record("oracle", LayerStatus.RAN, findings=len(sources), measured=True)
+            continue
+        if layer == "governor" and governor_ran:
+            m.record("governor", LayerStatus.RAN, findings=0, measured=True); continue
+        # OPTIONAL layer the triage did NOT select -> data-driven NOT_APPLICABLE.
+        # Never applied to a REQUIRED layer: triage cannot deselect the minimum core
+        # (a required layer that did not run stays MISSING -> INVALID).
+        if deploy and layer not in REQUIRED_LAYERS and layer not in deploy:
+            m.record(layer, LayerStatus.NOT_APPLICABLE, measured=True,
+                     justification="not selected by triage"); continue
+        # fallback: the run's declared status
         d = declared.get(layer, {})
         st = _norm(d.get("status"))
         if st == "ran":

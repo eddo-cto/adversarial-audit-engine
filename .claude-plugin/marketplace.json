@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "High-complexity verification and adversarial-audit tooling.",
-    "version": "0.13.0"
+    "version": "0.13.1"
   },
   "plugins": [
     {
       "name": "adversarial-audit-engine",
       "source": "./plugins/adversarial-audit-engine",
       "description": "Cross-model audit engine for documents and technical artifacts: blind adversarial review with a dependency-free Python core. Never reports 'validated' on internal grounds: only a human eye does.",
-      "version": "0.13.0",
+      "version": "0.13.1",
       "keywords": ["audit", "verification", "adversarial", "peer-review", "epistemic", "falsification"]
     }
   ]

@@ -144,5 +144,67 @@ class RunCoreEmitsManifest(unittest.TestCase):
             self.assertEqual("INVALID", man["run_validity"])   # required scaffolding missing
 
 
+class MeasuredScaffolding(unittest.TestCase):
+    """Round-16: scaffolding measured from real outputs, triage optimizes optionals."""
+
+    def test_oracle_measured_from_cited_sources(self):
+        led = _ledger(["verifier"])
+        led.findings[0].sources = ["https://issuer.example/report.pdf", "§4.2"]
+        m = build_manifest(led, {"artifact_class": "paper"})
+        self.assertEqual(LayerStatus.RAN, m.layers["oracle"].status)
+        self.assertTrue(m.layers["oracle"].measured)
+        self.assertEqual(2, m.layers["oracle"].findings)   # distinct sources
+
+    def test_oracle_without_sources_is_not_measured(self):
+        m = build_manifest(_ledger(["verifier"]), {"artifact_class": "paper"})
+        self.assertFalse(m.layers["oracle"].measured)      # falls back / MISSING
+
+    def test_triage_measured_and_deselects_optional_layer(self):
+        led = _ledger(["verifier", "reasoner", "propagator"])
+        m = build_manifest(led, {"artifact_class": "paper",
+                                 "layers": {"oracle": {"status": "ran"},
+                                            "governor": {"status": "ran"}}},
+                           triage={"dimensions_present": ["premises", "outputs"],
+                                   "deploy_roles": ["verifier", "reasoner", "propagator"]})
+        self.assertEqual(LayerStatus.RAN, m.layers["triage"].status)
+        self.assertTrue(m.layers["triage"].measured)
+        # deep_causal + external_auditor not selected by triage -> data-driven N/A
+        self.assertEqual(LayerStatus.NOT_APPLICABLE, m.layers["deep_causal"].status)
+        self.assertTrue(m.layers["deep_causal"].measured)
+        self.assertIn("triage", m.layers["deep_causal"].justification)
+        self.assertEqual("VALID", m.run_validity)
+
+    def test_triage_cannot_deselect_a_required_layer(self):
+        # triage omits propagator (required); it neither runs nor is declared -> MISSING
+        led = _ledger(["verifier", "reasoner"])
+        m = build_manifest(led, {"layers": {"oracle": {"status": "ran"},
+                                            "governor": {"status": "ran"}}},
+                           triage={"deploy_roles": ["verifier", "reasoner"]})
+        self.assertEqual(LayerStatus.MISSING, m.layers["propagator"].status)
+        self.assertEqual("INVALID", m.run_validity)
+
+    def test_run_core_measures_governor_from_meta(self):
+        spec = importlib.util.spec_from_file_location(
+            "run_core", os.path.join(_SCRIPTS, "run_core.py"))
+        rc = importlib.util.module_from_spec(spec); spec.loader.exec_module(rc)
+        payload = {"artifact_name": "t", "internal_identity": "anthropic:opus",
+                   "triage": {"dimensions_present": ["mechanisms"],
+                              "deploy_roles": ["verifier", "reasoner", "propagator"]},
+                   "findings": [
+                       {"id": "V", "element": "e", "taxonomy_cell": "mechanisms",
+                        "defect_class": "numeric", "posta": "high",
+                        "accusation": {"text": "t", "base": "execution", "evidence": "e",
+                                       "sections": ["a"]}, "defense": {"attempted": True},
+                        "action": "fix", "source_role": r, "source_grade": 1,
+                        "sources": ["https://x/doc.pdf"]}
+                       for r in ("verifier", "reasoner", "propagator")]}
+        with tempfile.TemporaryDirectory() as d:
+            man = rc.run(payload, d).ledger.run_manifest
+            self.assertTrue(man["layers"]["governor"]["measured"])   # from the meta verdict
+            self.assertTrue(man["layers"]["oracle"]["measured"])     # from cited sources
+            self.assertTrue(man["layers"]["triage"]["measured"])     # from the decision record
+            self.assertEqual("VALID", man["run_validity"])
+
+
 if __name__ == "__main__":
     unittest.main()

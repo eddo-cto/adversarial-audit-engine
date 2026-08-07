@@ -115,12 +115,6 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     # state and digest so the Stop hook can re-verify and enforce on the artifact.
     ledger.completion_state = completion.state
 
-    # Round-13 execution manifest (record-only): which layers RAN / NOT_APPLICABLE /
-    # MISSING. Emitting layers are measured from the data (source_role); non-emitting
-    # ones from the run's declared `execution` block. REQUIRED_LAYERS is empty, so
-    # run_validity is RECORD_ONLY — this measures, it does not yet enforce A+B.
-    manifest = build_manifest(ledger, payload.get("execution"))
-    ledger.run_manifest = manifest.to_dict()
     # Round-14: record the per-grade breakdown (the import was previously dead).
     ledger.source_grade_coverage = source_grade_coverage(ledger)
 
@@ -129,6 +123,15 @@ def run(payload: dict, out_dir: str) -> AuditResult:
                          triage=TriageResult(dimensions_present=[], deploy_roles=[]),
                          completion=completion, metrics=m)
     result.meta = MetaGovernor(None).assess(result, use_llm=False)  # deterministic
+
+    # Round-13/16 execution manifest. Scaffolding is MEASURED from real outputs:
+    # governor from the meta verdict just produced, oracle from the cited sources,
+    # triage from its decision record (which also auto-adjudicates the optional
+    # layers it did not select). Emitting layers are measured from source_role.
+    manifest = build_manifest(ledger, payload.get("execution"),
+                              triage=payload.get("triage"),
+                              governor_ran=result.meta is not None)
+    ledger.run_manifest = manifest.to_dict()
 
     os.makedirs(out_dir, exist_ok=True)
     stem = "".join(c if c.isalnum() else "_" for c in ledger.artifact_name)
