@@ -1,47 +1,86 @@
-# The audit engine, described as it runs: a reproducible adversarial-audit architecture where the discipline is code, not prompts
+# The audit engine, described as it runs: a code-enforced trust protocol for an adversarial LLM auditor, where the discipline is code, not prompts
 
-*Systems-and-benchmarks paper. Companion to two theory papers on the same engine
+*Systems-and-methods paper. Its contribution is a **trust protocol** — a small set of invariants an
+adversarial LLM-audit pipeline is made to obey **in ordinary code**, not in prompts: (i) it may never
+return `VALIDATED` on its own grounds, and human closure is a **cryptographic** attestation the model
+cannot forge; (ii) cross-model independence is **attested by the calling adapter**, not read from a
+self-report; (iii) a run counts as a run **only** if a measured minimum of layers actually executed
+**and** every other layer was adjudicated applicable-or-not with a recorded verdict (an A+B contract),
+otherwise the pipeline **refuses to close** and exits non-zero; (iv) the engine is turned on itself and
+the audits are shipped. This matters because recent large-scale evidence is that LLM judges are reliable
+without being valid — high test–retest consistency coexists with severe bias
+([Reliability without Validity, arXiv:2606.19544](https://arxiv.org/abs/2606.19544)). A reliable-but-
+invalid judge is dangerous precisely when it can certify itself; this paper's protocol is a mechanism
+that structurally forbids that self-certification. The closest adversarial cousin,
+[Refute-or-Promote (arXiv:2604.19049)](https://arxiv.org/abs/2604.19049), stage-gates candidate defects
+with an adversarial kill-mandate and a cross-model critic to raise precision; it keeps a human
+orchestrator and no enforced non-closure. Our distinctive is not detection accuracy — it is the
+code-enforced closure discipline, the cryptographic independence, the non-bypassable run-validity
+contract, and the self-audit trail. Positioned for the reliability-and-validity-of-evaluators agenda of
+[JUDGe @ NeurIPS 2026](https://judge2026.github.io/), whose community deliverable is exactly a
+judge-deployment disclosure standard.*
+
+*Companion to two theory papers on the same engine
 ([Managing epistemic circularity](../managing-circularity/), [Graded commensurability is not a
-quantale-enriched distributor](../commensurability/); Zenodo DOI 10.5281/zenodo.21288401). Those
-papers build a mathematics after the fact and hang the system underneath it. This one goes the other
-way: it describes what the machine actually does, draws the real graph of roles and gates, and states
-an honest point about the technology — what is a language model, what is deterministic code, what runs
-in CI. Its single advantage over the theory papers: every claim below maps to a file you can read or a
-test you can run (the one exception, the blind re-adjudication of §6, is attested rather than public and
-is flagged as such in §8), so it is falsifiable, from inside, without waiting for the external eye.*
+quantale-enriched distributor](../commensurability/); Zenodo DOI 10.5281/zenodo.21288401), which build a
+mathematics after the fact and hang the system underneath it (§11). This paper goes the other way: it
+describes what the machine does and turns each methodological claim into a file you can read or a test
+you can run — the one exception, the blind re-adjudication of §6, is attested rather than public and is
+flagged as such in §8 — so it is falsifiable, from inside, without waiting for the external eye.*
 
-**Artifact.** `github.com/eddo-cto/adversarial-audit-engine` (MIT), at tag `v1.0.4`. Four
-reproducible benchmarks under `plugins/adversarial-audit-engine/benchmarks/`, each with a
-`reproduce.py --strict` (pure standard library) checked in CI on `main` and every pull request,
-across Python 3.10–3.13.
+**Artifact.** `github.com/eddo-cto/adversarial-audit-engine` (MIT), at tag `v1.0.5` (the round-18
+trust-protocol commit; §9). Four reproducible benchmarks under
+`plugins/adversarial-audit-engine/benchmarks/`, each with a `reproduce.py --strict` (pure standard
+library), and 173 unit tests, checked in CI on `main` and every pull request across Python 3.10–3.13.
+The protocol invariants above are themselves tests: the run-validity contract, the non-bypassable
+refusal, the cryptographic-closure check, and a CI step that fails if the engine ever prints
+`VALIDATED` end-to-end without a human.
 
 ---
 
-## 1. Introduction — why bottom-up, and why it is worth more here
+## 1. Introduction — the problem is closure, and the fix is code
 
-The two published papers about this engine are *a-posteriori mathematical constructions*. One reads
-the finished behaviour and shows it lands in a graded quantale C₃ with a survivor gate; the other reads
-the same behaviour and shows the two "humility lemmas" are one quantity — the error-correlation ρ —
-seen twice. Both are true, and both descend from a formalism.
+An LLM used to *evaluate* — a judge, a reviewer, an auditor — has a failure mode more dangerous than
+being wrong: being **wrong while internally consistent**. The largest systematic study of
+LLM-as-a-judge to date reports exactly this dissociation — reliability without validity: test–retest
+consistency above 0.95 coexisting with severe position bias, and exact-match agreement inflating
+discriminative ability once corrected for chance ([arXiv:2606.19544](https://arxiv.org/abs/2606.19544)).
+A judge that is stable, confident, and biased is at its most harmful the moment it is allowed to
+**certify itself** — to declare its own output validated, or to count its own agreement as
+independence. Everything downstream (a training signal, a safety gate, a disclosure) then inherits an
+error the system cannot see.
 
-That framing carries a cost the papers cannot pay off: a reader cannot tell, from the algebra, *how
-much of the system is the algebra*. Is the quantale enforced, or narrated? Does "non-closure" live in a
-proof, or in a line of code that refuses to print `VALIDATED`? The honest answer — it lives in code — is
-more convincing than the algebra, and the theory papers never show it.
+This paper's contribution is a **trust protocol** that makes that self-certification structurally
+impossible, and makes the prohibition *checkable*. It is not a formalism and not an accuracy claim; it
+is a set of invariants enforced in ordinary Python, each pinned by a test:
 
-This paper supplies the missing description. It is deliberately not a formalism; it is the operating
-manual read out loud, with the numbers the manual actually produces. Its contribution is threefold and
-concrete. (i) It makes the method **reproducible by a stranger**: clone, run, watch the gates fire.
-(ii) It converts every methodological claim into a **passing test**, so the discipline is auditable
-without trusting the authors. (iii) It separates cleanly the part that is a language model — fallible,
-non-deterministic — from the part that is ordinary Python — deterministic, boring, trustworthy — a
-distinction the theory papers blur and every prospective user needs.
+1. **Non-closure is cryptographic, not conventional.** The pipeline can reach `VALIDATED` only through a
+   valid HMAC of the ledger digest under a key the operator holds outside the model's reach. The model
+   authors the payload but not the key, so it *cannot* sign its own validation (§4).
+2. **Independence is attested, not claimed.** Cross-model review is credited only from the identity the
+   calling *adapter* reports; a different-vendor label present only in the payload buys nothing (§4).
+3. **A run is a run only under an A+B contract.** A measured minimum of layers must actually have
+   executed (A) **and** every remaining layer must carry an explicit applicable/not-applicable verdict
+   (B); otherwise the run is `INVALID` and the pipeline **refuses to close**, overriding even a human
+   attestation, and exits non-zero (§4, §9). The minimum itself was *measured*, not assumed (§9).
+4. **The engine audits itself and ships the audits.** Its own adversarial rounds — including a
+   different-vendor review that killed this paper's original headline claim — are committed under
+   `audits/` and narrated in §9, because a system whose value is adversarial honesty must show the
+   audits that caught it.
 
-The empirical payoff (§6) is a small-sample observation the theory papers do not have: a **descriptive
-dissociation** between two candidate axes — capability and independence. One class of real defect is
-recovered by *no* model nature; a different class is recovered by a *different* nature; a third is always
-caught. We present this as hypothesis-generating (n=7, one run per nature), **not** as two identified
-orthogonal frontiers — a scoping forced by the round-11 different-vendor review (§9).
+Two things follow. The method is **reproducible by a stranger** — clone, run, watch the gates fire and
+the refusal trigger — and it **separates cleanly** the part that is a language model (fallible,
+non-deterministic; where defects are found) from the part that is ordinary code (deterministic; where
+verdicts and closure are decided). That separation is the whole design, and it is what distinguishes
+this from adversarial defect-discovery pipelines such as
+[Refute-or-Promote](https://arxiv.org/abs/2604.19049), which share the adversarial-kill and
+cross-model-critic ideas but keep a human orchestrator and no enforced non-closure (§10).
+
+The empirical section (§6) is deliberately secondary: a small-sample **descriptive dissociation**
+between two candidate axes — capability and independence — offered as hypothesis-generating (n=7, one
+run per nature), **not** as two identified orthogonal frontiers. It illustrates the protocol on real
+errors; it is not the load-bearing claim, and the round-11 different-vendor review (§9) is why it is
+scoped this modestly.
 
 ## 2. The graph, as it actually runs
 
@@ -162,6 +201,24 @@ runs `governor_check.py` **in the operator's environment**, **re-verifies the HM
 not a posture here: it is checked in code at write time and re-checked at Stop time, both against the
 same operator secret — one mechanism at two moments, not two independent mechanisms.
 
+**The run-validity contract (A+B) — what makes it a method, not a prototype (rounds 13–18).** A pipeline
+that quietly *skips* half its layers can still print a confident verdict; the danger is a run that looks
+complete because nobody counted what did not happen. So a run is admitted as a run only under two
+conditions, computed in code (`aae/run_manifest.py`). **(A)** a measured minimum of required layers —
+`triage, oracle, verifier, propagator, governor` — must have **actually executed**, measured from the
+data each produced (findings by `source_role`, oracle from the distinct sources it cited, governor from
+the meta verdict), not from self-report. **(B)** every *other* declared layer must carry an explicit
+`RAN` / `NOT_APPLICABLE` / `MISSING` status with a justification, so the denominator of "what could have
+run" is never unknown. The manifest then computes `run_validity ∈ {VALID, INVALID, INCOMPLETE,
+RECORD_ONLY}`. If it is not `VALID`, the **refusal is non-bypassable**: completion is forced to
+`INVALID_RUN` — which **overrides every other state, including a valid human `VALIDATED`** — and
+`run_core` exits non-zero (round 18). A run cannot be closed by adding a signature to an incomplete
+process; the process must first be *complete and adjudicated*. Crucially, `REQUIRED_LAYERS` was **not
+asserted** — it was read off a 10-run, 8-class measurement of which layers actually carry load, which
+corrected an earlier over-inclusion (`reasoner` was dropped from required to optional when two classes
+recovered their defects without it; §9). Measuring the minimum before freezing it is the difference
+between a contract and a guess.
+
 ## 5. The honest point about the technology
 
 What this is: an orchestration of **language-model sub-agents** (Sonnet for the hostile roles, Opus for
@@ -170,16 +227,16 @@ the governor; each with an effort budget, a turn cap, and write tools removed) w
 30 small modules. Intelligence and fallibility live in the LLM band; discipline and trust live in the
 Python band. Keeping them apart is the entire design.
 
-Where it is solid: the gates, the verdict state machine, the metrics, the dedup, and the governor's
-deterministic check are pure functions with tests (148 passing); they behave identically every run, and
-the four benchmarks reproduce to the digit in CI.
+Where it is solid: the gates, the verdict state machine, the run-validity manifest, the metrics, the
+dedup, and the governor's deterministic check are pure functions with tests (173 passing); they behave
+identically every run, and the four benchmarks reproduce to the digit in CI.
 
 Where it is fragile, plainly: (i) the discovery band is a language model, so *which* candidate defects
 surface varies run to run — the discipline bounds the false positives, not the recall variance; (ii)
 real cross-vendor independence depends on an **adapter** (an MCP server or a script calling another
 vendor's API) the operator must wire up — absent it the external-auditor is theatre, and the code says
-so; (iii) the "5-layer" framing describes five roles, not five guarantees — the guarantees are the
-three gates, fewer and humbler than any marketing.
+so; (iii) the "5-layer" framing describes roles, not guarantees — the guarantees are the
+three gates plus the A+B run-validity contract, fewer and humbler than any marketing.
 
 ## 6. What actually happens — a descriptive dissociation, and its limits
 
@@ -277,24 +334,28 @@ Everything quantitative above recomputes from versioned, anonymized data with th
 no install:
 
 ```bash
-git clone --branch v1.0.4 https://github.com/eddo-cto/adversarial-audit-engine && cd adversarial-audit-engine
+git clone --branch v1.0.5 https://github.com/eddo-cto/adversarial-audit-engine && cd adversarial-audit-engine
 for b in calibration real_errors inter_nature baselines; do
   python3 plugins/adversarial-audit-engine/benchmarks/$b/reproduce.py --strict || echo "DIVERGED: $b"
 done
-python3 -m unittest discover -s plugins/adversarial-audit-engine/tests   # 148 tests
+python3 -m unittest discover -s plugins/adversarial-audit-engine/tests   # 173 tests
 ```
 
-Each `reproduce.py --strict` exits non-zero on any divergence from its `claims.json`; each benchmark's
-guard is verified non-vacuous by an automated perturbation test (`tests/test_benchmarks_guards.py` flips
-one datum in each benchmark and requires `--strict` to fail). The one claim in this paper that is *not*
-clone-and-run is the §6 blind re-adjudication: its materials are attested in a private sealed register
+The protocol invariants of §1 and §4 are themselves in that suite: `tests/test_run_manifest.py` pins the
+A+B contract and the non-bypassable `INVALID_RUN` refusal, `tests/test_closure_hardening.py` the
+cryptographic attestation, and the CI workflow runs the engine end-to-end and **fails if `VALIDATED`
+is ever printed without a human**. Each `reproduce.py --strict` exits non-zero on any divergence from its
+`claims.json`; each benchmark's guard is verified non-vacuous by an automated perturbation test
+(`tests/test_benchmarks_guards.py` flips one datum in each benchmark and requires `--strict` to fail).
+The one claim in this paper that is *not* clone-and-run is the §6 blind re-adjudication: its materials
+are attested in a private sealed register
 (a fresh instance reproduced the coordinator's result on all 14 pairs) rather than shipped, because
 anonymization is deliberate — the public benchmarks carry only `(mechanism, class, landing, counts)`.
 Paper identities (PMCIDs, DOIs, the sealed Matters-Arising targets) stay private; naming a paper beside
 a "missed defect" adds nothing to any statistic and risks misreading. Red line: the engine flags, it
 does not accuse.
 
-## 9. The engine audited itself (round-9, round-10 and round-11 hardening)
+## 9. The engine audited itself (rounds 9–18: hardening, a different-vendor review, and a measured contract)
 
 The claims in §3–§4 above are stronger than they would have been a revision ago, and the reason is worth
 telling because it *is* the method. A separate instance of the engine — a distinct session on a separate
@@ -348,12 +409,88 @@ from the adapter that made the call (round-11; §4, §7, `aae/attestation.py`). 
 committed under `audits/` beside the level-1 ledgers. The asymmetry is the point: a different-vendor eye
 caught the headline over-claim two same-vendor rounds had missed — the independence scale doing its job.
 
+**Rounds 12–18: from a hardened prototype to a contract (measure, then enforce).** The rounds above made
+individual guarantees true; they did not yet answer *when is a run a run*. A pipeline could skip layers
+and still print a verdict. So the engine was instrumented rather than argued with. Round 13 added an
+**execution manifest** that records, per layer, `RAN` / `NOT_APPLICABLE` / `MISSING` — at first
+record-only, deliberately not gating anything. Round 14 is the round worth keeping honest about: the
+first measurement run, pointed at the round-12/13 code, **found three real instrumentation defects in
+that very code** — `parse_finding` was silently dropping the fields that form the false-positive
+denominator, the governor was counting all flags as coverage flags, and the source-grade coverage was
+computed but never recorded — each now fixed and pinned by a regression test. Only *after* the
+instrument was trustworthy was the minimum frozen: rounds 15–18 populated `REQUIRED_LAYERS` from a
+growing measurement (5 classes, then a 10-run/8-class consolidation), and that consolidation **corrected
+the engine against itself** — a 5-run sample had wrongly made `reasoner` required; two earlier runs
+recovered their defects without it, so round 18 demoted it to optional. Round 17 caught a subtler
+self-inflicted bug: the triage auto-adjudication was **overwriting an explicit `NOT_APPLICABLE`
+justification** (external-auditor N/A *for independence*) with its own weaker "not selected by triage",
+found by a 3-domain measurement run and fixed so a declaration always beats a deduction. With the minimum
+measured and stable, round 18 finally switched on the **non-bypassable refusal**: an `INVALID` run is
+forced to `INVALID_RUN`, overriding even a human `VALIDATED`, and the CLI exits non-zero. The order is
+the ethic in miniature — *measure the minimum, correct yourself where the measurement contradicts you,
+and only then let the gate bite* — because an unmeasured minimum would have made a valid run `INVALID`
+(over-strict) or hidden a real gap. The consolidation table lives at
+`MEASUREMENT_layer_contribution.md`; the contract and refusal are pinned in `tests/test_run_manifest.py`.
+
 We report all of it here, rather than quietly patching, because a system whose entire value is
 adversarial honesty must show the audits that caught it — including the one that caught the previous
-audit's fix, the one that caught this section overclaiming, and the different-vendor one that caught the
-paper's headline over-claim and forced two closure guarantees from convention into code.
+audit's fix, the one that caught this section overclaiming, the different-vendor one that caught the
+paper's headline over-claim and forced two closure guarantees from convention into code, and the
+measurement runs that caught three defects in the very instrument built to measure the others.
 
-## 10. Relation to the two theory papers
+## 10. Related work — where this sits among adversarial auditors and judge-reliability studies
+
+Three lines of recent work bound this contribution, and the boundary is worth drawing precisely.
+
+**The problem, measured (LLM-as-a-judge reliability vs. validity).** *Reliability without Validity*
+([arXiv:2606.19544](https://arxiv.org/abs/2606.19544)) is the largest systematic evaluation of
+LLM-as-a-judge to date — 21 judges, nine providers, ~541k judgments — and its central finding is the
+one that motivates this whole paper: judges are **reliable without being valid**. Test–retest
+consistency above 0.95 coexists with severe position bias; exact-match agreement, uncorrected for
+chance, inflates apparent discrimination by 33–41 points of κ; rankings move by up to 14 positions
+across benchmarks. That study *diagnoses* the disease empirically. This paper is a *mechanism* against
+its most dangerous consequence — a judge that is stable and biased **certifying itself** — by making
+self-certification cryptographically impossible and by forcing an explicit, measured account of what a
+run actually did before it may close. Norman et al. do distill their findings into a *recommended*
+"Minimum Viable Validation Protocol" (measure chance-corrected agreement, randomize position, and so on)
+— but a recommendation is advisory; a judge can decline to follow it and certify itself anyway. Our
+difference is in kind: we make the recommendation's *enforcement* structural — the pipeline refuses to
+close when the account is incomplete. We cite them as the external empirical warrant for why non-closure
+has to be enforced rather than assumed; we do not re-measure judge bias.
+
+**The closest adversarial cousin (defect discovery).** *Refute-or-Promote*
+([arXiv:2604.19049](https://arxiv.org/abs/2604.19049)) shares this system's core intuition — an
+adversarial *kill-mandate* (defend/refute a candidate before promoting it) and a **Cross-Model Critic**
+to catch correlated single-family blind spots — and demonstrates it at impressive scale (a 31-day
+campaign, ~171 candidates, ~79% killed before disclosure, real CVEs and accepted ISO C++ defect
+reports). The overlap is real and we claim no priority on the adversarial-kill or cross-model ideas.
+The differences are the point of this paper. Refute-or-Promote optimizes **precision of discovery** with
+a **human orchestrator** in the loop; its cross-model step *improves* reliability but nothing in the
+pipeline *forbids* a confident close. This system optimizes **trustworthiness of closure**: the
+orchestrator does not judge (code does), independence is credited only when an adapter attests a genuine
+different vendor (not merely a second model prompted adversarially), closure requires a cryptographic
+human signature, and a run that under-ran its measured minimum is **refused, non-bypassably**. Put
+crudely: they build a better *finder*; we build a *finder that cannot lie about having finished*. The
+two are complementary — a Refute-or-Promote front-end feeding an AAE-style closure contract is a natural
+combination — but the guarantees are different in kind.
+
+**The venue and the standard it wants.** [JUDGe @ NeurIPS 2026](https://judge2026.github.io/) frames
+evaluator reliability and validity explicitly as a **systems** problem — "how does a judge's error
+profile interact with what is upstream and downstream of it" — and its concrete community deliverable is
+a **judge-deployment disclosure template** (provenance, deployment context, known failure modes, human
+validation). This paper's execution manifest and A+B run-validity record are, in effect, a
+*machine-checked instance* of exactly such a disclosure: for every run they emit which layers ran, which
+were adjudicated inapplicable and why, what independence level was attested, and whether closure was
+reached — and they refuse to close when that record is incomplete. We position the contribution there:
+not a new judge, but a **protocol and a disclosure format that a judge cannot silently violate**.
+
+Two clarifications of scope. We make **no detection-superiority claim** over any of the above; §6 is
+explicitly a small-sample descriptive dissociation, not a recall result. And "adversarial" here is
+narrower than adversarial-*robustness* work on prompt-injection attacks against judges — that literature
+asks whether a judge can be *fooled from outside*; we ask whether a judge can be *stopped from certifying
+itself from inside*.
+
+## 11. Relation to the two theory papers
 
 This is the **empirical/architectural companion** the theory papers lacked. *Managing epistemic
 circularity* proves the survivor gate and non-closure in the C₃ quantale; here the same non-closure is a
@@ -368,7 +505,10 @@ shows both are real because it runs.
 
 ---
 
-*Revision v1.0.4 — post round-9/10/11 hardening. Round 11 = the first different-vendor / level-3 review:
-§6 scoped to a descriptive dissociation, and human-closure plus vendor-independence made cryptographic
-(`aae/attestation.py`). Targets a systems / reproducibility track. Companion framing §10; self-audit
-trail §9, with its ledgers under `audits/`. Open item: the version-note on the engineering frontier.*
+*Revision v1.0.5 — post round-9…18 hardening. Rounds 9–11 enforced closure and made human-closure plus
+vendor-independence cryptographic (`aae/attestation.py`); rounds 12–18 added the execution manifest,
+measured `REQUIRED_LAYERS` over 10 runs / 8 classes, and switched on the non-bypassable A+B run-validity
+refusal (§4, §9). Reframed around the trust protocol (§1); related work positions it against
+Reliability-without-Validity, Refute-or-Promote, and the JUDGe @ NeurIPS 2026 agenda (§10). Companion
+framing §11; self-audit trail §9, with its ledgers under `audits/`. Open items: cut a v1.0.5 tag at the
+round-18 commit to match the artifact pin; the version-note on the engineering frontier.*
