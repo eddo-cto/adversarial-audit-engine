@@ -54,16 +54,29 @@ jobs:
           # End-to-end red line, checked outside the test runner too: with no
           # human reviewer the CLI must not print VALIDATED, whatever happens
           # inside. If this ever passes, the project's central claim is false.
+          # The payload is a COMPLETE run (round-18 A+B contract: triage declared,
+          # required layers present) so run_core exits 0 and the red line is
+          # exercised on a valid run — completion must be EXTERNAL_REVIEW_PENDING.
           cat > /tmp/payload.json <<'JSON'
           {"artifact_name":"ci.md","internal_identity":"anthropic:claude",
            "external_identity":null,"max_posta":"high",
            "excluded_cells":{"premises":"n/a","inputs":"n/a","mechanisms":"n/a",
                              "boundary":"n/a","interface":"n/a"},
-           "findings":[{"element":"totale","taxonomy_cell":"outputs",
-             "defect_class":"numeric","posta":"high",
-             "accusation":{"text":"il totale non riconcilia","base":"execution",
-                           "evidence":"1+1=3","sections":["A","B"]},
-             "defense":{"attempted":true,"present":false,"fact":null}}]}
+           "triage":{"dimensions_present":["outputs"],
+                     "deploy_roles":["verifier","propagator"]},
+           "findings":[
+             {"element":"totale","taxonomy_cell":"outputs","defect_class":"numeric",
+              "posta":"high","source_role":"verifier","source_grade":1,
+              "sources":["ci.md A"],
+              "accusation":{"text":"il totale non riconcilia","base":"execution",
+                            "evidence":"1+1=3","sections":["A","B"]},
+              "defense":{"attempted":true,"present":false,"fact":null}},
+             {"element":"premessa vs dispositivo","taxonomy_cell":"outputs",
+              "defect_class":"non_local_mechanical","posta":"high",
+              "source_role":"propagator","source_grade":1,"sources":["ci.md B"],
+              "accusation":{"text":"premessa contraddice dispositivo","base":"execution",
+                            "evidence":"A != B","sections":["A","B"]},
+              "defense":{"attempted":true,"present":false,"fact":null}}]}
           JSON
           AAE_OUT=/tmp/aae_out python scripts/run_core.py /tmp/payload.json > /tmp/out.txt
           cat /tmp/out.txt
