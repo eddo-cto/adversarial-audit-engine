@@ -1,0 +1,5 @@
+decoy_id,CAP,IND,run_idx,false_positive
+# TEMPLATE — replace with real sealed data. one row per decoy × cell(CAP,IND) × run_idx.
+# false_positive=1 iff the auditor raised a landing-grade finding on a decoy (no known defect).
+D1,low,low,0,0
+D1,high,high,0,0

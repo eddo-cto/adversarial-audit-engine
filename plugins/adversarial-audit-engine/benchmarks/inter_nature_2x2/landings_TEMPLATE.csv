@@ -1,0 +1,7 @@
+target_id,class,CAP,IND,run_idx,land
+# TEMPLATE — replace with real sealed data. class∈{GR,ED,DR} CAP∈{low,high} IND∈{low,high} land∈{0,1}
+# one row per target × cell(CAP,IND) × run_idx. Example rows below are DUMMY and must be deleted.
+T1,GR,low,low,0,1
+T1,GR,low,high,0,1
+T1,GR,high,low,0,1
+T1,GR,high,high,0,1
