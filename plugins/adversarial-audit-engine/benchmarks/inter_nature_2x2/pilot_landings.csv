@@ -1,0 +1,9 @@
+target_id,class,CAP,IND,run_idx,land
+T1,GR,low,low,0,1
+T1,GR,high,low,0,1
+T1,GR,low,high,0,1
+T1,GR,high,high,0,1
+T2,DR,low,low,0,1
+T2,DR,high,low,0,1
+T2,DR,low,high,0,1
+T2,DR,high,high,0,1
