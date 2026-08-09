@@ -1,0 +1,31 @@
+% neurips_2026.sty — FAITHFUL STAND-IN for local compilation.
+% Reproduces the NeurIPS single-column look (letterpaper, 10pt, Times, ~5.5x9in text,
+% ruled abstract, anonymous author block) so the .tex compiles and reads correctly.
+% FOR SUBMISSION: replace this file with the OFFICIAL neurips_2026.sty from the NeurIPS
+% 2026 template (linked on the JUDGe CFP). The .tex needs no changes.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{neurips_2026}[2026/08/09 stand-in]
+\DeclareOption{final}{}\DeclareOption{preprint}{}\DeclareOption{nonatbib}{}
+\ProcessOptions\relax
+\RequirePackage[letterpaper,left=1.5in,right=1.5in,top=1.0in,bottom=1.0in]{geometry}
+\RequirePackage{mathptmx}
+\renewcommand{\normalsize}{\fontsize{10}{12}\selectfont}
+\setlength{\parindent}{0pt}\setlength{\parskip}{5pt plus 2pt minus 1pt}
+% title / author block
+\renewcommand{\@maketitle}{%
+  \newpage\null\vskip 1em%
+  \begin{center}%
+    {\LARGE\bfseries \@title \par}%
+    \vskip 1.2em {\normalsize \@author \par}%
+  \end{center}\vskip 1em}
+% ruled, narrowed abstract
+\renewenvironment{abstract}{%
+  \centerline{\large\bfseries Abstract}\vspace{0.4em}%
+  \begin{list}{}{\setlength{\leftmargin}{0.5in}\setlength{\rightmargin}{0.5in}}\item[]\small}%
+  {\end{list}\vspace{0.6em}\hrule\vspace{0.8em}}
+% section fonts
+\RequirePackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+% acknowledgements env used by NeurIPS
+\newenvironment{ack}{\section*{Acknowledgements}\small}{}

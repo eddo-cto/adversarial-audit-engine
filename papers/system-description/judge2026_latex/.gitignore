@@ -1,0 +1,8 @@
+*.aux
+*.log
+*.out
+*.synctex.gz
+b1.log
+b2.log
+build1.log
+build2.log
