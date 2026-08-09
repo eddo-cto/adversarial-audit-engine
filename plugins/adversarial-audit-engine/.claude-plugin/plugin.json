@@ -6,7 +6,7 @@
   "homepage": "https://github.com/eddo-cto/adversarial-audit-engine",
   "repository": "https://github.com/eddo-cto/adversarial-audit-engine",
   "license": "MIT",
-  "keywords": ["audit", "verification", "adversarial", "peer-review", "epistemic", "falsification"],
+  "keywords": ["audit", "verification", "adversarial", "peer-review", "epistemic", "falsification", "llm", "llm-as-a-judge", "evaluation", "reproducibility"],
   "commands": ["./commands/audit.md"],
   "agents": [
     "./agents/oracle.md",

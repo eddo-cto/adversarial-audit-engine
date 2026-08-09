@@ -3,66 +3,56 @@
 
 # Adversarial Audit Engine
 
-> Audits a document or technical artifact by trying to **falsify** it: a
-> deterministic grounding gate that blocks any finding not backed by a verbatim
-> quote, blind adversarial review across **different model vendors**, and explicit
-> control of the falsifier's own **Type-I error**. A hive of adversarial roles
-> attacks the artifact; a dependency-free Python core enforces the discipline.
-> It never reports "validated" on internal grounds: **only a human validates.**
+> Audits a document or technical artifact by trying to **falsify** it: blind adversarial review across
+> **different model vendors**, a deterministic grounding gate that blocks any finding not backed by a
+> verbatim quote, explicit control of the falsifier's own **Type-I error**, and a code-enforced closure
+> discipline. A hive of adversarial roles attacks the artifact; a dependency-free Python core enforces
+> the rules. It never reports "validated" on internal grounds: **only a human validates.**
 
-**[Read the story — how it was built and hardened across seven adversarial rounds](STORY.md)**
+**[Read the story — how it was built and hardened across many adversarial rounds](STORY.md)**
 
-**Status: research preview (v0.14.0).** Tested across seven adversarial rounds and
-on real cases (a consensus protocol, incident RCA, threat modeling, multi-regulation
-conflicts, scientific peer review). It is not an oracle: it is a tool that
-*multiplies* a competent human reviewer — it does not replace one.
+**Status: research preview (v0.14.0).** A tool that *multiplies* a competent human reviewer — it does not
+replace one, and it is not an oracle. Tested across many adversarial self-audit rounds and on real cases
+(a consensus protocol, incident RCA, threat modeling, multi-regulation conflicts, scientific peer review).
 
-**v0.8.0** adds **bias-resistant longitudinal metrics** (`aae/run_metrics.py`,
-`run_core.py --metrics`): a panel of *orthogonal* rates with **no single composite
-score** (avoiding Goodhart), where **abstention is never counted as success**, and
-*escape/precision/recall* are reported only with **human ground truth** (otherwise
-`n/d`, never an imputed 0). A `bias_audit()` actively flags degenerate signatures
-(rubber-stamp, all-abstain, over-condemn) — the meta-governor applied to the metrics
-themselves. Verified with six adversarial bias tests.
+## What is enforced in code (the trust protocol)
 
-**v0.7.0** adds a deterministic **anti-hallucination grounding gate**
-(`aae/grounding.py`): a finding may only condemn on a quote that exists *verbatim*
-in the source; a fabricated or paraphrased quote is reliably downgraded to "must be
-read by a human." It was itself broken and hardened across three dedicated
-adversarial rounds, and what it does and does not guarantee is stated precisely:
+The value is not detection accuracy; it is that the discipline lives in **ordinary Python**, each rule
+pinned by a test, so it behaves identically every run and cannot be talked out of by a prompt:
 
-- **Guaranteed (deterministic):** *existence* — no fabricated or altered quote can
-  condemn; and *recall robustness* — PDF noise (hyphenation, zero-width chars,
-  curly quotes) produced **0 false-negatives** on 1,407 real spans.
-- **Best-effort, not guaranteed:** *out-of-context / quote-mining* — a real
-  substring lifted out of a negated clause is flagged by a conservative
-  sentence-scope check that catches most but not all such cases (≈3 in 4 in
-  testing). The residual is the irreducible **semantic** limit, declared rather
-  than faked; meaning is validated by the human. The check costs ≈6% over-flagging
-  (legitimate findings routed to a human) — the safe direction.
+- **Non-closure is cryptographic.** `VALIDATED` requires a valid HMAC of the ledger digest under a key the
+  operator holds outside the model's reach (`aae/attestation.py`); the model authors the payload but not
+  the key, so it cannot sign its own validation.
+- **Independence is attested, not claimed.** Cross-vendor review is credited only from the identity the
+  calling adapter reports; a different-vendor label present only in the payload buys nothing.
+- **A run is a run only under an A+B contract.** A *measured* minimum of required layers must actually have
+  run **and** every other layer must carry an explicit `RAN`/`NOT_APPLICABLE`/`MISSING` verdict
+  (`aae/run_manifest.py`); otherwise the run is `INVALID`, completion is forced to `INVALID_RUN` (which
+  overrides even a human `VALIDATED`), and `run_core.py` exits non-zero. The minimum was **measured**, not
+  assumed (`MEASUREMENT_layer_contribution.md`).
+- **Grounding gate (anti-hallucination).** A finding may only condemn on a quote that exists *verbatim* in
+  the source (`aae/grounding.py`); a fabricated or paraphrased quote is downgraded to "must be read by a
+  human."
+- **Defense-gate.** Every accusation must attempt the strongest defense first; condemnation without a
+  recorded defense is structurally impossible — the rule most responsible for the near-zero false-positive
+  rate.
+- **Type-I control on the falsifier itself** (`aae/negation_spectrometry.py`): a bounded, measured
+  false-demolition rate, so the auditor cannot quietly over-demolish valid artifacts.
 
-A companion **legal oracle** (`aae/legal_oracle.py`) checks, on demand, that cited
-norms *exist* and are faithfully represented — never their interpretation, never
-from model memory.
-
----
+Full version history: **[`CHANGELOG.md`](CHANGELOG.md)**.
 
 ## What it does (and does not)
 
-Given an artifact — a spec, a paper, a model, an analysis, code — the engine
-deploys blind roles that attack it from different angles and look for its defects,
-**attempting the strongest defense first** for every accusation (the defense-gate),
-which drives false positives to near zero. A *pattern* may flag but never condemn:
-only reading or execution can condemn.
+Given an artifact — a spec, a paper, a model, an analysis, code — the engine deploys blind roles that
+attack it from different angles and look for its defects, **attempting the strongest defense first** for
+every accusation. A *pattern* may flag but never condemn: only reading or execution can condemn.
 
-It does not promise truth. It promises **disciplined falsification**: it either
-finds a demonstrable defect, or it honestly declares that it cannot decide
-internally and routes the case to a human expert.
+It does not promise truth. It promises **disciplined falsification**: it either finds a demonstrable
+defect, or it honestly declares that it cannot decide internally and routes the case to a human expert.
 
 ## The core principle
 
-Agents from the same model share the same blind spots. So the engine never
-self-certifies:
+Agents from the same model share the same blind spots. So the engine never self-certifies:
 
 | Independence level | Who reviews | Best possible verdict |
 |---|---|---|
@@ -71,30 +61,30 @@ self-certifies:
 | 3 — **different vendor** | e.g. another provider | `CROSS_MODEL_REVIEWED` (reliability ↑, **not** validated) |
 | 4 — **human expert** | a competent person | `VALIDATED` |
 
-The independent eye can run on a different vendor (adapters included), but it is
-still a machine: level 4 — the human — is the only instance that validates.
+The independent eye can run on a different vendor (adapters included), but it is still a machine: level 4
+— the human — is the only instance that validates.
 
 ## The 5 layers
 
-1. **Destruens** — point-by-point verification + propagation of *non-local* defects
-   (a premise broken in one place invalidates a guarantee elsewhere).
+1. **Destruens** — point-by-point verification + propagation of *non-local* defects (a premise broken in
+   one place invalidates a guarantee elsewhere).
 2. **Construens** — cause-of-absence diagnosis with an inverted defense-gate.
 3. **Generative** — deductive → inductive → **abductive** (rival hypotheses).
 4. **Deep-causal** — root clustering, forward/backward chiasm, gated scenarios.
-5. **Meta-epistemic governor** — validates the validator (bias, coverage,
-   independence, "apparent coherence"). It does not self-certify: it terminates
-   at the human.
+5. **Meta-epistemic governor** — validates the validator (bias, coverage, independence, "apparent
+   coherence"). It does not self-certify: it terminates at the human.
 
-> The method keeps its terms of art (the Latin layer names, coined terms like
-> *negation spectrometry*). Every module and term is mapped to one plain-language
-> line in **[`plugins/adversarial-audit-engine/GLOSSARY.md`](plugins/adversarial-audit-engine/GLOSSARY.md)** — readable without the papers.
+> The method keeps its terms of art (the Latin layer names, coined terms like *negation spectrometry*).
+> Every module and term is mapped to one plain-language line in
+> **[`plugins/adversarial-audit-engine/GLOSSARY.md`](plugins/adversarial-audit-engine/GLOSSARY.md)** —
+> readable without the papers.
 
 ## Hybrid architecture
 
-Claude Code / Cowork orchestrates the roles (agents) and tools; the
-**deterministic core** (`aae/`, bundled) enforces in *code* the verdict state
-machine, the defense-gate, per-dimension coverage, dedup, metrics, and the
-governor. The LLM provides the semantics; the code enforces the discipline.
+Claude Code / Cowork orchestrates the roles (agents) and tools; the **deterministic core** (`aae/`,
+bundled) enforces in *code* the verdict state machine, the defense-gate, per-dimension coverage, the A+B
+run-validity manifest, dedup, metrics, and the governor. The LLM provides the semantics; the code enforces
+the discipline.
 
 ## Installation (Claude Code)
 
@@ -109,64 +99,59 @@ Then, inside the project you want to audit:
 /audit <path-or-description-of-the-artifact>
 ```
 
-The Python core runs on the **standard library only** (no dependencies). The
-cross-vendor independent eye requires the chosen provider's credentials,
-configured on *your* machine.
+The Python core runs on the **standard library only** (no dependencies). The cross-vendor independent eye
+requires the chosen provider's credentials, configured on *your* machine.
+
+## Reproduce the claims
+
+```
+git clone https://github.com/eddo-cto/adversarial-audit-engine && cd adversarial-audit-engine
+cd plugins/adversarial-audit-engine
+python3 -m unittest discover -s tests        # the full invariant suite
+for b in calibration real_errors inter_nature baselines; do
+  python3 benchmarks/$b/reproduce.py --strict
+done
+```
 
 ## Declared limits (method honesty)
 
 - It does not replace the expert: without level 4 the verdict stays "not validated".
 - The "yardstick" (ground truth) can be wrong: the engine treats it as fallible.
-- Coverage is *per defect class*, not global: some classes (e.g. genuinely novel
-  non-local concepts) are routed to the human by construction.
+- Coverage is *per defect class*, not global: some classes (e.g. genuinely novel non-local concepts) are
+  routed to the human by construction.
 - It is a research preview: use it as decision support, not as the final authority.
 
 ## Documents
 
-- `plugins/adversarial-audit-engine/ARCHITETTURA_confini.md` — role boundaries and
-  contract (in Italian).
-- See also the architecture documents and per-round verdicts in the project.
-
-## License & disclaimer
-
-MIT (see `LICENSE`). See `DISCLAIMER.md`: the software is provided "as is", without
-warranties; it is not professional advice (legal, financial, medical). Its output
-must always be verified by a competent pers
-## 0.10.0 — Negation-spectrometry (Type-I gate against over-demolition)
-
-A powerful adversarial auditor can demolish *valid* artifacts too — the **Type-I error of
-falsification**. `aae/negation_spectrometry.py` turns "the engine demolishes too much" into a
-**measured, bounded number**: calibrate each auditor on a control battery (valid + broken
-artifacts) → false-demolition rate `FDR` / power `TDR` / `AUC`; admit a negation only if it
-persists across **k-of-m independent (different-vendor) auditors**; report the **assumption-free**
-residual Type-I (`empirical_type1`), which captures shared-blind-spot correlation that the
-`p^m` independence bound ignores. Theorem (binomial-tail control) is verified numerically by
-`python3 aae/negation_spectrometry.py`. Stdlib only.
-
-### 0.11.0 — meta sub-layer: usage ledger over engine runs
-`aae/usage_ledger.py` adds the **persistence** layer for meta-analysis: one append-only JSON
-line per engine run, feeding the existing bias-resistant panel (`aae/run_metrics.py`). Three
-purposes kept separate — improvement telemetry, historical series, reflexive meta-level — under
-two invariants: **anti-Goodhart** (no ledger field may become a *target* of the gate, or the
-engine learns to produce good metrics instead of good audits) and **reflexive/non-validating**
-(the sub-layer is itself a self-referential evaluator, so it does not self-validate; closure
-belongs to the human eye). See `plugins/adversarial-audit-engine/USAGE_LEDGER.md`. Stdlib only.
-
-### 0.10.1 — negation-spectrometry integrated into the governor
-`MetaGovernor.falsification_type1(scores_valid, scores_invalid, k=, m=)` exposes the Type-I gate
-directly on the meta-epistemic governor: given the auditor's demolition scores on a control
-battery, it returns the measured false-demolition rate (FDR), power, AUC and the k-of-m
-persistence bound. Domain-agnostic (the caller supplies the battery). The method is now
-*integrated*, not just present.
-
----
+- **[`GLOSSARY.md`](plugins/adversarial-audit-engine/GLOSSARY.md)** — every module and coined term in one
+  plain-language line.
+- **[`INVARIANTI_metodo.md`](plugins/adversarial-audit-engine/INVARIANTI_metodo.md)** — the
+  non-negotiable method invariants.
+- **[`MEASUREMENT_layer_contribution.md`](plugins/adversarial-audit-engine/MEASUREMENT_layer_contribution.md)**
+  — how `REQUIRED_LAYERS` is measured, not assumed.
+- **[`ARCHITETTURA_confini.md`](plugins/adversarial-audit-engine/ARCHITETTURA_confini.md)** — role
+  boundaries and contract (in Italian).
+- **[`USAGE_LEDGER.md`](plugins/adversarial-audit-engine/USAGE_LEDGER.md)** — the meta persistence layer.
 
 ## Papers
 
-This repository also hosts two papers and a runnable methodological note that formalise what the engine produces and test whether mature scientific communities do the same thing.
+This repository also hosts the papers that formalise what the engine produces and test whether mature
+scientific communities do the same thing. All are archived on Zenodo with a permanent DOI (see
+`CITATION.cff`).
 
-- **`papers/managing-circularity/`** — *Managing epistemic circularity in self-referential evaluation: the survivor gate, and how three scientific ledgers resolve indeterminacy.* The main paper: the Survivor Gate, declared non-closure, and three real reliability ledgers (Kepler KOI, ClinVar/ACMG, NVD/CVE) — every figure from open endpoints, no LLM judgement in the scoring path.
-- **`papers/commensurability/`** — *Graded, asymmetric commensurability is not a quantale-enriched distributor: a transitivity obstruction, and a persistence-module alternative.* The formal companion (C₃ quantale, two negative results, interleaving distance).
-- **`papers/engineering-frontier/`** — *The engineering frontier of verification.* A short methodological note with a runnable demo (`frontier_demo.py`): machine verification reduces to engineering exactly up to the independence supply, and non-closure is the certificate that the supply has run out.
+- **`papers/system-description/`** — *The audit engine, described as it runs: a code-enforced trust
+  protocol.* The empirical/architectural companion: the trust protocol above, the execution manifest, the
+  10-run layer measurement, and the self-audit trail (`audits/`). Includes a short paper positioned for the
+  **JUDGe @ NeurIPS 2026** workshop on evaluator reliability and validity.
+- **`papers/managing-circularity/`** — *Managing epistemic circularity in self-referential evaluation: the
+  survivor gate, and how three scientific ledgers resolve indeterminacy.* The main theory paper (Survivor
+  Gate, declared non-closure, three real reliability ledgers: Kepler KOI, ClinVar/ACMG, NVD/CVE).
+- **`papers/commensurability/`** — *Graded, asymmetric commensurability is not a quantale-enriched
+  distributor.* The formal companion (C₃ quantale, two negative results, interleaving distance).
+- **`papers/engineering-frontier/`** — *The engineering frontier of verification.* A short methodological
+  note with a runnable demo (`frontier_demo.py`).
 
-Both papers and the replication package are archived on Zenodo with a permanent DOI (see `CITATION.cff`).
+## License & disclaimer
+
+MIT (see `LICENSE`). See `DISCLAIMER.md`: the software is provided "as is", without warranties; it is not
+professional advice (legal, financial, medical). Its output must always be verified by a competent person.
