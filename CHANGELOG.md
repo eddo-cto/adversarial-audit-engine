@@ -5,6 +5,15 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.1 — Remove the unreachable `REDUCED` verdict (dead-code fix)
+A third-party audit (run on a stale 0.6.0 bundle) found, and re-derivation on 0.14.0 confirmed, that
+`Verdict.REDUCED` ("accusa_ridimensionata", "real but minor") was **never producible** by the
+adjudication state machine — `PATTERN` is caught by Rule 1 and the three remaining evidence bases by
+Rule 5, leaving its fall-through with no entry. Removed from the enum and from the verdict-keyed tables in
+`dedup`, `grounding`, `run_metrics`, and `usage_ledger`; the fall-through now defensively routes to the
+human expert. Severity of a real-but-minor defect already lives in `cost_to_fix`, not in a distinct
+verdict. Zero behaviour change (the verdict never fired); pinned by `tests/test_no_dead_verdict.py`.
+
 ## 0.14.0 — Non-bypassable A+B run-validity refusal
 The measured minimum of layers (`REQUIRED_LAYERS`) is consolidated over **10 runs across 8 artifact
 classes**, correcting an earlier over-inclusion (`reasoner` returned to optional once two classes

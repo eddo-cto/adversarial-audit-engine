@@ -37,7 +37,7 @@ def deduplicate(findings: list[Finding]) -> tuple[list[Finding], dict[str, list[
         groups[_signature(f)].append(f)
 
     severity_rank = {
-        "accusa_vince": 4, "conteso": 3, "accusa_ridimensionata": 2,
+        "accusa_vince": 3, "conteso": 2,
         "da_leggere": 1, "artefatto_regge": 0, "pending": 0,
     }
 

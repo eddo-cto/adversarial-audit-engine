@@ -60,7 +60,6 @@ class EvidenceBase(str, Enum):
 class Verdict(str, Enum):
     """Outcome for the ARTIFACT (not for the accuser)."""
     ARTIFACT_DEFECTIVE = "accusa_vince"        # accusation wins in full
-    REDUCED = "accusa_ridimensionata"          # real but minor
     ARTIFACT_HOLDS = "artefatto_regge"         # defended by a fact
     NEEDS_READING = "da_leggere"               # pattern-flagged, must be read
     NEEDS_EXPERT = "conteso"                    # contested — human expert required
@@ -178,7 +177,13 @@ class Finding:
             self.verdict = Verdict.ARTIFACT_DEFECTIVE
             return self.verdict
 
-        self.verdict = Verdict.REDUCED
+        # Exhaustive by construction: PATTERN is handled by Rule 1 and the three
+        # remaining bases by Rule 5, so this point is unreachable for the current
+        # EvidenceBase set. Kept as a defensive route-to-human: if a new base is
+        # ever added and reaches here, hand it to the expert rather than silently
+        # condemn or hold. (Severity of a real-but-minor defect lives in
+        # `cost_to_fix`, not in a distinct verdict.)
+        self.verdict = Verdict.NEEDS_EXPERT
         return self.verdict
 
     def validate(self) -> list[str]:

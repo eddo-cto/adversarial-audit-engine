@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 # verdict value categories (schema.Verdict .value strings)
-_CONDEMN = {"accusa_vince", "accusa_ridimensionata"}     # ARTIFACT_DEFECTIVE, REDUCED
+_CONDEMN = {"accusa_vince"}                              # ARTIFACT_DEFECTIVE
 _ABSOLVE = {"artefatto_regge"}                            # ARTIFACT_HOLDS
 _ABSTAIN = {"da_leggere", "conteso", "pending"}           # NEEDS_READING, NEEDS_EXPERT, PENDING
 
