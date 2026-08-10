@@ -5,6 +5,13 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.2 — `run_core.py` runs standalone (sys.path off-by-one)
+The CLI inserted `scripts/../..` (the `plugins/` dir) instead of `scripts/..` (the plugin dir where `aae`
+lives), so `python3 scripts/run_core.py --version` raised `ModuleNotFoundError` unless `PYTHONPATH` was
+set — which CI always did, hiding it. Found while packaging a self-verifying bundle. Fixed to
+`scripts/..`; the CLI (and the `--version` check) now work from any working directory with no environment
+setup.
+
 ## 0.14.1 — Remove the unreachable `REDUCED` verdict (dead-code fix)
 A third-party audit (run on a stale 0.6.0 bundle) found, and re-derivation on 0.14.0 confirmed, that
 `Verdict.REDUCED` ("accusa_ridimensionata", "real but minor") was **never producible** by the
