@@ -5,6 +5,17 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.4 — One-command run + free level-3 eye wired from the environment (delivery gap #1)
+The independent eye was documented but *narrated*, not wired — every real run stayed level 1. Added
+`aae.external_eye_from_env()`: `AAE_EYE=groq|ollama|openrouter` (or an explicit `AAE_EYE_BASE_URL`) builds
+a genuinely different-vendor adapter → independence **level 3**, at zero cost, via the existing
+`OpenAICompatibleClient`. Not configured → `None`, and the run stays honestly level 1. The `/audit`
+command gains a one-command quick-start and wires the eye in step 6 (credited only once the adapter is
+actually called, never merely configured). Confidentiality is called out: `groq`/`openrouter` send the
+artifact off-host (fine for demos, not for privileged material — use `ollama`). Pinned by
+`tests/test_eye.py`. This is the first productization step: a professional reaches a level-3 report
+without wrestling a bundle.
+
 ## 0.14.3 — Shared A+B refusal + `REDUCED` reintroduced as a derived verdict
 Two changes prompted by a third-party run on a real artifact.
 - **The non-bypassable A+B refusal is now shared, not tied to the CLI.** A real run via the *orchestrator*

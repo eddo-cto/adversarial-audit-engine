@@ -115,6 +115,45 @@ def _vendor_from_url(base_url: str) -> str:
     return "openai-compatible"
 
 
+# Zero-config presets for a free level-3 independent eye. The value is a base_url;
+# the model + key still come from the environment (or a default). See INDEPENDENCE_free.md.
+EYE_PRESETS = {
+    "ollama":     "http://localhost:11434/v1",      # local, private, free (needs install)
+    "groq":       "https://api.groq.com/openai/v1",  # hosted free tier, no install (artifact leaves host)
+    "openrouter": "https://openrouter.ai/api/v1",    # free models end in ":free"
+}
+_EYE_DEFAULT_MODEL = {
+    "ollama": "llama3.1:8b", "groq": "llama-3.1-70b-versatile",
+    "openrouter": "meta-llama/llama-3.1-8b-instruct:free",
+}
+
+
+def external_eye_from_env(env: dict | None = None) -> "OpenAICompatibleClient | None":
+    """Build the independent-eye client from the environment, or return None if not
+    configured. This is how the level-3 eye is *wired by default* instead of narrated:
+
+        AAE_EYE=groq            (or ollama / openrouter)   -> preset base_url + default model
+        AAE_EYE_MODEL=...       (override the model)
+        AAE_EYE_KEY=...         (api key; 'ollama' works for a local server)
+        AAE_EYE_BASE_URL=...    (override the base_url directly, for any other endpoint)
+
+    Confidentiality: `groq`/`openrouter` send the artifact to a third party — fine for demos and
+    non-confidential runs, NOT for privileged client material; use `ollama` (local) for that.
+
+    The eye is only credited as independence once it has ACTUALLY been called (attested by the
+    adapter), never merely because it was configured.
+    """
+    import os
+    env = env if env is not None else os.environ
+    preset = (env.get("AAE_EYE") or "").strip().lower()
+    base_url = env.get("AAE_EYE_BASE_URL") or EYE_PRESETS.get(preset)
+    if not base_url:
+        return None
+    model = env.get("AAE_EYE_MODEL") or _EYE_DEFAULT_MODEL.get(preset, "gpt-4o-mini")
+    key = env.get("AAE_EYE_KEY") or ("ollama" if preset == "ollama" else None)
+    return OpenAICompatibleClient(model=model, base_url=base_url, api_key=key)
+
+
 def independence_level_between(identity_a: str, identity_b: str | None) -> IndependenceLevel:
     """Honest independence level from two role identities.
        same string              -> 1 (not independent)

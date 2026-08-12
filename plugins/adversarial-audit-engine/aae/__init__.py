@@ -31,7 +31,8 @@ from .deep_causal import (DeepCausalLayer, DeepCausalResult, RootCause,
 from .meta_epistemic import (MetaGovernor, MetaAssessment, GovernorCheck,
                              ReliabilityVerdict)
 from .adapters import (OpenAICompatibleClient, GeminiClient,
-                       independence_level_between)
+                       independence_level_between, external_eye_from_env,
+                       EYE_PRESETS)
 
 # --- deterministic controls added in 0.7.0 - 0.12.0 -----------------------
 # Exposed as SUBMODULES on purpose: several of them own a generic name
@@ -50,7 +51,7 @@ from .run_metrics import Panel, GroundTruth, bias_audit
 from .independence_ledger import build_independence_ledger, IndependenceLedger
 from .adjudication_guard import assess_adjudication, BiasResistanceReport
 
-__version__ = "0.14.3"
+__version__ = "0.14.4"
 
 __all__ = [
     "AuditConfig", "LLMClient", "MockLLMClient", "AnthropicLLMClient",
@@ -65,6 +66,7 @@ __all__ = [
     "Scenario",
     "MetaGovernor", "MetaAssessment", "GovernorCheck", "ReliabilityVerdict",
     "OpenAICompatibleClient", "GeminiClient", "independence_level_between",
+    "external_eye_from_env", "EYE_PRESETS",
     # deterministic controls (0.7.0 - 0.12.0)
     "grounding", "criterion", "evidence_pairing", "negation_spectrometry",
     "support_geometry", "repr_validator", "run_metrics", "usage_ledger",
