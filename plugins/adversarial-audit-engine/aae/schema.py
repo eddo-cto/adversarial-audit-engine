@@ -60,6 +60,7 @@ class EvidenceBase(str, Enum):
 class Verdict(str, Enum):
     """Outcome for the ARTIFACT (not for the accuser)."""
     ARTIFACT_DEFECTIVE = "accusa_vince"        # accusation wins in full
+    REDUCED = "accusa_ridimensionata"          # real defect, but trivial to fix (derived from cost_to_fix)
     ARTIFACT_HOLDS = "artefatto_regge"         # defended by a fact
     NEEDS_READING = "da_leggere"               # pattern-flagged, must be read
     NEEDS_EXPERT = "conteso"                    # contested — human expert required
@@ -171,18 +172,23 @@ class Finding:
             self.verdict = Verdict.NEEDS_EXPERT  # unresolved: needs a real defense pass
             return self.verdict
 
-        # Rule 5: defense attempted, no fact found, solid base → condemn.
+        # Rule 5: defense attempted, no decisive fact, solid base → the defect is
+        # real. Its verdict *projects the severity axis onto the verdict* (a derived,
+        # one-way signal, so it cannot drift from `cost_to_fix`): a defect that is
+        # TRIVIAL to fix is "real but minor" (REDUCED); anything costlier is a full
+        # condemnation (ARTIFACT_DEFECTIVE). This gives a client a verdict-level
+        # priority signal without cross-referencing `cost_to_fix`.
         if a.base in (EvidenceBase.READING, EvidenceBase.EXECUTION,
                       EvidenceBase.DOMAIN_KNOWLEDGE):
-            self.verdict = Verdict.ARTIFACT_DEFECTIVE
+            self.verdict = (Verdict.REDUCED if self.cost_to_fix == CostToFix.TRIVIAL
+                            else Verdict.ARTIFACT_DEFECTIVE)
             return self.verdict
 
         # Exhaustive by construction: PATTERN is handled by Rule 1 and the three
         # remaining bases by Rule 5, so this point is unreachable for the current
         # EvidenceBase set. Kept as a defensive route-to-human: if a new base is
         # ever added and reaches here, hand it to the expert rather than silently
-        # condemn or hold. (Severity of a real-but-minor defect lives in
-        # `cost_to_fix`, not in a distinct verdict.)
+        # condemn or hold.
         self.verdict = Verdict.NEEDS_EXPERT
         return self.verdict
 

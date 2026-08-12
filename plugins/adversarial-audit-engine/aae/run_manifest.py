@@ -203,3 +203,22 @@ def build_manifest(ledger, execution: dict | None = None, *,
 
     m.evaluate()
     return m
+
+
+def enforce_run_validity(ledger, manifest) -> None:
+    """Round-18 NON-BYPASSABLE REFUSAL, shared by *every* entry point (the CLI and
+    the orchestrator alike, so the guarantee is not tied to which door you use).
+
+    Records the manifest on the ledger and, if the run does not satisfy the A+B
+    execution rule (`run_validity != "VALID"`), forces `completion_state` to
+    `INVALID_RUN` — overriding any prior state, not even a human attestation can
+    close a structurally incomplete audit — and appends an explanatory flag. Callers
+    that run a CLI should also exit non-zero when this fires.
+    """
+    ledger.run_manifest = manifest.to_dict()
+    if manifest.run_validity != "VALID":
+        ledger.completion_state = "INVALID_RUN"
+        ledger.flags.append(
+            f"INVALID_RUN ({manifest.run_validity}): the run does not satisfy the "
+            f"A+B execution rule and cannot be closed. Gaps: {manifest.gaps}. "
+            "Run, or declare (ran / not_applicable+justification), the missing layers.")

@@ -5,6 +5,20 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.3 — Shared A+B refusal + `REDUCED` reintroduced as a derived verdict
+Two changes prompted by a third-party run on a real artifact.
+- **The non-bypassable A+B refusal is now shared, not tied to the CLI.** A real run via the *orchestrator*
+  (not `run_core.py`) reported `run_manifest INCOMPLETE` yet a non-INVALID completion — the round-18
+  refusal lived only in `run_core.py`, so the orchestrator entry point bypassed it. Extracted into
+  `run_manifest.enforce_run_validity(...)` and applied on **both** entry points; the orchestrator now
+  builds the manifest and forces `INVALID_RUN` on an under-run. Pinned by `tests/test_refusal_shared.py`.
+- **`REDUCED` ("accusa_ridimensionata") is back — as a *derived* verdict, not dead code.** A real defect
+  (would be `ARTIFACT_DEFECTIVE`) whose `cost_to_fix` is `TRIVIAL` is now "real but minor". It is computed
+  one-way from `cost_to_fix`, so it cannot drift from it; it gives a client a verdict-level priority
+  signal without cross-referencing the cost field. Trigger and reachability pinned by
+  `tests/test_reduced_verdict.py`. (This supersedes the 0.14.1 removal, which was correct at the time: the
+  old `REDUCED` had *no* trigger and never fired.)
+
 ## 0.14.2 — `run_core.py` runs standalone (sys.path off-by-one)
 The CLI inserted `scripts/../..` (the `plugins/` dir) instead of `scripts/..` (the plugin dir where `aae`
 lives), so `python3 scripts/run_core.py --version` raised `ModuleNotFoundError` unless `PYTHONPATH` was

@@ -35,7 +35,7 @@ from aae.schema import Ledger, Posta, ActionState
 from aae.orchestrator import parse_finding, AuditResult
 from aae.gates import enforce_defense_gate, enforce_coverage_gate, evaluate_completion
 from aae.source_grade import enforce_source_grade_gate, source_grade_coverage
-from aae.run_manifest import build_manifest
+from aae.run_manifest import build_manifest, enforce_run_validity
 from aae.grounding import enforce_grounding
 from aae import metrics as metrics_mod
 from aae import run_metrics as rmx
@@ -131,20 +131,11 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     manifest = build_manifest(ledger, payload.get("execution"),
                               triage=payload.get("triage"),
                               governor_ran=result.meta is not None)
-    ledger.run_manifest = manifest.to_dict()
 
-    # Round-18: NON-BYPASSABLE REFUSAL. A run that fails the A+B execution rule is
-    # not a valid AAE run and cannot be closed — its completion is forced to
-    # INVALID_RUN, overriding any prior state (not even a human attestation can
-    # validate a structurally incomplete audit). main() exits non-zero. This is
-    # what makes the discipline non-bypassable: a run can no longer cheat by
-    # narrating the pipeline in prose or under-declaring its layers.
-    if manifest.run_validity != "VALID":
-        ledger.completion_state = "INVALID_RUN"
-        ledger.flags.append(
-            f"INVALID_RUN ({manifest.run_validity}): the run does not satisfy the "
-            f"A+B execution rule and cannot be closed. Gaps: {manifest.gaps}. "
-            "Run, or declare (ran / not_applicable+justification), the missing layers.")
+    # Round-18 NON-BYPASSABLE REFUSAL — now a SHARED helper so the same guarantee
+    # applies on every entry point (CLI and orchestrator), not only here. It records
+    # the manifest and forces completion to INVALID_RUN if the A+B rule fails.
+    enforce_run_validity(ledger, manifest)
 
     os.makedirs(out_dir, exist_ok=True)
     stem = "".join(c if c.isalnum() else "_" for c in ledger.artifact_name)

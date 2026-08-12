@@ -31,6 +31,7 @@ from .roles import all_roles, Role
 from .dedup import deduplicate
 from .gates import (enforce_defense_gate, enforce_coverage_gate,
                     evaluate_completion, CompletionStatus)
+from .run_manifest import build_manifest, enforce_run_validity
 from . import metrics as metrics_mod
 from .triadic import TriadicLayer, TriadicResult
 from .construens import ConstruensLayer, ConstruensResult
@@ -215,6 +216,18 @@ class Orchestrator:
         # certifies; it terminates the recursion at the human.
         if config.enable_meta:
             result.meta = MetaGovernor(self.client).assess(result, use_llm=config.allow_web)
+
+        # 11. A+B run-validity, applied HERE too — not only in the CLI. Build the
+        # execution manifest from the triage decision record and the governor run,
+        # then apply the non-bypassable refusal: an under-run cannot be closed no
+        # matter which entry point produced it.
+        ledger.completion_state = completion.state
+        manifest = build_manifest(
+            ledger, None,
+            triage={"dimensions_present": triage.dimensions_present,
+                    "deploy_roles": triage.deploy_roles},
+            governor_ran=result.meta is not None)
+        enforce_run_validity(ledger, manifest)
         return result
 
 

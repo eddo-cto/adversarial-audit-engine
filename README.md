@@ -11,7 +11,7 @@
 
 **[Read the story — how it was built and hardened across many adversarial rounds](STORY.md)**
 
-**Status: research preview (v0.14.2).** A tool that *multiplies* a competent human reviewer — it does not
+**Status: research preview (v0.14.3).** A tool that *multiplies* a competent human reviewer — it does not
 replace one, and it is not an oracle. Tested across many adversarial self-audit rounds and on real cases
 (a consensus protocol, incident RCA, threat modeling, multi-regulation conflicts, scientific peer review).
 
@@ -132,6 +132,8 @@ done
 - **[`ARCHITETTURA_confini.md`](plugins/adversarial-audit-engine/ARCHITETTURA_confini.md)** — role
   boundaries and contract (in Italian).
 - **[`USAGE_LEDGER.md`](plugins/adversarial-audit-engine/USAGE_LEDGER.md)** — the meta persistence layer.
+- **[`INDEPENDENCE_free.md`](plugins/adversarial-audit-engine/INDEPENDENCE_free.md)** — how to get a
+  **free level-3 independent eye** (local Ollama / free-tier APIs) without a paid API.
 
 ## Papers
 

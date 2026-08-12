@@ -31,7 +31,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 # verdict categories: aligned with run_metrics (single source of truth for buckets)
-_CONDEMN = {"accusa_vince"}
+_CONDEMN = {"accusa_vince", "accusa_ridimensionata"}
 _ABSOLVE = {"artefatto_regge"}
 _ABSTAIN = {"da_leggere", "conteso", "pending"}
 

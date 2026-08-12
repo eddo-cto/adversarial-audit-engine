@@ -120,7 +120,7 @@ def enforce_grounding(findings: list, source_text: str,
     or break a match). Such findings are routed to human verify. OCR trust contract."""
     from .schema import Verdict
     notes: list[str] = []
-    CONDEMNING = (Verdict.ARTIFACT_DEFECTIVE, Verdict.PENDING)
+    CONDEMNING = (Verdict.ARTIFACT_DEFECTIVE, Verdict.REDUCED, Verdict.PENDING)
     reasons = {
         "negation_risk": "GROUNDING: la frase-fonte contiene una negazione/eccezione che la citazione omette -> possibile fuori-contesto",
         "fuzzy": "GROUNDING: presente solo in forma non-verbatim (impaginazione) -> verificare a mano",
