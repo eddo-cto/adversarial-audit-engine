@@ -157,6 +157,76 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     return result
 
 
+def emit_schema() -> str:
+    """The exact findings payload the orchestrator must produce — template + the
+    live enum vocabularies — so the role agent NEVER has to reverse-engineer the
+    core (guess class names, list enums by hand). Introspected from the real enums,
+    so it can never drift from what the code accepts. One deterministic call
+    replaces ad-hoc introspection."""
+    from aae.schema import (DefectClass, Posta, EvidenceBase, CostToFix,
+                            ActionState, Verdict)
+    from aae.triage import TAXONOMY
+    schema = {
+        "payload_template": {
+            "artifact_name": "<name shown in the report>",
+            "internal_identity": "anthropic:claude-<model that ran the hive>",
+            "external_identity": None,
+            "max_posta": "high",
+            "source_primary_reachable": True,
+            "source_text": "<full verbatim text of the artifact (activates the grounding gate)>",
+            "excluded_cells": {"<taxonomy_cell>": "<why this dimension does not apply>"},
+            "triage": {"dimensions_present": ["<taxonomy_cell>", "..."],
+                       "deploy_roles": ["verifier", "propagator", "..."]},
+            "findings": ["<finding objects: see finding_template>"],
+        },
+        "finding_template": {
+            "source_role": "verifier|propagator|reasoner|oracle|<specialist>",
+            "element": "<the specific element under audit>",
+            "taxonomy_cell": "<one of vocabularies.taxonomy_cell>",
+            "defect_class": "<one of vocabularies.defect_class>",
+            "posta": "<one of vocabularies.posta>",
+            "accusation": {"text": "<the accusation>",
+                           "base": "<one of vocabularies.evidence_base>",
+                           "evidence": "<VERBATIM quote from source_text, or executed result>",
+                           "sections": ["§..", "§.."]},
+            "defense": {"attempted": True, "present": False, "fact": None},
+            "cost_to_fix": "<one of vocabularies.cost_to_fix>",
+            "action": "<the corrective action>",
+            "declared_limit": "<what you could NOT decide internally>",
+            "sources": ["<primary source refs>"],
+            "severity": "alta|media|bassa|nessuna",
+            "source_grade": 1,
+            "action_state": "open",
+        },
+        "vocabularies": {
+            "taxonomy_cell": list(TAXONOMY),
+            "defect_class": [e.value for e in DefectClass],
+            "posta": [e.value for e in Posta],
+            "evidence_base": [e.value for e in EvidenceBase],
+            "cost_to_fix": [e.value for e in CostToFix],
+            "action_state": [e.value for e in ActionState],
+            "verdict_OUTPUT_ONLY": [e.value for e in Verdict],
+        },
+        "rules": [
+            "Attempt the STRONGEST defense first for every accusation (defense.attempted=true); "
+            "condemnation without a recorded defense is impossible.",
+            "accusation.evidence must be VERBATIM from source_text (grounding gate) or an executed "
+            "result; a paraphrase is downgraded to 'must be read by a human'.",
+            "A non_local_* / conceptual finding needs >= 2 cited sections in accusation.sections.",
+            "source_grade: 1=primary filed/executed, 2=institutional/secondary, 3=generalist, "
+            "9=undeclared. A condemnation resting on grade>1 is downgraded to NEEDS_READING when a "
+            "primary is reachable.",
+            "On a HIGH-posta run record >= 1 hypothesis with action_state=deliberately_discarded, "
+            "so the false-positive rate is MEASURED, not asserted.",
+            "Verdicts are OUTPUT-ONLY — the code assigns them. Never put a verdict in a finding.",
+            "The independent eye comes from AAE_EYE (env). After ACTUALLY calling it, export "
+            "AAE_EXTERNAL_ATTESTED_IDENTITY=<eye.identity> so the core credits level 3. Never fake one.",
+        ],
+        "run": "python3 run_core.py <findings.json>   (writes ledger + summary to $AAE_OUT)",
+    }
+    return json.dumps(schema, ensure_ascii=False, indent=2)
+
+
 def metrics_report(out_dir: str) -> str:
     """Longitudinal panel + bias_audit over all accrued runs in out_dir.
     Descriptive only; no single score; abstention never counts as success."""
@@ -183,6 +253,8 @@ run_core.py — deterministic-core bridge (verdict state machine, defense-gate,
 coverage-gate, dedup, metrics, meta-epistemic governor).
 
 Usage:
+  run_core.py --schema             print the EXACT findings schema + enum vocab
+                                   (produce your findings.json to match this)
   run_core.py <findings.json>      run the core on a findings payload
   run_core.py                      same, reading the payload from stdin
   run_core.py --metrics [dir]      longitudinal, bias-resistant metrics panel
@@ -209,6 +281,13 @@ def main(argv: list[str] | None = None) -> int:
     if argv and argv[0] in ("-V", "--version"):
         from aae import __version__
         print(f"adversarial-audit-engine {__version__}")
+        return 0
+
+    # emit the exact findings schema + enum vocabulary, so the orchestrator produces
+    # a valid payload instead of reverse-engineering the core live (the improvisation
+    # a real Claude Code run exposed: guessing class names, listing enums by hand).
+    if argv and argv[0] == "--schema":
+        print(emit_schema())
         return 0
 
     # longitudinal metrics mode:  run_core.py --metrics [out_dir]
