@@ -5,6 +5,16 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.8 — Live Groq default model (the shipped default had been deprecated)
+The `groq` preset's default model (`llama-3.1-70b-versatile`) was retired by Groq in 2026, so a
+`AAE_EYE=groq` run with no `AAE_EYE_MODEL` override would fail the call and degrade to level 1 — the
+"configured but never reached" trap. Updated the default to a current model (`openai/gpt-oss-120b`) and
+documented that hosted providers churn model IDs: the identity's VENDOR earns level 3, not the model
+name, so any live model of the provider works — override with `AAE_EYE_MODEL` if a call 404s. (A
+standalone `probe_groq.py` in the workspace confirms key + model reachability from the run's own sandbox
+BEFORE the audit, since egress allowlists differ by host.) No test change: `test_eye.py` never pinned the
+model string. Suite 196 green.
+
 ## 0.14.7 — Independent eye wired into the engine, vendor-agnostic (gradient G3) + lean escape hatch
 Datapoint 1 stayed level 1: the run's "red team" was a same-vendor CLAIMED identity, never attested, so
 independence was correctly not credited. G3 wires the eye into `Orchestrator.run()` itself. An eye —

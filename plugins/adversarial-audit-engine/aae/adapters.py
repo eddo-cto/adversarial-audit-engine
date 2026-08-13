@@ -122,8 +122,12 @@ EYE_PRESETS = {
     "groq":       "https://api.groq.com/openai/v1",  # hosted free tier, no install (artifact leaves host)
     "openrouter": "https://openrouter.ai/api/v1",    # free models end in ":free"
 }
+# NOTE: hosted providers deprecate model IDs often (Groq retired the llama-3.1/3.3
+# ‘versatile’ line in 2026). These are current defaults; if a call 404s on the model,
+# override with AAE_EYE_MODEL — the identity's VENDOR (groq/openrouter/ollama-local)
+# is what earns level 3, not the model name, so any live model of the provider works.
 _EYE_DEFAULT_MODEL = {
-    "ollama": "llama3.1:8b", "groq": "llama-3.1-70b-versatile",
+    "ollama": "llama3.1:8b", "groq": "openai/gpt-oss-120b",
     "openrouter": "meta-llama/llama-3.1-8b-instruct:free",
 }
 
