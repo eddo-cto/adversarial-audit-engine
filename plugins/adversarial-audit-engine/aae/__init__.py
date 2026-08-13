@@ -51,7 +51,7 @@ from .run_metrics import Panel, GroundTruth, bias_audit
 from .independence_ledger import build_independence_ledger, IndependenceLedger
 from .adjudication_guard import assess_adjudication, BiasResistanceReport
 
-__version__ = "0.14.9"
+__version__ = "0.14.10"
 
 __all__ = [
     "AuditConfig", "LLMClient", "MockLLMClient", "AnthropicLLMClient",

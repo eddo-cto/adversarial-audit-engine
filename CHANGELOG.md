@@ -5,6 +5,15 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.10 — Plugin loads in Claude Code (duplicate-hooks packaging fix)
+The very first install of the plugin *as a Claude Code plugin* (prior real runs used the bundled skill,
+never the marketplace path) surfaced a packaging bug: `plugin.json` declared `"hooks":
+"./hooks/hooks.json"`, but Claude Code auto-loads `hooks/hooks.json` by convention — so the manifest
+reference was a duplicate and the loader refused the plugin ("Duplicate hooks file detected … the
+standard hooks/hooks.json is loaded automatically, so manifest.hooks should only reference additional
+hook files"). Removed the `hooks` field from the manifest; the hook still loads automatically. First
+clean `/plugin install` path. No code/test change.
+
 ## 0.14.9 — Honest caveat: a sandbox reaches no free eye (docs)
 `INDEPENDENCE_free.md` sold Groq/Ollama as easy free level-3 eyes without warning that, from a hosted/
 remote sandbox, *both* are unreachable for opposite reasons: hosted endpoints are outside the egress
