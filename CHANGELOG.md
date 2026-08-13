@@ -5,6 +5,25 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.12 — Two fixes a real Claude Code run exposed (attested independence; Windows hook encoding)
+The first end-to-end `/audit` on a user's machine (an EIA study, local Ollama eye) surfaced two bugs:
+- **An attested cross-vendor eye was lost from the record when the run was BLOCKED.** The eye
+  (`ollama-local:llama3.1:8b`) genuinely ran and corroborated a defect, yet the ledger read
+  `independence_level: 1` — `evaluate_completion` returned `BLOCKED_OPEN_ITEMS` before crediting the
+  attested reviewer. Completion STATE and independence LEVEL are separate facts; the level now reflects
+  who reviewed regardless of open items. Fixed in `gates.py` (credit the attested level up front),
+  pinned by `tests/test_independence_when_blocked.py`.
+- **The Stop hook crashed on the Windows console codepage.** `governor_check.py` printed box/warn
+  glyphs (and could print accented artifact names) under cp1252 → `UnicodeEncodeError`. Both
+  `governor_check.py` and `run_core.py` now force UTF-8 stdout/stderr (no-op where unsupported) and the
+  hook's decorative glyphs are ASCII — so the discipline no longer depends on the operator exporting
+  `PYTHONIOENCODING` by hand. Suite 201 green.
+
+Known, deferred (next phase, by design — not a rushed patch): the product path `/audit` → `run_core.py`
+does **not** invoke `Orchestrator.run()`, so the G1–G3 gradients (which live in the orchestrator) do not
+apply to it. Standardization work moves onto the `run_core.py` / `audit.md` path, or the two paths get
+unified.
+
 ## 0.14.11 — `/audit` stops improvising: a `--schema` contract for the core
 The first real Claude Code `/audit` run exposed the orchestration gap the standardization gradients
 target: with no explicit contract, the role agent **reverse-engineered the core live** — it imported

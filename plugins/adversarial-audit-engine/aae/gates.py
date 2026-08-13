@@ -104,6 +104,17 @@ def evaluate_completion(ledger: Ledger, *, max_posta: Posta,
         only from the payload (`external_identity`) is CROSS_MODEL_CLAIMED and its
         independence is NOT credited (level 1), because the model authored it.
     """
+    # Record the honest independence level from the ATTESTED reviewer UP FRONT, so it
+    # survives even when the run is BLOCKED on open items. A real datapoint (an EIA
+    # study audited via Claude Code) called a genuine cross-vendor eye whose level was
+    # LOST because the blocker branch returned before crediting it — the ledger then
+    # read level 1 despite an attested level-3 review. Completion STATE and independence
+    # LEVEL are separate facts: the level reflects who actually reviewed, regardless of
+    # whether open items still block closure. (Claimed-only reviewers are not credited.)
+    _attested_up = _machine_external(attested_identity)
+    if _attested_up:
+        ledger.independence_level = independence_level_between(internal_identity, _attested_up)
+
     # blockers first
     blockers = ledger.open_blockers()
     if blockers:

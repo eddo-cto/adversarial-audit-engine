@@ -91,10 +91,22 @@ def verdict_from_ledger(led: dict) -> tuple[str, float, list[str]]:
     return verdict, ac, notes
 
 
+def _utf8_stdio() -> None:
+    """Windows Stop hooks run under the console codepage (cp1252), which cannot encode
+    an accented artifact name or a box/warn glyph — a real run crashed the hook with
+    UnicodeEncodeError. Force UTF-8 with replacement; a no-op where unsupported."""
+    for _s in (sys.stdout, sys.stderr):
+        try:
+            _s.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+
 def main() -> int:
+    _utf8_stdio()
     out_dir = os.environ.get("AAE_OUT", os.path.join(os.getcwd(), "aae_out"))
     ledgers = sorted(glob.glob(os.path.join(out_dir, "*.ledger.json")))
-    print("── meta-epistemic governor (Stop hook) ──")
+    print("== meta-epistemic governor (Stop hook) ==")
     if not ledgers:
         print("  no ledger found in", out_dir, "— nothing to check.")
         return 0
@@ -126,8 +138,8 @@ def main() -> int:
     if completion_state:
         print(f"  completion state: {led.get('completion_state', completion_state)}")
     if downgraded:
-        print("  ⚠ HOOK ENFORCEMENT: downgraded an unverified VALIDATED "
-              "→ EXTERNAL_REVIEW_PENDING (artifact corrected on disk).")
+        print("  !! HOOK ENFORCEMENT: downgraded an unverified VALIDATED "
+              "-> EXTERNAL_REVIEW_PENDING (artifact corrected on disk).")
     print(f"  reliability verdict: {verdict}  (apparent-coherence {ac:.2f})")
     for n in notes:
         print(f"   - {n}")

@@ -270,7 +270,19 @@ state is EXTERNAL_REVIEW_PENDING, and closure belongs to a human reviewer.
 """
 
 
+def _utf8_stdio() -> None:
+    """Force UTF-8 stdout/stderr so a summary with accented text or box glyphs does not
+    crash on the Windows console codepage (cp1252). A real run had to work around this
+    by exporting PYTHONIOENCODING by hand; make it intrinsic. No-op where unsupported."""
+    for _s in (sys.stdout, sys.stderr):
+        try:
+            _s.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+
 def main(argv: list[str] | None = None) -> int:
+    _utf8_stdio()
     argv = list(sys.argv[1:] if argv is None else argv)
     out_dir = os.environ.get("AAE_OUT", os.path.join(os.getcwd(), "aae_out"))
 
