@@ -5,6 +5,19 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.11 — `/audit` stops improvising: a `--schema` contract for the core
+The first real Claude Code `/audit` run exposed the orchestration gap the standardization gradients
+target: with no explicit contract, the role agent **reverse-engineered the core live** — it imported
+`aae.schema` by hand, guessed a non-existent `TaxonomyCell` (ImportError), and listed enums ad-hoc,
+burning a turn and risking an invalid payload. Fix: `scripts/run_core.py --schema` emits, in one
+deterministic call, the exact payload template + the LIVE enum vocabulary (taxonomy_cell, defect_class,
+posta, evidence_base, cost_to_fix, action_state) + the rules — introspected from the real enums, so it
+can never drift from what the code accepts. `commands/audit.md` step 5 now mandates the path: call
+`--schema`, write `findings.json` to match (with `source_text` for the grounding gate), then
+`run_core.py findings.json` — and explicitly forbids hand-introspecting `aae`. Pinned by
+`tests/test_run_core_schema.py` (vocabulary == live enums; the finding template invites no verdict).
+Suite 199 green.
+
 ## 0.14.10 — Plugin loads in Claude Code (duplicate-hooks packaging fix)
 The very first install of the plugin *as a Claude Code plugin* (prior real runs used the bundled skill,
 never the marketplace path) surfaced a packaging bug: `plugin.json` declared `"hooks":
