@@ -5,6 +5,32 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.6 — Deep layers auto-deploy by stakes (standardization gradient G2)
+Datapoint 1 (an OEPV tender annex at HIGH posta) ran with the attack roles only — triadic, construens
+and deep-causal stayed off because the run script never set `enable_*`. That is the A1 gap: depth
+depended on the operator remembering a flag. G2 makes the deep passes **auto-deploy when the run
+warrants depth** — HIGH posta (the operator's declared stakes) or a conceptual-novel finding (exactly
+what root-clustering is for) — via a deterministic policy `_deep_layers_warranted(config, ledger)`. The
+explicit `enable_triadic` / `enable_construens` / new `enable_deep_causal` flags still force them on;
+below the threshold (a low/medium run with no conceptual-novel signal) they stay off — the Freno against
+over-engineering a small artifact. `deep_causal` is now wired into `Orchestrator.run()` (new
+`AuditResult.deep_causal`, added to the summary) and, when it auto-runs, recorded **RAN** in the
+manifest — honest measurement, not a silent extra. `construens` still needs its `construens_idea` and
+abstains without one. Pinned by `tests/test_deep_layers_autodeploy.py`. Suite 192 green.
+
+## 0.14.5 — Source-grade gate runs in the engine (standardization gradient G1)
+Two real runs (LU-VE, and an OEPV tender annex) hand-wired the source-grade gate *after* the
+orchestrator — and, worse, after completion and the manifest were already computed, so the "read the
+primary first" downgrade did not always reach the verdict a client sees. G1 folds the gate into
+`Orchestrator.run()`: it now runs **before** the defense/coverage gates, completion, and the manifest,
+and the per-grade coverage is **always** reported (`ledger.source_grade_coverage`), on every entry
+point — no external call. New `AuditConfig.primary_reachable` (default `True`) carries the operator's
+one honest declaration: `False` means no primary exists for this artifact class, and the gate abstains
+rather than punish. Pinned by `tests/test_source_grade_in_orchestrator.py` (coverage always reported;
+worse-than-primary condemnation downgraded to `NEEDS_READING`; gate abstains when no primary). First of
+the progressive standardization gradients: turning what a run had to assemble by hand into engine
+behavior. Suite 188 green.
+
 ## 0.14.4 — One-command run + free level-3 eye wired from the environment (delivery gap #1)
 The independent eye was documented but *narrated*, not wired — every real run stayed level 1. Added
 `aae.external_eye_from_env()`: `AAE_EYE=groq|ollama|openrouter` (or an explicit `AAE_EYE_BASE_URL`) builds

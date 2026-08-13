@@ -32,9 +32,11 @@ from .dedup import deduplicate
 from .gates import (enforce_defense_gate, enforce_coverage_gate,
                     evaluate_completion, CompletionStatus)
 from .run_manifest import build_manifest, enforce_run_validity
+from .source_grade import enforce_source_grade_gate, source_grade_coverage
 from . import metrics as metrics_mod
 from .triadic import TriadicLayer, TriadicResult
 from .construens import ConstruensLayer, ConstruensResult
+from .deep_causal import DeepCausalLayer, DeepCausalResult
 from .meta_epistemic import MetaGovernor, MetaAssessment
 from .schema import (Finding, Ledger, Accusation, Defense, DefectClass,
                      EvidenceBase, Posta, CostToFix, Verdict, ActionState)
@@ -90,6 +92,19 @@ def parse_finding(raw: dict, *, role_key: str) -> Finding | None:
     )
 
 
+def _deep_layers_warranted(config, ledger) -> bool:
+    """G2 policy — deterministic, testable. The deep passes (triadic / construens /
+    deep-causal) are warranted, without an explicit flag, when the run carries depth:
+      * HIGH posta — the operator's declared stakes, or
+      * a conceptual-novel finding — precisely what root-clustering exists to cluster.
+    Anything below that (a low/medium run with no conceptual-novel signal) leaves them
+    off: the Freno against over-engineering a small artifact."""
+    if config.max_posta == Posta.HIGH:
+        return True
+    return any(f.defect_class == DefectClass.NON_LOCAL_CONCEPTUAL_NOVEL
+               for f in ledger.findings)
+
+
 def run_role(client: LLMClient, role: Role, *, artifact: str, dossier: str,
              taxonomy: list[str], max_tokens: int) -> list[Finding]:
     system, user = role.build_prompt(artifact=artifact, dossier=dossier,
@@ -121,6 +136,7 @@ class AuditResult:
     integrity_problems: list[str] = field(default_factory=list)
     triadic: "TriadicResult | None" = None
     construens: "ConstruensResult | None" = None
+    deep_causal: "DeepCausalResult | None" = None
     meta: "MetaAssessment | None" = None
 
     def summary(self) -> str:
@@ -135,6 +151,8 @@ class AuditResult:
             lines += ["", self.triadic.summary()]
         if self.construens:
             lines += ["", self.construens.summary()]
+        if self.deep_causal:
+            lines += ["", self.deep_causal.summary()]
         if self.meta:
             lines += ["", self.meta.summary()]
         if self.ledger.flags:
@@ -183,7 +201,13 @@ class Orchestrator:
         ledger.excluded_cells = dict(triage.excluded)  # carried for coverage
         ledger.adjudicate_all()
 
-        # 6. gates
+        # 6. gates. The source-grade gate runs FIRST and IN THE ENGINE (G1): a
+        # conviction resting on a worse-than-primary datum, while a primary is
+        # reachable, is downgraded to NEEDS_READING before completion and the
+        # manifest see it — so "read the primary first" is enforced on every entry
+        # point, not hand-wired after the run. Its coverage is always reported.
+        enforce_source_grade_gate(ledger, primary_reachable=config.primary_reachable)
+        ledger.source_grade_coverage = source_grade_coverage(ledger)
         enforce_defense_gate(ledger)
         enforce_coverage_gate(ledger)
 
@@ -197,19 +221,29 @@ class Orchestrator:
         m = metrics_mod.compute(ledger)
         problems = ledger.integrity_report()
 
-        # 9. deep layers (adaptive; off by default — the Freno)
+        # 9. deep layers. AUTO-DEPLOYED by stakes (G2): the operator no longer has to
+        # remember to switch them on. They fire when the run WARRANTS depth — HIGH posta
+        # (the operator's declared stakes) or a conceptual-novel finding (exactly what
+        # root-clustering is for) — or when an explicit flag forces them. The Freno holds:
+        # on a low/medium run with no conceptual-novel signal they stay off.
+        warranted = _deep_layers_warranted(config, ledger)
         triadic_res = None
-        if config.enable_triadic:
+        if config.enable_triadic or warranted:
             triadic_res = TriadicLayer(self.client).run(artifact, str(dossier))
         construens_res = None
-        if config.enable_construens and config.construens_idea:
+        if (config.enable_construens or warranted) and config.construens_idea:
             construens_res = ConstruensLayer(self.client).run(
                 config.construens_idea, str(dossier))
+        deep_causal_res = None
+        if config.enable_deep_causal or warranted:
+            deep_causal_res = DeepCausalLayer(self.client).run(
+                artifact, [f"{f.id}: {f.element}" for f in ledger.findings])
 
         result = AuditResult(ledger=ledger, triage=triage, completion=completion,
                              metrics=m, corroboration=corroboration,
                              integrity_problems=problems,
-                             triadic=triadic_res, construens=construens_res)
+                             triadic=triadic_res, construens=construens_res,
+                             deep_causal=deep_causal_res)
 
         # 10. meta-epistemic governor (5th layer): validate the validator.
         # On by default — it is the brake against apparent coherence. It never
@@ -222,8 +256,16 @@ class Orchestrator:
         # then apply the non-bypassable refusal: an under-run cannot be closed no
         # matter which entry point produced it.
         ledger.completion_state = completion.state
+        # deep_causal is a manifest-tracked optional layer: when it auto-deployed it
+        # must show RAN (measured), not NOT_APPLICABLE. Declared status wins in the
+        # manifest, so this is the honest record of what the engine actually did.
+        execution = None
+        if deep_causal_res is not None:
+            execution = {"layers": {"deep_causal": {
+                "status": "ran",
+                "justification": "auto-deployed (G2): high posta or conceptual-novel finding"}}}
         manifest = build_manifest(
-            ledger, None,
+            ledger, execution,
             triage={"dimensions_present": triage.dimensions_present,
                     "deploy_roles": triage.deploy_roles},
             governor_ran=result.meta is not None)
