@@ -43,6 +43,19 @@ adapter kept for paying clients.
 
 ## Honest caveats (read before trusting the level-3 badge)
 
+- **The eye must be reachable FROM WHERE THE ENGINE RUNS — and in a sandbox it usually is not.**
+  This is the trap that looks like success. If the engine runs inside a hosted/remote sandbox (a Cowork
+  or agent session), two things fail at once: hosted endpoints (Groq, OpenRouter) are **blocked by the
+  egress allowlist** — `api.groq.com` does not even resolve in DNS — and `localhost:11434` is the
+  *sandbox's* localhost, **not** the Ollama on your laptop. So *both* free routes are dead from a sandbox,
+  for opposite reasons. The engine degrades honestly (the un-called eye is never credited — level 1), but
+  you have burned a run. Reachable level-3 eyes are only: (a) run the engine **on your own machine**, where
+  `localhost:11434` is your real Ollama (the recommended path — local, private, $0); or (b) expose your
+  eye at a URL the sandbox can reach (`AAE_EYE_BASE_URL=http://<your-host>:11434/v1`) and confirm it first.
+  **Always probe reachability from the run's own environment before trusting `AAE_EYE`.**
+- **Hosted model IDs churn.** Providers retire models (Groq dropped the `llama-3.1/3.3 …-versatile` line in
+  2026). The identity's *vendor* earns level 3, not the model name — if a call 404s, set `AAE_EYE_MODEL` to
+  a live model of that provider.
 - **Capability gap.** A weaker independent model makes its *agreement* worth less (the capability↔
   independence confound of the system paper's §6). Its *disagreement*, though, is real signal — a
   different-family model does not share Claude's specific blind spots, which is exactly the point of the

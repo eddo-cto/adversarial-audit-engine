@@ -5,6 +5,15 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.9 — Honest caveat: a sandbox reaches no free eye (docs)
+`INDEPENDENCE_free.md` sold Groq/Ollama as easy free level-3 eyes without warning that, from a hosted/
+remote sandbox, *both* are unreachable for opposite reasons: hosted endpoints are outside the egress
+allowlist (`api.groq.com` fails DNS) and `localhost:11434` is the sandbox's localhost, not your laptop's
+Ollama. A real run proved it. Added the caveat as the first item (and a model-churn note): reachable
+level-3 eyes are only a **local** run (engine on your own machine, where `localhost` is your Ollama) or a
+**self-exposed** endpoint via `AAE_EYE_BASE_URL` — always probe reachability from the run's own
+environment first. Docs-only; suite unchanged.
+
 ## 0.14.8 — Live Groq default model (the shipped default had been deprecated)
 The `groq` preset's default model (`llama-3.1-70b-versatile`) was retired by Groq in 2026, so a
 `AAE_EYE=groq` run with no `AAE_EYE_MODEL` override would fail the call and degrade to level 1 — the
