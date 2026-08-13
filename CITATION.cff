@@ -3,7 +3,7 @@ doi: 10.5281/zenodo.21288401
 title: "Adversarial Audit Engine, and: Managing epistemic circularity in self-referential evaluation"
 message: "If you use this software or these papers, please cite them as below."
 type: software
-version: "0.14.10"
+version: "0.14.11"
 authors:
   - family-names: Gazzoni
     given-names: Edoardo
