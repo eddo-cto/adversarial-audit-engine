@@ -25,5 +25,8 @@ class AuditConfig:
     enable_triadic: bool = False           # force deductive/inductive/abductive pass
     enable_construens: bool = False        # force cause-of-absence diagnosis
     enable_deep_causal: bool = False       # force root-clustering / chiasm / scenarios
+    auto_deep_layers: bool = True          # posta-driven auto-deploy (G2). False = lean run:
+                                           # only explicit enable_* count. For slow LOCAL eyes
+                                           # (Ollama) or a quick pass, so the build is not rigid.
     construens_idea: str = ""              # the idea/gap to diagnose (construens needs it)
     enable_meta: bool = True               # meta-epistemic governor (5th layer; on by default)

@@ -33,6 +33,7 @@ from .gates import (enforce_defense_gate, enforce_coverage_gate,
                     evaluate_completion, CompletionStatus)
 from .run_manifest import build_manifest, enforce_run_validity
 from .source_grade import enforce_source_grade_gate, source_grade_coverage
+from .adapters import external_eye_from_env
 from . import metrics as metrics_mod
 from .triadic import TriadicLayer, TriadicResult
 from .construens import ConstruensLayer, ConstruensResult
@@ -167,10 +168,41 @@ class AuditResult:
 # Orchestrator
 # --------------------------------------------------------------------------
 
+def _run_external_eye(eye, artifact: str, ledger) -> str:
+    """G3 — the independent-eye pass. Ask a DIFFERENT-vendor model to attack the run's
+    strongest condemnations. The point is not that a (usually weaker) eye finds more; it
+    is that the call is REAL, so the independence is *attested by the adapter that made
+    it*, not merely claimed in a payload. Returns the eye's note. Raises if unreachable —
+    the caller degrades gracefully to level 1 rather than pretend a review happened."""
+    top = [f for f in ledger.findings
+           if getattr(f.verdict, "value", "") in ("accusa_vince", "accusa_ridimensionata",
+                                                   "conteso")][:8]
+    lines = [f"- {f.id} [{f.taxonomy_cell}]: {f.element}" for f in top] or ["- (no condemnations)"]
+    system = ("You are an INDEPENDENT external auditor from a different model vendor. Try to "
+              "REFUTE the following condemnations of an artifact — attempt the strongest defense "
+              "for the artifact. Report, briefly, which you would UPHOLD, which you DISPUTE, and "
+              "anything only a human can close. Do not rubber-stamp.")
+    user = "Artifact under audit (excerpt):\n" + artifact[:4000] + "\n\nCondemnations:\n" + "\n".join(lines)
+    return eye.complete(system, user, max_tokens=1024)
+
+
 class Orchestrator:
-    def __init__(self, client: LLMClient):
+    def __init__(self, client: LLMClient, external_eye="auto"):
+        """`external_eye`:
+             "auto"  -> resolve an independent eye from the environment (AAE_EYE=…);
+                        None if not configured — the run stays honestly level 1.
+             None    -> explicitly no eye (hermetic; used by tests).
+             client  -> an injected LLMClient-like eye (its `.identity` is what gets attested).
+        The eye is vendor-agnostic: a LOCAL Ollama eye earns the same level-3 credit as a
+        hosted one, so a confidential run keeps full independence without leaving the host."""
         self.client = client
+        self.external_eye = external_eye
         self.roles = all_roles()
+
+    def _resolve_eye(self):
+        if self.external_eye == "auto":
+            return external_eye_from_env()
+        return self.external_eye
 
     def run(self, artifact: str, config: AuditConfig,
             artifact_name: str = "artifact") -> AuditResult:
@@ -211,11 +243,31 @@ class Orchestrator:
         enforce_defense_gate(ledger)
         enforce_coverage_gate(ledger)
 
+        # 6b. independent eye (G3). If an eye is configured (env AAE_EYE=… or injected) it is
+        # CALLED here — a real, different-vendor pass over the strongest condemnations — and its
+        # adapter identity becomes the ATTESTED reviewer. Vendor-agnostic: a local Ollama eye earns
+        # the same level-3 credit as a hosted one. If it is unreachable, we degrade gracefully to
+        # level 1 (a flag, no pretense) — the build never HARD-requires an external service.
+        attested_identity = None
+        eye = self._resolve_eye()
+        if eye is not None:
+            try:
+                note = _run_external_eye(eye, artifact, ledger)
+                attested_identity = getattr(eye, "identity", None)
+                ledger.flags.append(
+                    f"External eye '{attested_identity}' reviewed (attested by adapter). "
+                    f"Note: {str(note)[:280]}")
+            except Exception as e:  # unreachable local server, network, etc.
+                ledger.flags.append(
+                    f"External eye '{getattr(eye, 'identity', '?')}' configured but the call "
+                    f"failed ({type(e).__name__}); independence NOT credited — run stays level 1.")
+
         # 7. completion / independence
         completion = evaluate_completion(
             ledger, max_posta=config.max_posta,
             external_identity=config.external_review_identity,
-            internal_identity=self.client.identity)
+            internal_identity=self.client.identity,
+            attested_identity=attested_identity)
 
         # 8. metrics + integrity
         m = metrics_mod.compute(ledger)
@@ -226,7 +278,7 @@ class Orchestrator:
         # (the operator's declared stakes) or a conceptual-novel finding (exactly what
         # root-clustering is for) — or when an explicit flag forces them. The Freno holds:
         # on a low/medium run with no conceptual-novel signal they stay off.
-        warranted = _deep_layers_warranted(config, ledger)
+        warranted = config.auto_deep_layers and _deep_layers_warranted(config, ledger)
         triadic_res = None
         if config.enable_triadic or warranted:
             triadic_res = TriadicLayer(self.client).run(artifact, str(dossier))
@@ -259,11 +311,16 @@ class Orchestrator:
         # deep_causal is a manifest-tracked optional layer: when it auto-deployed it
         # must show RAN (measured), not NOT_APPLICABLE. Declared status wins in the
         # manifest, so this is the honest record of what the engine actually did.
-        execution = None
+        execution_layers = {}
         if deep_causal_res is not None:
-            execution = {"layers": {"deep_causal": {
+            execution_layers["deep_causal"] = {
                 "status": "ran",
-                "justification": "auto-deployed (G2): high posta or conceptual-novel finding"}}}
+                "justification": "auto-deployed (G2): high posta or conceptual-novel finding"}
+        if attested_identity is not None:
+            execution_layers["external_auditor"] = {
+                "status": "ran",
+                "justification": f"attested independent eye {attested_identity} (G3)"}
+        execution = {"layers": execution_layers} if execution_layers else None
         manifest = build_manifest(
             ledger, execution,
             triage={"dimensions_present": triage.dimensions_present,

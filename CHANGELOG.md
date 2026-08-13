@@ -5,6 +5,23 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.7 — Independent eye wired into the engine, vendor-agnostic (gradient G3) + lean escape hatch
+Datapoint 1 stayed level 1: the run's "red team" was a same-vendor CLAIMED identity, never attested, so
+independence was correctly not credited. G3 wires the eye into `Orchestrator.run()` itself. An eye —
+injected, or resolved from the environment (`AAE_EYE=ollama|groq|openrouter|<base_url>`) — is **called**
+over the strongest condemnations, and the identity its adapter reports becomes the **attested** reviewer
+passed to `evaluate_completion` (so the orchestrator path can finally reach level 3, not only `run_core`).
+- **Vendor-agnostic, local first-class.** A local **Ollama** eye is a different vendor → **level 3**,
+  the same credit as a hosted one — a confidential run keeps full independence without the artifact
+  leaving the host. Pinned by `test_local_ollama_attested_is_credited_level3`.
+- **Never rigid.** No eye configured → honest level 1, no crash. An eye that is unreachable (e.g. Ollama
+  not started) → a recorded flag and level 1, not a failure. `external_auditor` shows RAN in the manifest
+  only when the eye actually answered. Pinned by `test_external_eye_wiring.py`.
+- **Lean escape hatch (fixes a G2 rigidity).** New `AuditConfig.auto_deep_layers` (default `True`): set
+  `False` for a lean run where only explicit `enable_*` flags deploy the deep layers — so a slow LOCAL
+  eye or a quick pass is not forced through triadic/construens/deep-causal at HIGH posta.
+Suite 196 green.
+
 ## 0.14.6 — Deep layers auto-deploy by stakes (standardization gradient G2)
 Datapoint 1 (an OEPV tender annex at HIGH posta) ran with the attack roles only — triadic, construens
 and deep-causal stayed off because the run script never set `enable_*`. That is the A1 gap: depth
