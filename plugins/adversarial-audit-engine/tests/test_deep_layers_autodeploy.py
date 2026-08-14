@@ -53,9 +53,9 @@ class DeepLayersAutoDeploy(unittest.TestCase):
         cfg = AuditConfig(artifact_path="x", max_posta=Posta.MEDIUM)
         led = Ledger(artifact_name="x")
         led.add(_finding(DefectClass.NON_LOCAL_CONCEPTUAL_NOVEL))
-        self.assertTrue(_deep_layers_warranted(cfg, led))
+        self.assertTrue(_deep_layers_warranted(cfg, led.findings))
         # medium posta with no conceptual-novel signal -> not warranted
-        self.assertFalse(_deep_layers_warranted(cfg, Ledger(artifact_name="x")))
+        self.assertFalse(_deep_layers_warranted(cfg, Ledger(artifact_name="x").findings))
 
 
 if __name__ == "__main__":

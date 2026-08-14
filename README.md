@@ -11,7 +11,7 @@
 
 **[Read the story — how it was built and hardened across many adversarial rounds](STORY.md)**
 
-**Status: research preview (v0.14.13).** A tool that *multiplies* a competent human reviewer — it does not
+**Status: research preview (v0.14.14).** A tool that *multiplies* a competent human reviewer — it does not
 replace one, and it is not an oracle. Tested across many adversarial self-audit rounds and on real cases
 (a consensus protocol, incident RCA, threat modeling, multi-regulation conflicts, scientific peer review).
 

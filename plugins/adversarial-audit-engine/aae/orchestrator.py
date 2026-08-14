@@ -93,17 +93,41 @@ def parse_finding(raw: dict, *, role_key: str) -> Finding | None:
     )
 
 
-def _deep_layers_warranted(config, ledger) -> bool:
+def _deep_layers_warranted(config, findings) -> bool:
     """G2 policy — deterministic, testable. The deep passes (triadic / construens /
     deep-causal) are warranted, without an explicit flag, when the run carries depth:
       * HIGH posta — the operator's declared stakes, or
       * a conceptual-novel finding — precisely what root-clustering exists to cluster.
     Anything below that (a low/medium run with no conceptual-novel signal) leaves them
-    off: the Freno against over-engineering a small artifact."""
+    off: the Freno against over-engineering a small artifact. `findings` is a list."""
     if config.max_posta == Posta.HIGH:
         return True
-    return any(f.defect_class == DefectClass.NON_LOCAL_CONCEPTUAL_NOVEL
-               for f in ledger.findings)
+    return any(f.defect_class == DefectClass.NON_LOCAL_CONCEPTUAL_NOVEL for f in findings)
+
+
+def _finding_to_payload(f: Finding) -> dict:
+    """Serialize a live Finding back to the `--schema` payload shape, so the orchestrator
+    hands the ONE contract to `pipeline.discipline` just like the /audit product path does."""
+    return {
+        "id": f.id,
+        "source_role": f.source_role,
+        "element": f.element,
+        "taxonomy_cell": f.taxonomy_cell,
+        "defect_class": f.defect_class.value,
+        "posta": f.posta.value,
+        "accusation": {"text": f.accusation.text, "base": f.accusation.base.value,
+                       "evidence": f.accusation.evidence, "sections": list(f.accusation.sections)},
+        "defense": {"attempted": f.defense.attempted, "present": f.defense.present,
+                    "fact": f.defense.fact},
+        "cost_to_fix": f.cost_to_fix.value if f.cost_to_fix else None,
+        "action": f.action,
+        "declared_limit": f.declared_limit,
+        "sources": list(f.sources),
+        "severity": f.severity,
+        "source_grade": f.source_grade,
+        "action_state": f.action_state.value,
+        "discard_justification": f.discard_justification,
+    }
 
 
 def run_role(client: LLMClient, role: Role, *, artifact: str, dossier: str,
@@ -168,16 +192,15 @@ class AuditResult:
 # Orchestrator
 # --------------------------------------------------------------------------
 
-def _run_external_eye(eye, artifact: str, ledger) -> str:
+def _run_external_eye(eye, artifact: str, findings) -> str:
     """G3 — the independent-eye pass. Ask a DIFFERENT-vendor model to attack the run's
-    strongest condemnations. The point is not that a (usually weaker) eye finds more; it
-    is that the call is REAL, so the independence is *attested by the adapter that made
-    it*, not merely claimed in a payload. Returns the eye's note. Raises if unreachable —
-    the caller degrades gracefully to level 1 rather than pretend a review happened."""
-    top = [f for f in ledger.findings
-           if getattr(f.verdict, "value", "") in ("accusa_vince", "accusa_ridimensionata",
-                                                   "conteso")][:8]
-    lines = [f"- {f.id} [{f.taxonomy_cell}]: {f.element}" for f in top] or ["- (no condemnations)"]
+    strongest findings. It runs BEFORE the core assigns verdicts, so it selects by posta
+    (not verdict). The point is not that a (usually weaker) eye finds more; it is that the
+    call is REAL, so the independence is *attested by the adapter that made it*, not merely
+    claimed. Returns the eye's note. Raises if unreachable — the caller degrades to level 1."""
+    _order = {"high": 0, "medium": 1, "low": 2}
+    top = sorted(findings, key=lambda f: _order.get(getattr(f.posta, "value", ""), 3))[:8]
+    lines = [f"- {f.id} [{f.taxonomy_cell}]: {f.element}" for f in top] or ["- (no findings)"]
     system = ("You are an INDEPENDENT external auditor from a different model vendor. Try to "
               "REFUTE the following condemnations of an artifact — attempt the strongest defense "
               "for the artifact. Report, briefly, which you would UPHOLD, which you DISPUTE, and "
@@ -226,107 +249,73 @@ class Orchestrator:
         # 4. dedup
         unique, corroboration = deduplicate(all_findings)
 
-        # 5. build ledger + adjudicate
-        ledger = Ledger(artifact_name=artifact_name)
-        for f in unique:
-            ledger.add(f)
-        ledger.excluded_cells = dict(triage.excluded)  # carried for coverage
-        ledger.adjudicate_all()
-
-        # 6. gates. The source-grade gate runs FIRST and IN THE ENGINE (G1): a
-        # conviction resting on a worse-than-primary datum, while a primary is
-        # reachable, is downgraded to NEEDS_READING before completion and the
-        # manifest see it — so "read the primary first" is enforced on every entry
-        # point, not hand-wired after the run. Its coverage is always reported.
-        enforce_source_grade_gate(ledger, primary_reachable=config.primary_reachable)
-        ledger.source_grade_coverage = source_grade_coverage(ledger)
-        enforce_defense_gate(ledger)
-        enforce_coverage_gate(ledger)
-
-        # 6b. independent eye (G3). If an eye is configured (env AAE_EYE=… or injected) it is
-        # CALLED here — a real, different-vendor pass over the strongest condemnations — and its
-        # adapter identity becomes the ATTESTED reviewer. Vendor-agnostic: a local Ollama eye earns
-        # the same level-3 credit as a hosted one. If it is unreachable, we degrade gracefully to
-        # level 1 (a flag, no pretense) — the build never HARD-requires an external service.
-        attested_identity = None
-        eye = self._resolve_eye()
-        if eye is not None:
-            try:
-                note = _run_external_eye(eye, artifact, ledger)
-                attested_identity = getattr(eye, "identity", None)
-                ledger.flags.append(
-                    f"External eye '{attested_identity}' reviewed (attested by adapter). "
-                    f"Note: {str(note)[:280]}")
-            except Exception as e:  # unreachable local server, network, etc.
-                ledger.flags.append(
-                    f"External eye '{getattr(eye, 'identity', '?')}' configured but the call "
-                    f"failed ({type(e).__name__}); independence NOT credited — run stays level 1.")
-
-        # 7. completion / independence
-        completion = evaluate_completion(
-            ledger, max_posta=config.max_posta,
-            external_identity=config.external_review_identity,
-            internal_identity=self.client.identity,
-            attested_identity=attested_identity)
-
-        # 8. metrics + integrity
-        m = metrics_mod.compute(ledger)
-        problems = ledger.integrity_report()
-
-        # 9. deep layers. AUTO-DEPLOYED by stakes (G2): the operator no longer has to
-        # remember to switch them on. They fire when the run WARRANTS depth — HIGH posta
-        # (the operator's declared stakes) or a conceptual-novel finding (exactly what
-        # root-clustering is for) — or when an explicit flag forces them. The Freno holds:
-        # on a low/medium run with no conceptual-novel signal they stay off.
-        warranted = config.auto_deep_layers and _deep_layers_warranted(config, ledger)
+        # 5. deep layers — the producer's semantic depth, AUTO-DEPLOYED by stakes (G2): HIGH posta or a
+        # conceptual-novel finding warrants them; the Freno leaves them off on a small low/medium run.
+        # Their rich outputs ride on the result for presentation (exploration, not disciplined findings).
+        warranted = config.auto_deep_layers and _deep_layers_warranted(config, unique)
         triadic_res = None
         if config.enable_triadic or warranted:
             triadic_res = TriadicLayer(self.client).run(artifact, str(dossier))
         construens_res = None
         if (config.enable_construens or warranted) and config.construens_idea:
-            construens_res = ConstruensLayer(self.client).run(
-                config.construens_idea, str(dossier))
+            construens_res = ConstruensLayer(self.client).run(config.construens_idea, str(dossier))
         deep_causal_res = None
         if config.enable_deep_causal or warranted:
             deep_causal_res = DeepCausalLayer(self.client).run(
-                artifact, [f"{f.id}: {f.element}" for f in ledger.findings])
+                artifact, [f"{f.id}: {f.element}" for f in unique])
 
-        result = AuditResult(ledger=ledger, triage=triage, completion=completion,
-                             metrics=m, corroboration=corroboration,
-                             integrity_problems=problems,
-                             triadic=triadic_res, construens=construens_res,
-                             deep_causal=deep_causal_res)
+        # 6. independent eye — CALLED before the core, on the strongest findings; its adapter identity
+        # becomes the ATTESTED reviewer handed to the discipline. Vendor-agnostic; a local Ollama eye
+        # earns level 3. Unreachable -> graceful level 1 (a flag, no pretense).
+        attested_identity = None
+        eye_note = None
+        eye_failed = None
+        eye = self._resolve_eye()
+        if eye is not None:
+            try:
+                eye_note = _run_external_eye(eye, artifact, unique)
+                attested_identity = getattr(eye, "identity", None)
+            except Exception as e:  # unreachable local server, network, etc.
+                eye_failed = (f"External eye '{getattr(eye, 'identity', '?')}' configured but the call "
+                              f"failed ({type(e).__name__}); independence NOT credited — run stays level 1.")
 
-        # 10. meta-epistemic governor (5th layer): validate the validator.
-        # On by default — it is the brake against apparent coherence. It never
-        # certifies; it terminates the recursion at the human.
-        if config.enable_meta:
-            result.meta = MetaGovernor(self.client).assess(result, use_llm=config.allow_web)
-
-        # 11. A+B run-validity, applied HERE too — not only in the CLI. Build the
-        # execution manifest from the triage decision record and the governor run,
-        # then apply the non-bypassable refusal: an under-run cannot be closed no
-        # matter which entry point produced it.
-        ledger.completion_state = completion.state
-        # deep_causal is a manifest-tracked optional layer: when it auto-deployed it
-        # must show RAN (measured), not NOT_APPLICABLE. Declared status wins in the
-        # manifest, so this is the honest record of what the engine actually did.
+        # 7. THE ONE contract + THE ONE discipline. Serialize the findings to the --schema payload and
+        # delegate every gate / verdict / completion / governor / manifest to `pipeline.discipline` —
+        # the same audited core the /audit product path runs. No discipline is enforced here anymore;
+        # this method is now purely the findings PRODUCER (who drives the model), the core is one place.
+        from .pipeline import discipline
         execution_layers = {}
         if deep_causal_res is not None:
             execution_layers["deep_causal"] = {
                 "status": "ran",
-                "justification": "auto-deployed (G2): high posta or conceptual-novel finding"}
-        if attested_identity is not None:
-            execution_layers["external_auditor"] = {
-                "status": "ran",
-                "justification": f"attested independent eye {attested_identity} (G3)"}
-        execution = {"layers": execution_layers} if execution_layers else None
-        manifest = build_manifest(
-            ledger, execution,
-            triage={"dimensions_present": triage.dimensions_present,
-                    "deploy_roles": triage.deploy_roles},
-            governor_ran=result.meta is not None)
-        enforce_run_validity(ledger, manifest)
+                "justification": "auto-deployed by stakes (high posta / conceptual-novel)"}
+        payload = {
+            "artifact_name": artifact_name,
+            "internal_identity": self.client.identity,
+            "external_identity": config.external_review_identity,
+            "max_posta": config.max_posta.value,
+            "source_primary_reachable": config.primary_reachable,
+            "source_text": artifact,                       # arms the grounding gate on this path too
+            "excluded_cells": dict(triage.excluded),
+            "triage": {"dimensions_present": triage.dimensions_present,
+                       "deploy_roles": triage.deploy_roles},
+            "execution": {"layers": execution_layers} if execution_layers else None,
+            "findings": [_finding_to_payload(f) for f in unique],
+        }
+        result = discipline(payload, attested_identity=attested_identity)
+
+        # 8. attach the producer's artefacts (outside the disciplined ledger) for presentation.
+        result.triage = triage
+        result.corroboration = corroboration
+        result.triadic = triadic_res
+        result.construens = construens_res
+        result.deep_causal = deep_causal_res
+        if attested_identity:
+            result.ledger.flags.append(
+                f"External eye '{attested_identity}' reviewed (attested by adapter). "
+                f"Note: {str(eye_note)[:280]}")
+        elif eye_failed:
+            result.ledger.flags.append(eye_failed)
         return result
 
 

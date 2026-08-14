@@ -5,6 +5,22 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.14 — One contract, one discipline: the two entry points unified
+The two entry points ran the SAME ~8 discipline steps in two files, and had already **drifted on 4 rules**
+(grounding, integrity-as-flags, self-instrumentation, human-HMAC were enforced on only one path) — so the
+core claim "the discipline lives in one audited place" was, in fact, false. Extracted the whole
+discipline into **`aae/pipeline.py::discipline(payload, *, attested_identity=None)`** — the single audited
+core, driven by the `--schema` findings contract. Now:
+- **`scripts/run_core.py`** is a thin product-path wrapper: `discipline()` + write ledger/summary/run-log.
+- **`Orchestrator.run()`** is purely the findings PRODUCER (drives the LLM: oracle, triage, roles, deep
+  layers, the eye), then serializes to the same payload and **delegates all discipline** to
+  `pipeline.discipline`. It no longer enforces anything itself.
+Effect: one place to audit, one place to fix, no drift; and the previously orchestrator-only path now
+gets grounding, self-instrumentation and human-HMAC for free (the 4 divergences are closed). The eye is
+called before the core and its identity passed through; the deterministic governor is the enforceable
+core (the LLM-narrative governor, if any, rides on top as presentation). Suite 203 green; both entry
+points verified. This makes the trust-protocol claim literally true.
+
 ## 0.14.13 — The product path exercises the full method (bug 1: `/audit` → `run_core.py`)
 Datapoint 2 exposed that `/audit` drives `run_core.py`, which does **not** invoke `Orchestrator.run()` —
 so the G1–G3 gradients built into the orchestrator did not reach the product path. Diagnosed precisely:
