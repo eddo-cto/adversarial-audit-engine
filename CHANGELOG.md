@@ -5,6 +5,22 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.13 — The product path exercises the full method (bug 1: `/audit` → `run_core.py`)
+Datapoint 2 exposed that `/audit` drives `run_core.py`, which does **not** invoke `Orchestrator.run()` —
+so the G1–G3 gradients built into the orchestrator did not reach the product path. Diagnosed precisely:
+G1 (source-grade gate) and G3 (env-attested eye) were **already** implemented independently in
+`run_core.py`; the real gaps were the deep layers and the eye/record handshake. Fixed:
+- **Code:** when `AAE_EXTERNAL_ATTESTED_IDENTITY` is set (the eye actually ran), `run_core.py` now records
+  `external_auditor` = RAN in the manifest **deterministically**, overriding an under-declaring payload —
+  a real run left it NOT_APPLICABLE despite a genuine cross-vendor corroboration, understating the
+  independence. Pinned by `tests/test_external_auditor_recorded.py`.
+- **`commands/audit.md` flow rewrite:** deep-causal is **run on any HIGH-posta / richly-structured**
+  artifact (Freno only for trivial ones), not "optional"; the eye is called **before** the core and its
+  identity exported in the **same shell**; the core is **one invocation at the end** (no run→patch→re-run
+  churn); and `source_text` must be **byte-for-byte extracted, not hand-transcribed** (a fuzzy copy makes
+  the grounding gate downgrade good findings — exactly what cost datapoint 2 three findings).
+Suite 203 green. Deferred by design: full unification of the two entry points (orchestrator vs run_core).
+
 ## 0.14.12 — Two fixes a real Claude Code run exposed (attested independence; Windows hook encoding)
 The first end-to-end `/audit` on a user's machine (an EIA study, local Ollama eye) surfaced two bugs:
 - **An attested cross-vendor eye was lost from the record when the run was BLOCKED.** The eye

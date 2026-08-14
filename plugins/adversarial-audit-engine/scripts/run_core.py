@@ -128,7 +128,20 @@ def run(payload: dict, out_dir: str) -> AuditResult:
     # governor from the meta verdict just produced, oracle from the cited sources,
     # triage from its decision record (which also auto-adjudicates the optional
     # layers it did not select). Emitting layers are measured from source_role.
-    manifest = build_manifest(ledger, payload.get("execution"),
+    # If an eye was ACTUALLY attested (AAE_EXTERNAL_ATTESTED_IDENTITY set), the
+    # external_auditor layer RAN — record it deterministically, not at the agent's
+    # discretion. A real run left external_auditor NOT_APPLICABLE in the payload even
+    # though a genuine cross-vendor eye had corroborated a defect, so the record
+    # understated the independence. When attested, this wins over the payload.
+    execution = dict(payload.get("execution") or {})
+    if attested_identity:
+        layers = dict(execution.get("layers") or {})
+        layers["external_auditor"] = {
+            "status": "ran",
+            "justification": f"attested independent eye {attested_identity} "
+                             "(credited by run_core from AAE_EXTERNAL_ATTESTED_IDENTITY)"}
+        execution["layers"] = layers
+    manifest = build_manifest(ledger, execution,
                               triage=payload.get("triage"),
                               governor_ran=result.meta is not None)
 
