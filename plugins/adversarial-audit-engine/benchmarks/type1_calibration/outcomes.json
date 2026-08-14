@@ -1,0 +1,62 @@
+[
+  {
+    "id": "V4",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V2",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "I1",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "I2",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "I5",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "V5",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V3",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V1",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "I3",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "I4",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "V6",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "I6",
+    "label": "invalid",
+    "condemned": 1
+  }
+]

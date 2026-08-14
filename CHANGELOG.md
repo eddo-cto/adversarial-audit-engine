@@ -5,6 +5,19 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.18 — First real Type-I calibration shipped (blind, Sonnet 5)
+The G4 mechanism (0.14.16) was measured but uncalibrated — runs said "NOT CALIBRATED". This ships the
+first real number. The 12-item control battery (`general-v1`, 6 valid + 6 invalid) was audited BLIND by a
+fresh Sonnet 5 auditor: items were re-identified with neutral, shuffled ids and the label key was withheld
+from the auditor (the project's anti-contamination invariant — whoever knows the labels cannot audit). The
+auditor scored 6/6 true demolitions and 0/6 false demolitions → **Type-I (false-demolition) = 0%, 95% CI
+[0%, 39%], power TDR = 100%, AUC = 1.0** (`benchmarks/type1_calibration/_calibration.jsonl`, auditor
+`anthropic:claude-sonnet-5`, battery `general-v1`, 2026-08-14). Point `AAE_CALIBRATION` at that file and
+runs cite the real number instead of "NOT CALIBRATED". The CI is deliberately wide (n=6 valid controls);
+tightening it is the job of a larger battery, shipped as a periodic recalibration. Honest note: this
+calibrates the auditor's condemn/hold decision on the battery, not a full per-item engine run. No code
+change — the discipline and gates are unchanged from 0.14.17.
+
 ## 0.14.17 — Deep-causal on a deterministic structural trigger, enforced (A1)
 Datapoint 3 (EDPS, HIGH posta, 3 sparse findings) left deep-causal off, and the scorecard called it a
 gap. The data says otherwise: the 10-run measurement classified deep_causal as CONTEXTUAL (7/10). So the
