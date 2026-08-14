@@ -24,6 +24,7 @@ from . import metrics as metrics_mod
 from .triage import TriageResult
 from .meta_epistemic import MetaGovernor
 from .attestation import content_digest, verify_human_attestation
+from .type1_calibration import latest_calibration, cite as cite_type1
 
 
 def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditResult:
@@ -69,6 +70,13 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
             "SELF-INSTRUMENTATION: no discarded hypotheses recorded on a high-stakes run — the "
             "generated/discarded denominator is unknown, so the false-positive rate is asserted, not "
             "measured. Record killed hypotheses with action_state=deliberately_discarded.")
+
+    # Type-I citation (G4): cite this auditor's calibrated false-demolition rate from the calibration
+    # store (AAE_CALIBRATION), or say honestly it is NOT calibrated. Never 'low' — always the number
+    # and its interval, or nothing. Calibration is produced offline by the control battery.
+    _cal_store = os.environ.get("AAE_CALIBRATION")
+    _cal = latest_calibration(internal, _cal_store) if _cal_store else None
+    ledger.flags.append("TYPE-I: " + cite_type1(_cal))
 
     # closure is ENFORCED, not conventional. Human closure = a valid HMAC over the ledger digest under
     # an operator key the model cannot reach. Independence level 3 is credited only from the

@@ -5,6 +5,27 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.16 — Type-I calibration: the false-demolition rate becomes a cited, bounded number (G4)
+Both real datapoints failed the control-battery / Type-I cell: the engine flagged the false-positive rate
+as "unmeasured". G4 turns it into a measured, honest number. The math already existed
+(`negation_spectrometry.calibrate` → FDR/TDR/AUC); added around it:
+- **A control battery** (`benchmarks/type1_calibration/battery.json`, `general-v1`): 6 VALID items (must
+  survive) + 6 INVALID (must die), balanced across defect classes — an unambiguous, versioned, fallible
+  yardstick.
+- **`aae/type1_calibration.py`**: FDR (Type-I) and TDR with **95% Wilson confidence intervals** (a rate
+  is never a bare point — with a small battery it is intrinsically uncertain and that is shown), plus the
+  calibration record store and `cite()`.
+- **The run cites it (option B — calibrate once, cite):** `pipeline.discipline` reads the latest
+  calibration for the auditor identity from `AAE_CALIBRATION` and reports
+  `TYPE-I: ... = X% [95% CI …, n=… valid controls] …`, or honestly "NOT CALIBRATED" — never "low".
+  Calibration is a **periodic safety re-calibration**, shippable to clients as an update patch (dated
+  records, latest-wins; a bigger battery tightens the interval).
+- **`calibrate.py`** turns an auditor's battery outcomes into a record.
+Because this is an error theory, it is validated by **independent rounds** in
+`tests/test_type1_calibration.py`: analytic cases (perfect/paranoid/blind/mixed), the AUC re-derived by a
+second average-rank Mann-Whitney method, and a Monte-Carlo **coverage** test (the 95% interval covers the
+true rate ~95% of the time) plus a convergence check. Suite 219 green.
+
 ## 0.14.15 — Generous, configurable eye timeout (a local Ollama eye was cut off at 60s)
 The first successful level-3 product run (EDPS AI-risk guidance, local Ollama eye) surfaced it: the
 adapter's HTTP timeout was **60s**, too short for a slow LOCAL model on a big audit payload, so the eye
