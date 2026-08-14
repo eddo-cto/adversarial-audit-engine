@@ -5,6 +5,19 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.17 — Deep-causal on a deterministic structural trigger, enforced (A1)
+Datapoint 3 (EDPS, HIGH posta, 3 sparse findings) left deep-causal off, and the scorecard called it a
+gap. The data says otherwise: the 10-run measurement classified deep_causal as CONTEXTUAL (7/10). So the
+honest policy is neither a blanket "always on HIGH posta" (contradicts the measurement) nor the agent's
+whim (not measurable), but a deterministic STRUCTURAL trigger — new `aae/layer_policy.deep_causal_warranted`:
+HIGH posta AND (>= 5 findings OR >= 2 findings sharing a taxonomy cell OR a conceptual-novel finding).
+On a small/sparse run it stays off — so EDPS's 3 unrelated findings correctly do NOT warrant it (the
+earlier "gap" was the scorecard, not the engine). Wired on both entry points: the orchestrator uses it to
+auto-deploy, and `pipeline.discipline` ENFORCES it on the product path — a warranted-but-absent deep-causal
+is flagged ("DEEP-CAUSAL WARRANTED BUT NOT RUN"), so it cannot be silently skipped. `commands/audit.md`
+states the exact trigger. The threshold (5) is a named, tunable hypothesis; the mechanism is the principled
+part. Pinned by `tests/test_deep_causal_policy.py`. Suite 227 green.
+
 ## 0.14.16 — Type-I calibration: the false-demolition rate becomes a cited, bounded number (G4)
 Both real datapoints failed the control-battery / Type-I cell: the engine flagged the false-positive rate
 as "unmeasured". G4 turns it into a measured, honest number. The math already existed

@@ -25,6 +25,7 @@ from .triage import TriageResult
 from .meta_epistemic import MetaGovernor
 from .attestation import content_digest, verify_human_attestation
 from .type1_calibration import latest_calibration, cite as cite_type1
+from .layer_policy import deep_causal_warranted
 
 
 def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditResult:
@@ -117,6 +118,16 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
             "status": "ran",
             "justification": f"attested independent eye {attested_identity} (credited by the core)"}
         execution["layers"] = layers
+    # A1 enforcement: deep-causal is warranted deterministically (HIGH posta + something to cluster). If
+    # it was warranted but the payload did not mark it RAN, record the gap — the product path cannot skip
+    # a warranted root-cause pass silently. On a small/sparse run it is not warranted, so no flag.
+    _dc_ran = str(((execution.get("layers") or {}).get("deep_causal") or {}).get("status", "")).lower() == "ran"
+    if deep_causal_warranted(ledger.findings, max_posta) and not _dc_ran:
+        ledger.flags.append(
+            "DEEP-CAUSAL WARRANTED BUT NOT RUN: high posta with clustering structure (>=5 findings, or "
+            ">=2 findings sharing a taxonomy cell, or a conceptual-novel finding) — root-cause clustering "
+            "should have run; coverage of non-local roots is unverified.")
+
     manifest = build_manifest(ledger, execution,
                               triage=payload.get("triage"),
                               governor_ran=result.meta is not None)

@@ -34,6 +34,7 @@ from .gates import (enforce_defense_gate, enforce_coverage_gate,
 from .run_manifest import build_manifest, enforce_run_validity
 from .source_grade import enforce_source_grade_gate, source_grade_coverage
 from .adapters import external_eye_from_env
+from .layer_policy import deep_causal_warranted
 from . import metrics as metrics_mod
 from .triadic import TriadicLayer, TriadicResult
 from .construens import ConstruensLayer, ConstruensResult
@@ -259,8 +260,11 @@ class Orchestrator:
         construens_res = None
         if (config.enable_construens or warranted) and config.construens_idea:
             construens_res = ConstruensLayer(self.client).run(config.construens_idea, str(dossier))
+        # deep-causal uses the A1 STRUCTURAL trigger (stakes + something to cluster), not bare posta:
+        # on a small/sparse run it stays off, matching the measurement and a competent auditor.
+        dc_warranted = config.auto_deep_layers and deep_causal_warranted(unique, config.max_posta)
         deep_causal_res = None
-        if config.enable_deep_causal or warranted:
+        if config.enable_deep_causal or dc_warranted:
             deep_causal_res = DeepCausalLayer(self.client).run(
                 artifact, [f"{f.id}: {f.element}" for f in unique])
 

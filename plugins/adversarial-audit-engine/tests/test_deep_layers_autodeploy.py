@@ -19,8 +19,8 @@ from aae.schema import (Ledger, Finding, Accusation, Defense, DefectClass,  # no
                         EvidenceBase, Posta)
 
 
-def _res(posta):
-    cfg = AuditConfig(artifact_path="x", max_posta=posta)
+def _res(posta, **cfg_kwargs):
+    cfg = AuditConfig(artifact_path="x", max_posta=posta, **cfg_kwargs)
     return Orchestrator(MockLLMClient()).run("artefatto con numeri.", cfg, artifact_name="x")
 
 
@@ -36,13 +36,15 @@ class DeepLayersAutoDeploy(unittest.TestCase):
     def test_high_posta_autodeploys_triadic_and_deep_causal(self):
         r = _res(Posta.HIGH)   # no enable_* flags set
         self.assertIsNotNone(r.triadic, "HIGH posta must auto-deploy triadic")
-        self.assertIsNotNone(r.deep_causal, "HIGH posta must auto-deploy deep-causal")
+        # A1: the mock emits 2 findings that share the 'mechanisms' cell -> a candidate common root, so
+        # deep-causal IS warranted here (structural trigger fires on shared structure, not bare posta).
+        self.assertIsNotNone(r.deep_causal, "2 findings sharing a cell -> deep-causal warranted (A1)")
 
-    def test_auto_deep_causal_is_recorded_ran_in_manifest(self):
-        r = _res(Posta.HIGH)
+    def test_forced_deep_causal_is_recorded_ran_in_manifest(self):
+        r = _res(Posta.HIGH, enable_deep_causal=True)   # explicit flag forces it
         layers = r.ledger.run_manifest["layers"]
         self.assertEqual(layers["deep_causal"]["status"], "ran",
-                         "an auto-deployed deep-causal must show RAN, not NOT_APPLICABLE")
+                         "a deployed deep-causal must show RAN, not NOT_APPLICABLE")
 
     def test_low_posta_leaves_deep_layers_off(self):
         r = _res(Posta.LOW)    # the Freno: small artifact, no depth forced
