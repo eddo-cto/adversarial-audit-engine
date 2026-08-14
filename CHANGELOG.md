@@ -5,6 +5,14 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.15 — Generous, configurable eye timeout (a local Ollama eye was cut off at 60s)
+The first successful level-3 product run (EDPS AI-risk guidance, local Ollama eye) surfaced it: the
+adapter's HTTP timeout was **60s**, too short for a slow LOCAL model on a big audit payload, so the eye
+timed out mid-review and had to be hand-patched to finish. Audits are not latency-sensitive: the default
+is now **300s**, and `OpenAICompatibleClient` reads `AAE_EYE_TIMEOUT` (or a constructor arg) to override
+— so the independent eye completes without a manual patch. Pinned by `tests/test_adapter_timeout.py`.
+Suite 207 green.
+
 ## 0.14.14 — One contract, one discipline: the two entry points unified
 The two entry points ran the SAME ~8 discipline steps in two files, and had already **drifted on 4 rules**
 (grounding, integrity-as-flags, self-instrumentation, human-HMAC were enforced on only one path) — so the

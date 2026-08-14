@@ -32,7 +32,9 @@ from .llm import LLMClient
 from .schema import IndependenceLevel
 
 
-def _post_json(url: str, payload: dict, headers: dict, timeout: int = 60) -> dict:
+def _post_json(url: str, payload: dict, headers: dict, timeout: int = 300) -> dict:
+    # 300s default, not 60: a LOCAL Ollama eye is slow on a big audit payload, and a real run
+    # timed out mid-review at 60s. Audits are not latency-sensitive; override with AAE_EYE_TIMEOUT.
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
     with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -48,12 +50,17 @@ class OpenAICompatibleClient(LLMClient):
 
     def __init__(self, model: str, base_url: str = "https://api.openai.com/v1",
                  api_key: str | None = None, vendor: str | None = None,
-                 env_key: str = "OPENAI_API_KEY"):
+                 env_key: str = "OPENAI_API_KEY", timeout: int | None = None):
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key or os.environ.get(env_key) or "none"
         self.vendor = vendor or _vendor_from_url(base_url)
         self.identity = f"{self.vendor}:{model}"
+        # generous default so a slow LOCAL eye is not cut off; AAE_EYE_TIMEOUT overrides.
+        try:
+            self.timeout = timeout if timeout is not None else int(os.environ.get("AAE_EYE_TIMEOUT", "300"))
+        except (TypeError, ValueError):
+            self.timeout = 300
 
     def complete(self, system: str, user: str, *, max_tokens: int = 4096,
                  temperature: float = 0.2) -> str:
@@ -67,7 +74,8 @@ class OpenAICompatibleClient(LLMClient):
         headers = {"Content-Type": "application/json",
                    "Authorization": f"Bearer {self.api_key}"}
         try:
-            data = _post_json(f"{self.base_url}/chat/completions", payload, headers)
+            data = _post_json(f"{self.base_url}/chat/completions", payload, headers,
+                              timeout=self.timeout)
         except urllib.error.URLError as e:
             raise RuntimeError(f"{self.identity} request failed: {e}") from e
         return data["choices"][0]["message"]["content"]
