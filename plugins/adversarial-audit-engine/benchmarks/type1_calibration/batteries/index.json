@@ -1,0 +1,9 @@
+{
+  "active": "general-v2",
+  "note": "Block structure for Type-I control batteries. Exactly one card is 'active' (the base). Domain cards are added as separate files and can replace the active base per client/domain. Each card is calibrated independently; calibration records are keyed by (auditor_identity, battery_id), latest-wins by date, so every card carries its own honest number.",
+  "cards": [
+    {"battery_id": "general-v1", "file": "general-v1.json", "kind": "base",   "domain": "generic", "status": "superseded", "n_valid": 6,  "n_invalid": 6},
+    {"battery_id": "general-v2", "file": "general-v2.json", "kind": "base",   "domain": "generic", "status": "active",     "n_valid": 24, "n_invalid": 12}
+  ],
+  "how_to_add_a_domain_card": "1) write batteries/<domain>-v1.json in the same schema (id,label,class_hint,artifact,rationale), VALID-HEAVY with near-miss valid items that look wrong but hold; 2) python3 make_blind.py <domain>-v1 <out_dir> --result-path <win_path>; 3) have a FRESH, blind auditor (never one that has seen the labels) score the blind file; 4) python3 calibrate.py <auditor_identity> outcomes.json _calibration.jsonl <domain>-v1; 5) set that card 'active' here if it should be the base for that client."
+}

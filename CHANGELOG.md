@@ -5,6 +5,22 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.19 — Block structure for control batteries (swappable base + domain cards)
+The Type-I battery becomes modular. `benchmarks/type1_calibration/batteries/` now holds one CARD per
+`battery_id`, with a manifest (`index.json`) that names the single ACTIVE base card; domain cards are added
+as separate files over time and can replace the active base per client/domain. Calibration records are
+already keyed by `(auditor_identity, battery_id)` (latest-wins by date), so every card carries its own
+honest number. The base card is upgraded to **`general-v2`: 24 valid + 12 invalid, VALID-HEAVY and
+NEAR-MISS by design** — the valid items look superficially wrong (many summands, percentage-point-vs-
+relative distinctions, valid-but-unusual logic, correct-but-tricky citations) yet survive the strongest
+defence. That matters because the Type-I rate is bounded by the VALID controls: a trivially-correct valid
+item never tempts a false demolition, so it measures nothing; a near-miss does. Every numeric/date label
+is verified in code at build time. New reusable tool `make_blind.py` turns any card into a blind audit file
+(neutral, shuffled ids) plus a private answer key kept out of the repo (`.gitignore`), enforcing the
+anti-contamination invariant when adding a card. `general-v1` (6+6) is retained as history, marked
+superseded. No engine-code change; the discipline is unchanged. The v2 calibration NUMBER is produced by a
+fresh blind auditor next; until then runs still cite the standing record.
+
 ## 0.14.18 — First real Type-I calibration shipped (blind, Sonnet 5)
 The G4 mechanism (0.14.16) was measured but uncalibrated — runs said "NOT CALIBRATED". This ships the
 first real number. The 12-item control battery (`general-v1`, 6 valid + 6 invalid) was audited BLIND by a
