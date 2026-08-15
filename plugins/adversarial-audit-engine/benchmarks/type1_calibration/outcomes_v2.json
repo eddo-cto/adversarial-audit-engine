@@ -1,0 +1,182 @@
+[
+  {
+    "id": "V04",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V20",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V13",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "I12",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "I07",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "V10",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V08",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V01",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V12",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "I08",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "V11",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V07",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V17",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V15",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "I03",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "V05",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "I01",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "V14",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "I06",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "V23",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "I11",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "I04",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "V18",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V09",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V21",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "I02",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "V24",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V22",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V16",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V03",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "I09",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "V19",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "I05",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "I10",
+    "label": "invalid",
+    "condemned": 1
+  },
+  {
+    "id": "V02",
+    "label": "valid",
+    "condemned": 0
+  },
+  {
+    "id": "V06",
+    "label": "valid",
+    "condemned": 0
+  }
+]

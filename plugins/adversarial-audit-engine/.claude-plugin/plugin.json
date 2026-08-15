@@ -1,6 +1,6 @@
 {
   "name": "adversarial-audit-engine",
-  "version": "0.14.19",
+  "version": "0.14.20",
   "description": "Cross-model audit engine for documents and technical artifacts. Blind adversarial roles try to falsify the artifact; a dependency-free Python core enforces the discipline (grounding gate on verbatim quotes, Type-I error control, verdict gates); the independent eye can run on a different model vendor. Never reports 'validated' on internal grounds: only a human does.",
   "author": { "name": "Capybara Media", "email": "hello@capybaramedia.com" },
   "homepage": "https://github.com/eddo-cto/adversarial-audit-engine",

@@ -5,6 +5,17 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 0.14.20 — general-v2 calibrated: Type-I 0% [95% CI 0-14%, n=24]
+A fresh, blind Sonnet 5 auditor scored the general-v2 base card (24 valid near-miss + 12 invalid): all
+24 valid items survived (0 false demolitions) and all 12 invalid were demolished → **Type-I = 0%, 95% CI
+[0%, 14%], power TDR = 100%, AUC = 1.0** (`_calibration.jsonl`, auditor `anthropic:claude-sonnet-5`,
+battery `general-v2`, 2026-08-15). This tightens the standing bound from [0%, 39%] (n=6) to [0%, 14%]
+(n=24) and — the point of the near-miss design — the 0% now holds against valid items engineered to look
+wrong (many summands, pp-vs-relative, valid-but-unusual logic, correct-but-tricky citations). Appended
+latest-wins, so runs for this auditor now cite the general-v2 number instead of general-v1. Honest note:
+this is still the auditor's condemn/hold decision on a generic battery; domain cards remain the path to
+domain transfer. No engine-code change.
+
 ## 0.14.19 — Block structure for control batteries (swappable base + domain cards)
 The Type-I battery becomes modular. `benchmarks/type1_calibration/batteries/` now holds one CARD per
 `battery_id`, with a manifest (`index.json`) that names the single ACTIVE base card; domain cards are added
