@@ -11,9 +11,11 @@
 
 **[Read the story — how it was built and hardened across many adversarial rounds](STORY.md)**
 
-**Status: research preview (v0.14.20).** A tool that *multiplies* a competent human reviewer — it does not
-replace one, and it is not an oracle. Tested across many adversarial self-audit rounds and on real cases
-(a consensus protocol, incident RCA, threat modeling, multi-regulation conflicts, scientific peer review).
+**Status: first stable release (v1.0.0).** A tool that *multiplies* a competent human reviewer — it does
+not replace one, and it is not an oracle. The public API and the trust-protocol invariants are frozen for
+1.x (**[`API.md`](plugins/adversarial-audit-engine/API.md)**). Tested across many adversarial self-audit
+rounds and on real cases (a consensus protocol, incident RCA, threat modeling, multi-regulation conflicts,
+scientific peer review), with the auditor's own Type-I error calibrated on a control battery.
 
 ## What is enforced in code (the trust protocol)
 
@@ -37,7 +39,9 @@ pinned by a test, so it behaves identically every run and cannot be talked out o
   recorded defense is structurally impossible — the rule most responsible for the near-zero false-positive
   rate.
 - **Type-I control on the falsifier itself** (`aae/negation_spectrometry.py`): a bounded, measured
-  false-demolition rate, so the auditor cannot quietly over-demolish valid artifacts.
+  false-demolition rate, so the auditor cannot quietly over-demolish valid artifacts. The auditor is
+  **calibrated** on a blind control battery and each run **cites** the number with its confidence interval
+  (`benchmarks/type1_calibration/`), never "low" — it gives the rate or says "not calibrated".
 
 Full version history: **[`CHANGELOG.md`](CHANGELOG.md)**.
 
@@ -119,10 +123,14 @@ done
 - The "yardstick" (ground truth) can be wrong: the engine treats it as fallible.
 - Coverage is *per defect class*, not global: some classes (e.g. genuinely novel non-local concepts) are
   routed to the human by construction.
-- It is a research preview: use it as decision support, not as the final authority.
+- It is decision support, not the final authority: internal completion never exceeds
+  `EXTERNAL_REVIEW_PENDING`; only a human (level 4) validates.
 
 ## Documents
 
+- **[`API.md`](plugins/adversarial-audit-engine/API.md)** — the public API & stability contract frozen for
+  1.x: the `--schema` payload contract, the `run_core.py` CLI, `pipeline.discipline`, the `AAE_*` env
+  variables, and the SemVer policy.
 - **[`GLOSSARY.md`](plugins/adversarial-audit-engine/GLOSSARY.md)** — every module and coined term in one
   plain-language line.
 - **[`INVARIANTI_metodo.md`](plugins/adversarial-audit-engine/INVARIANTI_metodo.md)** — the
@@ -134,6 +142,9 @@ done
 - **[`USAGE_LEDGER.md`](plugins/adversarial-audit-engine/USAGE_LEDGER.md)** — the meta persistence layer.
 - **[`INDEPENDENCE_free.md`](plugins/adversarial-audit-engine/INDEPENDENCE_free.md)** — how to get a
   **free level-3 independent eye** (local Ollama / free-tier APIs) without a paid API.
+- **[`benchmarks/type1_calibration/README.md`](plugins/adversarial-audit-engine/benchmarks/type1_calibration/README.md)**
+  — the Type-I calibration: the swappable **block structure** of control batteries, how to calibrate an
+  auditor **blind**, and how the run cites the number.
 
 ## Papers
 

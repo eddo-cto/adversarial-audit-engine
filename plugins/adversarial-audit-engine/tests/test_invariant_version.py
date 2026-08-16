@@ -48,7 +48,7 @@ class VersionCoherence(unittest.TestCase):
     def test_readme_status_matches_package(self):
         with open(os.path.join(REPO_ROOT, "README.md"), encoding="utf-8") as fh:
             readme = fh.read()
-        m = re.search(r"Status: research preview \(v([0-9][0-9.]*)\)", readme)
+        m = re.search(r"Status:[^(]*\(v([0-9][0-9.]*)\)", readme)
         self.assertIsNotNone(m, "README lost its status line")
         self.assertEqual(
             m.group(1), aae.__version__,

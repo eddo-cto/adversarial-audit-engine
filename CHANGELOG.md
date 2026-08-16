@@ -5,6 +5,28 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.0.0 — First stable release: API frozen, trust protocol standardized
+The engine reaches 1.0. This is not "audits are now validated" (only a human validates) — it is that the
+**tool is mature and standardized**: one audited discipline (`aae.pipeline.discipline`), one contract
+(`--schema`), a calibrated Type-I number the run cites, and a public surface that will not break within the
+1.x line. What 1.0 declares:
+
+- **Public API frozen for 1.x** — new `API.md` fixes the `--schema` payload/finding keys, the enum
+  vocabularies (additive-only), the `run_core.py` CLI, `discipline()`'s signature, the 11 `AAE_*`
+  variables, and a SemVer policy (what won't break, what may be added, what triggers 2.0). Pinned by
+  `tests/test_api_surface.py` so drift fails CI.
+- **Trust protocol standardized** — cryptographic human closure (HMAC), attested cross-vendor independence,
+  the A+B run-validity manifest, grounding gate, defense-gate, source-grade gate, deterministic
+  meta-governor; all on one code path since the 0.14.14 unification.
+- **Type-I calibrated** — auditor `anthropic:claude-sonnet-5` at 0% [95% CI 0–14%, n=24] on the near-miss
+  `general-v2` battery; swappable **block structure** for domain cards.
+- **A1 deep-causal** on a deterministic structural trigger.
+- Validated on 3 real public-document datapoints (DP3 EDPS at attested level 3).
+
+Honest boundaries carried into 1.0: it multiplies a competent reviewer, it is not an oracle; internal
+completion never exceeds `EXTERNAL_REVIEW_PENDING`; calibration certainty scales with battery size; no
+external/paid pilot yet. Suite 233 green.
+
 ## 0.14.20 — general-v2 calibrated: Type-I 0% [95% CI 0-14%, n=24]
 A fresh, blind Sonnet 5 auditor scored the general-v2 base card (24 valid near-miss + 12 invalid): all
 24 valid items survived (0 false demolitions) and all 12 invalid were demolished → **Type-I = 0%, 95% CI
