@@ -66,6 +66,43 @@ def is_grounded(quote: str, source: str) -> bool:
     return q in normalize(source)
 
 
+_FOOTNOTE_RE = re.compile(r"\b\d{1,3}\b")
+
+
+def _norm_fn(s: str) -> str:
+    """normalize() + footnote-marker tolerance: drop standalone 1-3 digit tokens
+    (inline footnote/paragraph numbers) from BOTH sides so a real quote broken only
+    by 'interest 53, an interest' still matches. Applied symmetrically, so it cannot
+    make a fabricated string match — it only removes short numerals present on both."""
+    s = normalize(s)
+    s = _FOOTNOTE_RE.sub(" ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def _atomic_fragments(evidence: str) -> list[str]:
+    """Explicitly-quoted spans (between " " or « »), each further split on an ellipsis
+    used INSIDE a quote to join two passages. Editorial glue outside quotes is ignored."""
+    spans = re.findall(r'"([^"]+)"', evidence) + re.findall(r"«([^»]+)»", evidence)
+    frags: list[str] = []
+    for sp in spans:
+        for fr in re.split(r"\.\.\.|…", sp):
+            fr = fr.strip()
+            if len(_norm_fn(fr)) >= _MIN_QUOTE_CHARS:
+                frags.append(fr)
+    return frags
+
+
+def is_grounded_fragments(evidence: str, source: str) -> bool:
+    """Recover evidence that is verbatim but broken by footnote markers or composite
+    '...' joins: EVERY explicitly-quoted, footnote-normalized fragment must be present.
+    Preserves 'no fabrication condemns' — one absent fragment fails the whole."""
+    frags = _atomic_fragments(evidence)
+    if not frags:
+        return False
+    src = _norm_fn(source)
+    return all(_norm_fn(fr) in src for fr in frags)
+
+
 def _strip_boiler(text: str, bp) -> str:
     for b in bp:
         text = text.replace(b, " ")
@@ -107,6 +144,12 @@ def negation_context_risk(quote: str, source: str) -> bool:
 def classify(quote: str, source: str) -> str:
     if is_grounded(quote, source):
         return "negation_risk" if negation_context_risk(quote, source) else "strict"
+    if is_grounded_fragments(quote, source):
+        # verbatim fragments, only footnote-/ellipsis-broken -> as strong as a strict match
+        frags = _atomic_fragments(quote)
+        if any(negation_context_risk(fr, source) for fr in frags):
+            return "negation_risk"
+        return "strict"
     if is_grounded_fuzzy(quote, source):
         return "fuzzy"
     return "absent"

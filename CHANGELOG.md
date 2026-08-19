@@ -5,6 +5,19 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.0.1 — Footnote-tolerant, fragment-aware grounding (real-document hardening)
+A real-use run on the footnoted EDPB Opinion 28/2024 (AI models & GDPR) exposed a recall gap: legitimate
+verbatim quotes were flagged "absent" only because the source carried inline **footnote markers**
+("legitimate interest **53**, an interest") or because the auditor joined two real passages with "...".
+The grounding gate now, when a whole-string match fails, extracts the explicitly-quoted spans (between
+`"` `"` or `«` `»`), splits each on an internal ellipsis, drops standalone 1–3-digit footnote/paragraph
+markers **symmetrically** from quote and source, and requires **every** resulting fragment to be present
+verbatim. This recovers genuinely-grounded findings on footnoted legal/regulatory documents (the target
+domain) while preserving the guarantee: one absent fragment still fails the whole (no fabrication
+condemns), and editorial glue outside quotation marks is ignored. Verified by re-adjudicating the real
+EDPB findings (grounding flags 7→4, no verdict regressions) and pinned by `tests/test_grounding_fragments.py`.
+Suite 239 green. No API/contract change (patch).
+
 ## 1.0.0 — First stable release: API frozen, trust protocol standardized
 The engine reaches 1.0. This is not "audits are now validated" (only a human validates) — it is that the
 **tool is mature and standardized**: one audited discipline (`aae.pipeline.discipline`), one contract
