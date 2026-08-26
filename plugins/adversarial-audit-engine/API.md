@@ -19,6 +19,16 @@ CI rather than shipping silently.
 `accusation` (`text`, `base`, `evidence`, `sections`), `defense` (`attempted`, `present`, `fact`),
 `cost_to_fix`, `action`, `declared_limit`, `sources`, `severity`, `source_grade`, `action_state`.
 
+**finding — optional temporal/epistemic axis (added 1.1.0, record-only).** These fields are **not
+required** in `findings.json` and are **not** part of the enforced `--schema` template; they type a
+finding's status across turns in longitudinal use and are ignored by the verdict state machine. They may
+appear on the persisted ledger and round-trip if present: `temporal_status`
+(`stable|provisional|transient|conflicted`), `likelihood` (float, only on `provisional`; a declared,
+NON-calibrated estimate) + `likelihood_basis` (required when `likelihood` is set), `conflict_with`
+(claim keys of opposing vectors), `perishable_pivot` (bool) + `pivot_valid_until`, `superseded_by`, and
+`claim_key` — a deterministic cross-run identity of the claim, **auto-filled on serialize**, so every
+persisted finding carries one. Consumers that do not know these fields may ignore them safely.
+
 **vocabularies (enum members are additive in 1.x — new members may be appended, none removed/renamed):**
 - `taxonomy_cell`: premises, inputs, mechanisms, outputs, boundary, interface
 - `defect_class`: lookup, numeric, idiosyncratic_local, non_local_mechanical,

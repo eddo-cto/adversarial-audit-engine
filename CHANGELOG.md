@@ -5,6 +5,27 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.1.0 — Temporal/epistemic axis on findings (longitudinal, record-only)
+Longitudinal use (auditing a living artifact across turns as new primary documents arrive) exposed
+statuses the ledger could not name: a finding can be **provisional** (suspected, not yet realized),
+**transient** (true this turn, resolved later), or **conflicted** (two vectors in genuine disagreement —
+the Belnap "both" state the ledger previously collapsed on overwrite). These are a **third axis**,
+orthogonal to the taxonomy (WHERE a defect is) and to the verdict (this turn's adjudicated truth). This
+release adds that axis to `Finding`, **record-only**: `adjudicate()` never reads it and the verdict state
+machine is untouched. New optional fields: `temporal_status` (`stable|provisional|transient|conflicted`),
+`likelihood` + `likelihood_basis` (a **declared, non-calibrated** estimate on a provisional finding —
+basis required, so a bare number can never masquerade as a measured rate), `conflict_with` (claim keys of
+the opposing vectors), `perishable_pivot` + `pivot_valid_until` (a load-bearing datum that must be
+re-verified each turn), and — the primitive the rest depends on — `claim_key`, a deterministic cross-run
+identity of the *claim* (stable under changes of per-run id, verdict, and connective prose) plus
+`superseded_by`, so a longitudinal tracker can draw a claim's status line across turns. `claim_key` is
+auto-filled on serialize, so **every** ledger now carries it. All fields default unset (like
+`source_grade=9`): a one-shot run asserts no temporal judgment. Backward-compatible and additive — the
+`--schema` agent contract is unchanged, `content_digest` (element+verdict) is unchanged, so existing
+consumers and human attestations are unaffected. Also: `commands/audit.md` now requires `accusation.evidence`
+to be ONE verbatim quote (no editorial gloss), reducing upstream the mixed-evidence downgrades the 1.0.1
+grounding gate handles. Pinned by `tests/test_temporal_axis.py` (13 tests). Suite 252 green.
+
 ## 1.0.1 — Footnote-tolerant, fragment-aware grounding (real-document hardening)
 A real-use run on the footnoted EDPB Opinion 28/2024 (AI models & GDPR) exposed a recall gap: legitimate
 verbatim quotes were flagged "absent" only because the source carried inline **footnote markers**

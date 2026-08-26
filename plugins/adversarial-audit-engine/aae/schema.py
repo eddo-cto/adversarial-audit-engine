@@ -67,6 +67,22 @@ class Verdict(str, Enum):
     PENDING = "pending"                        # not yet adjudicated
 
 
+class TemporalStatus(str, Enum):
+    """Temporal/epistemic status of a finding ACROSS turns (longitudinal use).
+
+    A third axis, orthogonal to the taxonomy (WHERE the defect is) and to the
+    verdict (this turn's adjudicated truth): it types the status of a claim as
+    the audit is re-run against new primary documents over time. The four values
+    are mutually exclusive lifecycle points — tested on the OPTT longitudinal
+    corpus, no two co-occur at a single turn. `perishable_pivot` is a SEPARATE
+    orthogonal flag on Finding, because it genuinely co-occurs with a lifecycle
+    state. NEVER read by adjudicate(): purely record-only. Default unset."""
+    STABLE = "stable"            # holds this turn, no reason to expect change
+    PROVISIONAL = "provisional"  # suspected, not yet realized (carries a likelihood)
+    TRANSIENT = "transient"      # true this turn, resolved/superseded at a later one
+    CONFLICTED = "conflicted"    # two vectors in disagreement, both kept (Belnap B)
+
+
 class ActionState(str, Enum):
     OPEN = "open"
     DONE = "done"
@@ -142,6 +158,20 @@ class Finding:
     source_grade: int = 9   # SourceGrade of the load-bearing datum (1 primary-filed,
                             # 2 institutional, 3 generalist, 9 undeclared) — round 12
 
+    # ---- temporal/epistemic axis (round 19, record-only, longitudinal) ------
+    # Orthogonal to taxonomy (WHERE) and to verdict (adjudicated truth THIS turn).
+    # NEVER read by adjudicate(): purely additive/record-only. Default unset — like
+    # source_grade=9, a one-shot run asserts no temporal judgment; the axis lights
+    # up only under longitudinal use or when a role types it explicitly.
+    temporal_status: Optional[TemporalStatus] = None
+    likelihood: Optional[float] = None        # only on provisional; a DECLARED, NON-CALIBRATED estimate in [0,1]
+    likelihood_basis: Optional[str] = None    # required if likelihood is set: what the estimate rests on
+    conflict_with: list[str] = field(default_factory=list)  # only on conflicted: claim_key(s) of the opposing vector(s)
+    perishable_pivot: bool = False            # orthogonal flag: rests on a time-sensitive datum (longitudinal gap 4.3)
+    pivot_valid_until: Optional[str] = None   # optional: date by which the perishable pivot must be re-verified
+    claim_key: Optional[str] = None           # stable cross-run identity of the CLAIM; auto-filled on serialize if unset
+    superseded_by: Optional[str] = None       # claim_key of the later-turn finding that resolved/replaced this one
+
     # ---- state machine -------------------------------------------------
 
     def adjudicate(self) -> Verdict:
@@ -192,9 +222,36 @@ class Finding:
         self.verdict = Verdict.NEEDS_EXPERT
         return self.verdict
 
+    def compute_claim_key(self) -> str:
+        """Deterministic cross-run identity of the CLAIM (not the per-run `id`).
+
+        A stable fingerprint of WHERE + WHAT — taxonomy cell, element, and the
+        accusation text, whitespace/case-normalized — so a longitudinal tracker
+        can recognize the same claim across turns and draw its status line. It
+        does NOT depend on the turn, the verdict, or the wording of connective
+        prose. stdlib only; pure function of the finding's own fields."""
+        import hashlib
+        import re
+        norm_el = re.sub(r"\s+", " ", (self.element or "").strip().lower())
+        norm_acc = re.sub(r"\s+", " ", (self.accusation.text or "").strip().lower())
+        basis = f"{self.taxonomy_cell}|{norm_el}|{norm_acc}"
+        return "ck_" + hashlib.sha1(basis.encode("utf-8")).hexdigest()[:16]
+
     def validate(self) -> list[str]:
         """Return a list of integrity problems (empty == valid)."""
         problems: list[str] = []
+        # temporal axis: soft checks that fire ONLY when the (optional) fields are
+        # populated, so they can never break an existing finding that omits them.
+        if self.likelihood is not None:
+            if not (0.0 <= self.likelihood <= 1.0):
+                problems.append(f"{self.id}: likelihood must be in [0,1].")
+            if not self.likelihood_basis:
+                problems.append(f"{self.id}: likelihood requires a declared basis "
+                                f"(it is a non-calibrated estimate, not a measured rate).")
+            if self.temporal_status != TemporalStatus.PROVISIONAL:
+                problems.append(f"{self.id}: likelihood is only meaningful on a provisional finding.")
+        if self.conflict_with and self.temporal_status != TemporalStatus.CONFLICTED:
+            problems.append(f"{self.id}: conflict_with requires temporal_status=conflicted.")
         if self.verdict == Verdict.ARTIFACT_DEFECTIVE and not self.defense.attempted:
             problems.append(f"{self.id}: condemned without a defense attempt (defense-gate).")
         if self.verdict == Verdict.ARTIFACT_DEFECTIVE and \
@@ -227,6 +284,12 @@ class Finding:
         d["action_state"] = self.action_state.value
         if self.cost_to_fix:
             d["cost_to_fix"] = self.cost_to_fix.value
+        if self.temporal_status:
+            d["temporal_status"] = self.temporal_status.value
+        # always carry the stable claim identity so a longitudinal tracker can
+        # recognize this claim across turns, even if no role set it explicitly.
+        if not d.get("claim_key"):
+            d["claim_key"] = self.compute_claim_key()
         return d
 
 

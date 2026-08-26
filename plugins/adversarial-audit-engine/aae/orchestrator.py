@@ -41,7 +41,8 @@ from .construens import ConstruensLayer, ConstruensResult
 from .deep_causal import DeepCausalLayer, DeepCausalResult
 from .meta_epistemic import MetaGovernor, MetaAssessment
 from .schema import (Finding, Ledger, Accusation, Defense, DefectClass,
-                     EvidenceBase, Posta, CostToFix, Verdict, ActionState)
+                     EvidenceBase, Posta, CostToFix, Verdict, ActionState,
+                     TemporalStatus)
 
 
 # --------------------------------------------------------------------------
@@ -91,6 +92,16 @@ def parse_finding(raw: dict, *, role_key: str) -> Finding | None:
         source_grade=int(raw.get("source_grade", 9) or 9),
         action_state=_enum(ActionState, raw.get("action_state"), ActionState.OPEN),
         discard_justification=raw.get("discard_justification"),
+        # temporal/epistemic axis (record-only; absent -> stays unset)
+        temporal_status=_enum(TemporalStatus, raw.get("temporal_status"), None),
+        likelihood=(float(raw["likelihood"])
+                    if raw.get("likelihood") is not None else None),
+        likelihood_basis=raw.get("likelihood_basis"),
+        conflict_with=list(raw.get("conflict_with", []) or []),
+        perishable_pivot=bool(raw.get("perishable_pivot", False)),
+        pivot_valid_until=raw.get("pivot_valid_until"),
+        claim_key=raw.get("claim_key"),
+        superseded_by=raw.get("superseded_by"),
     )
 
 
@@ -128,6 +139,15 @@ def _finding_to_payload(f: Finding) -> dict:
         "source_grade": f.source_grade,
         "action_state": f.action_state.value,
         "discard_justification": f.discard_justification,
+        # temporal/epistemic axis (record-only) — survives Finding->payload->discipline
+        "temporal_status": f.temporal_status.value if f.temporal_status else None,
+        "likelihood": f.likelihood,
+        "likelihood_basis": f.likelihood_basis,
+        "conflict_with": list(f.conflict_with),
+        "perishable_pivot": f.perishable_pivot,
+        "pivot_valid_until": f.pivot_valid_until,
+        "claim_key": f.claim_key or f.compute_claim_key(),
+        "superseded_by": f.superseded_by,
     }
 
 
