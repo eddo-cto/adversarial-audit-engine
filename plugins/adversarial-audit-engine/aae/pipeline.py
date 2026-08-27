@@ -17,7 +17,7 @@ import os
 from .schema import Ledger, Posta, ActionState
 from .orchestrator import parse_finding, AuditResult
 from .gates import enforce_defense_gate, enforce_coverage_gate, evaluate_completion
-from .source_grade import enforce_source_grade_gate, source_grade_coverage
+from .source_grade import enforce_source_grade_gate, source_grade_coverage, belnap_coverage
 from .run_manifest import build_manifest, enforce_run_validity
 from .grounding import enforce_grounding
 from . import metrics as metrics_mod
@@ -101,6 +101,7 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
                                      attested_identity=attested_identity)
     ledger.completion_state = completion.state
     ledger.source_grade_coverage = source_grade_coverage(ledger)
+    ledger.belnap_coverage = belnap_coverage(ledger)
 
     m = metrics_mod.compute(ledger)
     result = AuditResult(ledger=ledger,

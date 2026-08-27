@@ -5,6 +5,22 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.2.0 — Belnap (4-valued) coverage recovery on the ledger (record-only)
+A boolean covered/not-covered view of the six taxonomy cells collapses two states the engine already
+produces but then discards: **F** — a cell explicitly *excluded-with-justification* (`excluded_cells`) — and
+**B** — a cell carrying a *conflict* (a finding typed `conflicted` on the 1.1.0 temporal axis, two vectors
+kept instead of collapsed). Both were squashed into the same "0" as **N** (a genuinely silent, unexamined
+cell). This release adds `Ledger.belnap_coverage` (record-only): a 4-valued state per cell —
+`T` covered, `F` excluded, `N` silent, `B` conflict — with precedence `B > T > F > N`. Computed in the
+pipeline next to `source_grade_coverage` from fields already on the ledger; it never feeds a verdict. On the
+real audit corpus this recovers a measurable signal: **12.8%** of cells are `F`, previously invisible next
+to the 3.8% that are truly silent. This is the one piece of the derived-taxonomy exploration (VAL-PROP-01/02)
+that survived: that feature was **killed at F0** — its "seams" between cells proved *below* a permutation
+null on real ledgers (z=−2.83), so it never entered the engine — but the Belnap distinction it rested on is a
+real, standalone improvement that does not depend on the (rejected) ternary graph. Backward-compatible,
+additive; the `--schema` contract and `content_digest` are unchanged. Pinned by `tests/test_belnap_coverage.py`
+(5 tests). Suite 257 green.
+
 ## 1.1.0 — Temporal/epistemic axis on findings (longitudinal, record-only)
 Longitudinal use (auditing a living artifact across turns as new primary documents arrive) exposed
 statuses the ledger could not name: a finding can be **provisional** (suspected, not yet realized),

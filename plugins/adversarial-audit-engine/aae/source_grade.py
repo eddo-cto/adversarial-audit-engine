@@ -59,3 +59,43 @@ def source_grade_coverage(ledger: Ledger) -> dict:
         g = int(getattr(f, "source_grade", SourceGrade.UNKNOWN) or SourceGrade.UNKNOWN)
         out[g if g in (1, 2, 3) else 0] += 1
     return out
+
+
+def belnap_coverage(ledger: Ledger) -> dict:
+    """4-valued (Belnap) coverage state per taxonomy cell — round 19, record-only.
+
+    A boolean covered/not-covered view collapses two states the engine already
+    produces but discards. This recovers them:
+        T (true)  — covered: a finding cites the cell
+        F (false) — excluded-with-justification: the cell is in `excluded_cells`
+        N (none)  — silent: neither covered nor excluded (an unexamined gap)
+        B (both)  — a conflict is present: the cell carries a finding typed
+                    `conflicted` (temporal axis), i.e. two vectors kept in
+                    disagreement instead of collapsed.
+    Precedence B > T > F > N (the most informative state wins). Reads only fields
+    the ledger already carries; never feeds a verdict. This is the surviving
+    value from the derived-taxonomy exploration (which was killed at F0): making
+    the excluded (F) and conflict (B) states visible instead of squashed to 0."""
+    from .triage import TAXONOMY
+    covered = {f.taxonomy_cell for f in ledger.findings}
+    excluded = set(ledger.excluded_cells or {})
+    conflicted = set()
+    for f in ledger.findings:
+        ts = getattr(f, "temporal_status", None)
+        ts = getattr(ts, "value", ts)
+        if ts == "conflicted" or getattr(f, "conflict_with", None):
+            conflicted.add(f.taxonomy_cell)
+    per_cell = {}
+    for cell in TAXONOMY:
+        if cell in conflicted:
+            per_cell[cell] = "B"
+        elif cell in covered:
+            per_cell[cell] = "T"
+        elif cell in excluded:
+            per_cell[cell] = "F"
+        else:
+            per_cell[cell] = "N"
+    counts = {"N": 0, "T": 0, "F": 0, "B": 0}
+    for s in per_cell.values():
+        counts[s] += 1
+    return {"per_cell": per_cell, "counts": counts}

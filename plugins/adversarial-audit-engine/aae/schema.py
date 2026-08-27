@@ -317,6 +317,7 @@ class Ledger:
     run_manifest: dict = field(default_factory=dict)   # execution manifest (round 13):
                                  # which layers RAN / NOT_APPLICABLE / MISSING
     source_grade_coverage: dict = field(default_factory=dict)  # per-grade finding count (round 14)
+    belnap_coverage: dict = field(default_factory=dict)  # 4-valued cell state N/T/F/B (round 19, record-only)
 
     def add(self, finding: Finding) -> None:
         self.findings.append(finding)
@@ -352,6 +353,7 @@ class Ledger:
             "content_digest": self.content_digest,
             "run_manifest": self.run_manifest,
             "source_grade_coverage": self.source_grade_coverage,
+            "belnap_coverage": self.belnap_coverage,
             "findings": [f.to_dict() for f in self.findings],
         }
         return json.dumps(payload, indent=indent, ensure_ascii=False)
