@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "High-complexity verification and adversarial-audit tooling.",
-    "version": "1.2.0"
+    "version": "1.3.0"
   },
   "plugins": [
     {
       "name": "adversarial-audit-engine",
       "source": "./plugins/adversarial-audit-engine",
       "description": "Cross-model audit engine for documents and technical artifacts: blind adversarial review with a dependency-free Python core. Never reports 'validated' on internal grounds: only a human eye does.",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "keywords": ["audit", "verification", "adversarial", "peer-review", "epistemic", "falsification", "llm", "llm-as-a-judge", "evaluation", "reproducibility"]
     }
   ]

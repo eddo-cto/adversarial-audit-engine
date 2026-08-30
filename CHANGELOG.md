@@ -5,6 +5,24 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.3.0 — The deterministic core is non-bypassable (robustness under surprises)
+A real `claude-plus-local` run derailed: an unexpected `TypeError` on the independent-eye call threw, and
+the hive ended the session with a **prose summary** instead of invoking `run_core.py`. **No ledger was
+produced, yet nothing failed** — the Stop hook found no ledger and printed "nothing to check". The trust
+protocol had been silently bypassed: with no core run, verdicts would come from the model, not the code —
+exactly what the engine exists to prevent. This release engineers that shut, in code, not prompt: fetching
+the schema (`run_core.py --schema`, the mandatory first step of every audit) drops an `.audit_pending`
+marker that **only a completed core run clears**; the Stop hook (`governor_check.py`) now, on finding the
+marker but **no ledger**, prints `AUDIT DERAILED` and **exits 2 (blocking)** — the session cannot present as
+a completed audit. Any surprise that derails the run (an exception, a tool error, an eye failure, or the
+model deciding to write prose) leaves the marker and is caught; a genuine non-audit session (no marker)
+passes quietly, and a completed run clears the marker (an `INVALID_RUN` counts — the core still adjudicated
+it). Supporting hardening in `commands/audit.md`: the eye is called with an explicit signature
+(`eye.complete(system=…, user=…)`), an eye that errors **never aborts** the audit (it lowers the
+independence level and the core still runs), and step 6 states the core is non-bypassable. The guarantee no
+longer depends on the model remembering to run the core. Pinned by `tests/test_stop_hook_enforcement.py`
+(6 tests). Suite 263 green. Backward-compatible: valid runs are unaffected; only derailed sessions newly fail.
+
 ## 1.2.0 — Belnap (4-valued) coverage recovery on the ledger (record-only)
 A boolean covered/not-covered view of the six taxonomy cells collapses two states the engine already
 produces but then discards: **F** — a cell explicitly *excluded-with-justification* (`excluded_cells`) — and

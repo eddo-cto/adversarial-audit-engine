@@ -106,10 +106,31 @@ def main() -> int:
     _utf8_stdio()
     out_dir = os.environ.get("AAE_OUT", os.path.join(os.getcwd(), "aae_out"))
     ledgers = sorted(glob.glob(os.path.join(out_dir, "*.ledger.json")))
+    pending = os.path.join(out_dir, ".audit_pending")
     print("== meta-epistemic governor (Stop hook) ==")
     if not ledgers:
+        if os.path.exists(pending):
+            # An audit started (the schema was fetched) but NO deterministic ledger
+            # exists: the run derailed — an exception, a tool error, or the model
+            # writing a prose summary instead of invoking the core. A prose 'referto'
+            # is NOT an audit: verdicts must come from run_core.py, not from the model.
+            # Fail LOUD and BLOCKING so the session cannot present as a completed audit.
+            print("  !! AUDIT DERAILED — the audit started (schema fetched) but produced "
+                  "NO deterministic ledger in", out_dir + ".")
+            print("  A prose summary is NOT an audit: verdicts come from run_core.py, not "
+                  "from the model. This session is INVALID and cannot close.")
+            print("  RECOVER: gather your findings into findings.json and run "
+                  "`run_core.py findings.json`. If a surprise interrupted you (e.g. the "
+                  "independent eye erroring), that only lowers the independence level — it "
+                  "must NEVER skip the core. Run the core, then stop.")
+            return 2   # blocking: Claude Code surfaces this and the audit is not accepted
         print("  no ledger found in", out_dir, "— nothing to check.")
         return 0
+    # A ledger exists: the core ran. Clear any stale marker so it can't misfire later.
+    try:
+        os.remove(pending)
+    except OSError:
+        pass
     led = json.load(open(ledgers[-1], encoding="utf-8"))
 
     # F-HOOK enforcement: a VALIDATED completion is only legitimate if a human

@@ -11,7 +11,7 @@
 
 **[Read the story — how it was built and hardened across many adversarial rounds](STORY.md)**
 
-**Status: stable (v1.2.0).** A tool that *multiplies* a competent human reviewer — it does
+**Status: stable (v1.3.0).** A tool that *multiplies* a competent human reviewer — it does
 not replace one, and it is not an oracle. The public API and the trust-protocol invariants are frozen for
 1.x (**[`API.md`](plugins/adversarial-audit-engine/API.md)**). Tested across many adversarial self-audit
 rounds and on real cases (a consensus protocol, incident RCA, threat modeling, multi-regulation conflicts,

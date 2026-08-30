@@ -187,6 +187,36 @@ def _utf8_stdio() -> None:
             pass
 
 
+_PENDING_MARKER = ".audit_pending"
+
+
+def _mark_audit_pending(out_dir: str) -> None:
+    """Drop a marker the moment an audit fetches the schema (the first mandatory
+    step). It is cleared ONLY by a completed core run (below). If a surprise — an
+    exception, a tool error, or the model deciding to write a prose 'referto'
+    instead of invoking the core — derails the run, the marker survives and the
+    Stop hook rejects the session. This is engineered, non-bypassable enforcement
+    of 'the deterministic core is not optional': it does not rely on the model
+    remembering to run the core."""
+    try:
+        import datetime
+        os.makedirs(out_dir, exist_ok=True)
+        with open(os.path.join(out_dir, _PENDING_MARKER), "w", encoding="utf-8") as fh:
+            fh.write(json.dumps({"started_at": datetime.datetime.now(
+                datetime.timezone.utc).isoformat()}))
+    except Exception:
+        pass  # never let bookkeeping break the audit
+
+
+def _clear_audit_pending(out_dir: str) -> None:
+    """The core ran and wrote a ledger — the disciplined path completed (even an
+    INVALID_RUN counts: the core adjudicated it). Remove the marker."""
+    try:
+        os.remove(os.path.join(out_dir, _PENDING_MARKER))
+    except OSError:
+        pass
+
+
 def main(argv: list[str] | None = None) -> int:
     _utf8_stdio()
     argv = list(sys.argv[1:] if argv is None else argv)
@@ -205,6 +235,7 @@ def main(argv: list[str] | None = None) -> int:
     # a valid payload instead of reverse-engineering the core live (the improvisation
     # a real Claude Code run exposed: guessing class names, listing enums by hand).
     if argv and argv[0] == "--schema":
+        _mark_audit_pending(out_dir)   # an audit has started; only a core run clears this
         print(emit_schema())
         return 0
 
@@ -247,6 +278,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     result = run(payload, out_dir)
+    _clear_audit_pending(out_dir)   # the core ran and wrote a ledger: disciplined path complete
     print(result.summary())
     print(f"\nwritten to: {out_dir}")
     if result.ledger.run_manifest.get("run_validity") != "VALID":
