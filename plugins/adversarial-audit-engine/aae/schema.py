@@ -318,6 +318,9 @@ class Ledger:
                                  # which layers RAN / NOT_APPLICABLE / MISSING
     source_grade_coverage: dict = field(default_factory=dict)  # per-grade finding count (round 14)
     belnap_coverage: dict = field(default_factory=dict)  # 4-valued cell state N/T/F/B (round 19, record-only)
+    internal_identity: str = ""              # "vendor:model" that ran the hive (round 21, record-only)
+    external_attested_identity: str = ""     # the eye ACTUALLY called, adapter-attested; the
+                                             # vendor of this string is what lifts independence to 3
 
     def add(self, finding: Finding) -> None:
         self.findings.append(finding)
@@ -354,6 +357,8 @@ class Ledger:
             "run_manifest": self.run_manifest,
             "source_grade_coverage": self.source_grade_coverage,
             "belnap_coverage": self.belnap_coverage,
+            "internal_identity": self.internal_identity,
+            "external_attested_identity": self.external_attested_identity,
             "findings": [f.to_dict() for f in self.findings],
         }
         return json.dumps(payload, indent=indent, ensure_ascii=False)

@@ -34,6 +34,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(_HERE, "..")))  # -> plugin dir 
 from aae.pipeline import discipline           # THE one disciplined core
 from aae.orchestrator import AuditResult
 from aae import run_metrics as rmx
+from aae import run_registry as reg
 
 
 def run(payload: dict, out_dir: str) -> AuditResult:
@@ -45,7 +46,8 @@ def run(payload: dict, out_dir: str) -> AuditResult:
 
     os.makedirs(out_dir, exist_ok=True)
     stem = "".join(c if c.isalnum() else "_" for c in ledger.artifact_name)
-    with open(os.path.join(out_dir, f"{stem}.ledger.json"), "w", encoding="utf-8") as fh:
+    ledger_path = os.path.join(out_dir, f"{stem}.ledger.json")
+    with open(ledger_path, "w", encoding="utf-8") as fh:
         fh.write(ledger.to_json())
     summary = (result.summary() if hasattr(result, "summary") else "")
     with open(os.path.join(out_dir, f"{stem}.summary.txt"), "w", encoding="utf-8") as fh:
@@ -60,6 +62,11 @@ def run(payload: dict, out_dir: str) -> AuditResult:
                              "run_manifest": ledger.run_manifest,
                              "source_grade_coverage": ledger.source_grade_coverage,
                              "flags": ledger.flags}, ensure_ascii=False) + "\n")
+
+    # single longitudinal run registry (round 21): one line, in ONE known place, capturing the
+    # independence actually achieved and the vendor of the eye as first-class fields. Best-effort:
+    # a registry write NEVER breaks the audit (see run_registry.append). Record-only.
+    reg.append(reg.record_from_ledger(ledger, rec, ledger_path=os.path.abspath(ledger_path)))
     return result
 
 
@@ -164,11 +171,15 @@ Usage:
   run_core.py <findings.json>      run the core on a findings payload
   run_core.py                      same, reading the payload from stdin
   run_core.py --metrics [dir]      longitudinal, bias-resistant metrics panel
+  run_core.py --registry [path]    portfolio panel over the single run registry
   run_core.py --help               this message
   run_core.py --version            print the engine version
 
 Environment:
-  AAE_OUT    output directory (default: ./aae_out)
+  AAE_OUT       output directory for this run (default: ./aae_out)
+  AAE_REGISTRY  explicit path of the single run registry (jsonl); else
+                AAE_HOME/RUN_REGISTRY.jsonl, else ~/.aae/RUN_REGISTRY.jsonl
+  AAE_BOX       optional box label recorded on each registry line
 
 The payload schema is documented in the module docstring at the top of this
 file. The core NEVER reports VALIDATED on internal grounds: the best internal
@@ -244,6 +255,11 @@ def main(argv: list[str] | None = None) -> int:
         if len(argv) > 1:
             out_dir = argv[1]
         print(metrics_report(out_dir))
+        return 0
+
+    # single-registry portfolio panel:  run_core.py --registry [path]
+    if argv and argv[0] == "--registry":
+        print(reg.render(argv[1] if len(argv) > 1 else None))
         return 0
 
     if argv and argv[0].startswith("-"):

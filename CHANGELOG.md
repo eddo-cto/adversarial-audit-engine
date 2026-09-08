@@ -5,6 +5,27 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.4.0 — Single longitudinal run registry (record-only)
+Each run already accrued a self-describing record (`_runs.jsonl`, round 13), but it was written **inside
+that run's own `out_dir`** and never aggregated: answering "how many runs, with what verdicts, at what
+independence, over time" meant a `find(1)` sweep across scattered folders — and the property that matters
+most, the **independence actually achieved and the vendor of the independent eye**, was not recorded at all
+(it had to be reconstructed by hand from the ledger plus who ran the eye). This release closes both gaps.
+The **eye is now a recorded ledger property**: `Ledger.internal_identity` and
+`Ledger.external_attested_identity` persist the identities the completion was computed from — the attested
+one, adapter-supplied, never the model-authored payload (the C1 invariant). And a new module
+(`aae/run_registry.py`) writes **one append-only line per completed run to ONE known location**
+(`AAE_REGISTRY`, else `AAE_HOME/RUN_REGISTRY.jsonl`, else `~/.aae/RUN_REGISTRY.jsonl`), capturing `run_id`,
+timestamp, box, artifact, `run_validity`, verdicts, **`independence_level`**, **`eye_vendor`**, the
+**governor completion** verdict, calibration state, content digest and the ledger path. `run_core.py
+--registry [path]` renders a descriptive portfolio panel (independence distribution, cross-vendor count,
+Type-I calibration) — no single score, abstention never dressed up as success. The registry is strictly
+**record-only and non-authoritative**: it indexes what the deterministic core already decided, never
+adjudicates and never gates, and every write is **best-effort** — a read-only mount or disk error returns
+`None` and can never break an audit. Pinned by `tests/test_run_registry.py` (10 tests). Suite 273 green.
+Backward-compatible: two new optional ledger fields (default `""`); existing runs and consumers are
+unaffected.
+
 ## 1.3.0 — The deterministic core is non-bypassable (robustness under surprises)
 A real `claude-plus-local` run derailed: an unexpected `TypeError` on the independent-eye call threw, and
 the hive ended the session with a **prose summary** instead of invoking `run_core.py`. **No ledger was

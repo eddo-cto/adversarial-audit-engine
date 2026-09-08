@@ -50,11 +50,15 @@ verdicts are output-only; the independent eye is credited only from the attested
 
 - `run_core.py --schema` — print the contract above.
 - `run_core.py <findings.json>` (or payload on stdin) — run the deterministic discipline; write outputs.
-- `run_core.py --metrics [dir]` — longitudinal, bias-resistant metrics panel.
+- `run_core.py --metrics [dir]` — longitudinal, bias-resistant metrics panel (per-`out_dir`).
+- `run_core.py --registry [path]` — portfolio panel over the single run registry (all runs, one place).
 - `run_core.py --version` — engine version. `run_core.py --help` — usage.
 
 **Outputs** (in `AAE_OUT`, default `./aae_out`): `<stem>.ledger.json`, `<stem>.summary.txt`, and an
-appended `_runs.jsonl` longitudinal record.
+appended `_runs.jsonl` longitudinal record. Additionally, one append-only line per completed run is written
+to the **single run registry** (record-only, best-effort): `run_id`, timestamp, box, artifact,
+`run_validity`, verdicts, `independence_level`, `eye_vendor`, governor completion, calibration, content
+digest, ledger path. The ledger now also persists `internal_identity` and `external_attested_identity`.
 
 **Golden rule (invariant):** the core never reports `VALIDATED` on internal grounds. The best internal
 completion is `EXTERNAL_REVIEW_PENDING`; closure to `VALIDATED` requires a human HMAC.
@@ -85,7 +89,10 @@ adapters, deterministic controls). Those names are stable; submodule internals a
 | `AAE_EXTERNAL_ATTESTED_IDENTITY` | identity the adapter attests after a real eye call → credits level 3 | unset |
 | `AAE_CALIBRATION` | path to the Type-I calibration store (`_calibration.jsonl`) the run cites | unset → "NOT CALIBRATED" |
 | `AAE_HUMAN_KEY` / `AAE_HUMAN_ATTESTATION` | HMAC key / attestation for human closure to `VALIDATED` | unset |
-| `AAE_OUT` | output directory | `./aae_out` |
+| `AAE_OUT` | output directory for this run | `./aae_out` |
+| `AAE_REGISTRY` | explicit path of the single run registry (jsonl) | `AAE_HOME/RUN_REGISTRY.jsonl`, else `~/.aae/RUN_REGISTRY.jsonl` |
+| `AAE_HOME` | stable home for the registry when `AAE_REGISTRY` is unset | `~/.aae` |
+| `AAE_BOX` | optional box label recorded on each registry line | unset |
 | `AAE_USAGE_LEDGER` | path for the usage ledger | unset |
 
 ## 5. SemVer policy for 1.x

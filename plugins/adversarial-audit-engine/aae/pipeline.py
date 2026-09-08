@@ -102,6 +102,11 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
     ledger.completion_state = completion.state
     ledger.source_grade_coverage = source_grade_coverage(ledger)
     ledger.belnap_coverage = belnap_coverage(ledger)
+    # Record-only (round 21): persist the identities the completion was computed from, so the
+    # independence of a run is an auditable ledger property — the attested eye is the adapter-
+    # attested one (env/trusted caller), never the model-authored payload (C1 invariant).
+    ledger.internal_identity = internal or ""
+    ledger.external_attested_identity = attested_identity or ""
 
     m = metrics_mod.compute(ledger)
     result = AuditResult(ledger=ledger,
