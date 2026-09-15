@@ -61,6 +61,62 @@ def source_grade_coverage(ledger: Ledger) -> dict:
     return out
 
 
+def enforce_verified_at_source_gate(ledger: Ledger) -> list[str]:
+    """The DUAL of the source-grade gate, for POSITIVE reputation/credential claims.
+
+    The source-grade gate stops a CONDEMNATION resting on weak data. This stops a
+    "verified" BADGE resting on a non-primary source. A reputation or credential
+    claim (`credential_claim=True`) asserted as read on the primary authoritative
+    source (`verified_at_source=True`) but whose load-bearing `source_grade` is
+    worse than primary (an aggregator, a search snippet, or the subject's own page)
+    has NOT earned the badge: the gate downgrades the assertion to self-declared
+    (`verified_at_source=False`, record-only correction) and records a flag. It
+    never touches the verdict — an unearned "verified" is a badge defect, not a
+    conviction. Born from two real misattributions an L3 audit caught (a "Premier
+    Partner" absent from the official directory; a "Clutch 5.0" of another company).
+    """
+    notes: list[str] = []
+    for f in ledger.findings:
+        if not getattr(f, "credential_claim", False):
+            continue
+        if getattr(f, "verified_at_source", None) is not True:
+            continue
+        grade = int(getattr(f, "source_grade", SourceGrade.UNKNOWN) or SourceGrade.UNKNOWN)
+        if grade > int(SourceGrade.PRIMARY_FILED):
+            f.verified_at_source = False   # record-only correction: the badge is not earned
+            notes.append(
+                f"VERIFIED-AT-SOURCE: {f.id}: reputation/credential claim asserted as "
+                f"verified-at-source but its load-bearing datum is grade {grade} "
+                f"(> primary — aggregator / snippet / the subject's own page). Downgraded "
+                f"to self-declared; re-read it on the primary authoritative source "
+                f"(official directory / the review portal itself).")
+    return notes
+
+
+def verified_at_source_coverage(ledger: Ledger) -> dict:
+    """Record-only tally of reputation/credential claims by badge state, so
+    'how many claims actually earned the verified badge' is a measured fact.
+        verified   — credential_claim asserted verified-at-source AND grade == primary
+        declared   — credential_claim not asserted verified-at-source (self-declared)
+        unearned   — asserted verified-at-source but grade worse than primary
+                     (i.e. the gate flagged/downgraded it)
+    Reads only fields already on the finding; call AFTER the gate so 'verified'
+    reflects the corrected state."""
+    out = {"verified": 0, "declared": 0, "unearned": 0}
+    for f in ledger.findings:
+        if not getattr(f, "credential_claim", False):
+            continue
+        vas = getattr(f, "verified_at_source", None)
+        grade = int(getattr(f, "source_grade", SourceGrade.UNKNOWN) or SourceGrade.UNKNOWN)
+        if vas is True and grade == int(SourceGrade.PRIMARY_FILED):
+            out["verified"] += 1
+        elif vas is True:            # asserted but grade > primary (should not survive the gate)
+            out["unearned"] += 1
+        else:
+            out["declared"] += 1
+    return out
+
+
 def belnap_coverage(ledger: Ledger) -> dict:
     """4-valued (Belnap) coverage state per taxonomy cell — round 19, record-only.
 

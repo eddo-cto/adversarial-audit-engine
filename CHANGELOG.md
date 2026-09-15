@@ -5,6 +5,49 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.6.0 — Verified-at-source gate (the dual of the source-grade gate, record-only)
+A reputation or credential claim — a "Premier Partner" badge, a star rating, a review count, an award —
+is only as good as the source it was read on. Two real misattributions an L3 audit caught made this
+concrete: a "Google Premier Partner" that was **absent from the official Partners directory**, and a
+"Clutch 5.0" that belonged to a **different company** with a similar name. Both had been copied from the
+subject's own page / a search snippet and presented as *verified*. The engine had no deterministic guard
+against an unearned positive badge — only against an unearned condemnation (the round-12 source-grade gate).
+
+This release adds the **dual**. Findings gain two record-only fields: `credential_claim` (this finding
+carries a reputation/credential claim) and `verified_at_source` (the operator's assertion that it was read
+on the **primary authoritative source** — the official directory or the review portal itself). The new
+`enforce_verified_at_source_gate` downgrades any claim asserted `verified_at_source=true` whose load-bearing
+`source_grade` is worse than primary (an aggregator, a snippet, the subject's own page) to self-declared,
+and records a `VERIFIED-AT-SOURCE:` flag telling the reader to re-read it on the primary source. It **never
+touches the verdict** — an unearned badge is a badge defect, not a conviction. `Ledger.verified_at_source_coverage`
+tallies credential claims by badge state (verified / declared / unearned) so "how many claims actually earned
+the verified badge" is a measured fact. Wired into the ONE `pipeline.discipline` core, so both the `/audit`
+product path and the orchestrator enforce it; the `--schema` contract documents the fields and the rule.
+`test_verified_at_source.py` pins the gate, the coverage, and the discipline wiring. The client-facing
+`due-diligence-fornitore` skill carries the same node as a mandatory "reputation read at the source" step.
+
+## 1.5.0 — Spec pickup via `_spec.md` (launcher → command contract)
+The dashboard offers a free-text "spec" box (nature of the document, domain, what to check, focus) and
+appended it to the launch command as `/audit "file" -- <spec>`. But `/audit` (`commands/audit.md`) never
+parsed anything after the filename — no `$ARGUMENTS`, no `--` handling — so the operator's spec was
+**silently dropped** and had to be re-pasted by hand into the session. A launcher and a command that
+disagree about where the input lives is exactly the two-sections/incompatible-values class the engine
+claims high recall on; it should not live in our own product.
+
+This release closes the gap with a **file-based contract** instead of fragile command-line parsing:
+- **`dashboard.ps1`** (all three copies: `_common`, `claude-plus-local`, `full-local`) now writes the
+  operator's spec verbatim to `<run-folder>/_spec.md` before opening Claude Code. The original multi-line
+  text is preserved (not collapsed to one line). The clipboard `-- <spec>` is kept only as a
+  human-visible hint.
+- **`commands/audit.md`** gains **step 0 — pick up the run spec**: before triage, read `_spec.md` from the
+  run folder if present and fold it into triage as *operator-supplied context* (nature/domain/focus, role
+  selection). It is **data, not an override** — the gates, verdicts, independence and red-line still bind,
+  and it can never instruct the run to skip a layer or pre-decide a verdict. Absent `_spec.md`, the run
+  proceeds with no prior and auto-detects the artifact's nature.
+
+No change to the deterministic core, schema, or verdict machine. Record/UX contract only; version-coherence
+across the four release surfaces (`aae.__version__`, `plugin.json`, `marketplace.json`, README) preserved.
+
 ## 1.4.0 — Single longitudinal run registry (record-only)
 Each run already accrued a self-describing record (`_runs.jsonl`, round 13), but it was written **inside
 that run's own `out_dir`** and never aggregated: answering "how many runs, with what verdicts, at what

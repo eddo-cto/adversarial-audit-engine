@@ -90,6 +90,10 @@ def parse_finding(raw: dict, *, role_key: str) -> Finding | None:
         sources=list(raw.get("sources", []) or []),
         severity=str(raw.get("severity", "")),
         source_grade=int(raw.get("source_grade", 9) or 9),
+        # verified-at-source axis (#88, record-only + flag; absent -> not a credential claim)
+        credential_claim=bool(raw.get("credential_claim", False)),
+        verified_at_source=(bool(raw["verified_at_source"])
+                            if raw.get("verified_at_source") is not None else None),
         action_state=_enum(ActionState, raw.get("action_state"), ActionState.OPEN),
         discard_justification=raw.get("discard_justification"),
         # temporal/epistemic axis (record-only; absent -> stays unset)

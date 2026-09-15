@@ -61,6 +61,7 @@ def run(payload: dict, out_dir: str) -> AuditResult:
                              "by_class": rec.by_class,
                              "run_manifest": ledger.run_manifest,
                              "source_grade_coverage": ledger.source_grade_coverage,
+                             "verified_at_source_coverage": ledger.verified_at_source_coverage,
                              "flags": ledger.flags}, ensure_ascii=False) + "\n")
 
     # single longitudinal run registry (round 21): one line, in ONE known place, capturing the
@@ -109,6 +110,8 @@ def emit_schema() -> str:
             "sources": ["<primary source refs>"],
             "severity": "alta|media|bassa|nessuna",
             "source_grade": 1,
+            "credential_claim": False,
+            "verified_at_source": None,
             "action_state": "open",
         },
         "vocabularies": {
@@ -129,6 +132,12 @@ def emit_schema() -> str:
             "source_grade: 1=primary filed/executed, 2=institutional/secondary, 3=generalist, "
             "9=undeclared. A condemnation resting on grade>1 is downgraded to NEEDS_READING when a "
             "primary is reachable.",
+            "credential_claim/verified_at_source (reputation & credential claims — partner status, "
+            "rating, review count, award): set credential_claim=true and verified_at_source=true ONLY "
+            "if the claim was read on the PRIMARY authoritative source (the official directory / the "
+            "review portal itself). An aggregator, a search snippet, or the subject's own page is "
+            "self-declared (verified_at_source=false). A claim marked verified_at_source=true whose "
+            "source_grade is worse than 1 is auto-downgraded to self-declared and flagged.",
             "On a HIGH-posta run record >= 1 hypothesis with action_state=deliberately_discarded, "
             "so the false-positive rate is MEASURED, not asserted.",
             "Verdicts are OUTPUT-ONLY — the code assigns them. Never put a verdict in a finding.",

@@ -17,7 +17,8 @@ import os
 from .schema import Ledger, Posta, ActionState
 from .orchestrator import parse_finding, AuditResult
 from .gates import enforce_defense_gate, enforce_coverage_gate, evaluate_completion
-from .source_grade import enforce_source_grade_gate, source_grade_coverage, belnap_coverage
+from .source_grade import (enforce_source_grade_gate, source_grade_coverage, belnap_coverage,
+                           enforce_verified_at_source_gate, verified_at_source_coverage)
 from .run_manifest import build_manifest, enforce_run_validity
 from .grounding import enforce_grounding
 from . import metrics as metrics_mod
@@ -47,6 +48,9 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
     # is downgraded to NEEDS_READING. The operator may declare no primary via source_primary_reachable.
     primary_reachable = bool(payload.get("source_primary_reachable", True))
     ledger.flags.extend(enforce_source_grade_gate(ledger, primary_reachable=primary_reachable))
+    # verified-at-source gate (dual): a reputation/credential claim asserted "verified" but resting on a
+    # non-primary source is downgraded to self-declared and flagged (record-only; never touches verdicts).
+    ledger.flags.extend(enforce_verified_at_source_gate(ledger))
     enforce_coverage_gate(ledger)
     # structural integrity (non-local needs >=2 sections; a declared limit) surfaced as flags.
     ledger.flags.extend(f"INTEGRITY: {p}" for p in ledger.integrity_report())
@@ -101,6 +105,7 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
                                      attested_identity=attested_identity)
     ledger.completion_state = completion.state
     ledger.source_grade_coverage = source_grade_coverage(ledger)
+    ledger.verified_at_source_coverage = verified_at_source_coverage(ledger)
     ledger.belnap_coverage = belnap_coverage(ledger)
     # Record-only (round 21): persist the identities the completion was computed from, so the
     # independence of a run is an auditable ledger property — the attested eye is the adapter-

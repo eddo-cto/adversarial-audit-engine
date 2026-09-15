@@ -158,6 +158,21 @@ class Finding:
     source_grade: int = 9   # SourceGrade of the load-bearing datum (1 primary-filed,
                             # 2 institutional, 3 generalist, 9 undeclared) — round 12
 
+    # ---- verified-at-source axis (round 20 / #88, record-only + flag) --------
+    # The DUAL of source_grade, for POSITIVE reputation/credential claims (partner
+    # status, rating, number of reviews, award). source_grade guards a CONDEMNATION
+    # from resting on weak data; this guards a "verified" BADGE from resting on a
+    # non-primary source. A claim is verified ONLY if read on the PRIMARY
+    # authoritative source (the official directory / the review portal itself); an
+    # aggregator, a search snippet, or the subject's own page is self-declared. The
+    # gate flags any claim asserted verified-at-source whose load-bearing
+    # source_grade is worse than primary (1). Born from two real misattributions an
+    # L3 audit caught (a "Premier Partner" absent from the official directory; a
+    # "Clutch 5.0" that belonged to a different company).
+    credential_claim: bool = False              # this finding carries a reputation/credential claim
+    verified_at_source: Optional[bool] = None   # operator's assertion it was read on the PRIMARY
+                                                # authoritative source. None = not asserted.
+
     # ---- temporal/epistemic axis (round 19, record-only, longitudinal) ------
     # Orthogonal to taxonomy (WHERE) and to verdict (adjudicated truth THIS turn).
     # NEVER read by adjudicate(): purely additive/record-only. Default unset — like
@@ -317,6 +332,8 @@ class Ledger:
     run_manifest: dict = field(default_factory=dict)   # execution manifest (round 13):
                                  # which layers RAN / NOT_APPLICABLE / MISSING
     source_grade_coverage: dict = field(default_factory=dict)  # per-grade finding count (round 14)
+    verified_at_source_coverage: dict = field(default_factory=dict)  # credential claims by badge state
+                                             # (verified/declared/unearned) — round 20 / #88, record-only
     belnap_coverage: dict = field(default_factory=dict)  # 4-valued cell state N/T/F/B (round 19, record-only)
     internal_identity: str = ""              # "vendor:model" that ran the hive (round 21, record-only)
     external_attested_identity: str = ""     # the eye ACTUALLY called, adapter-attested; the
@@ -356,6 +373,7 @@ class Ledger:
             "content_digest": self.content_digest,
             "run_manifest": self.run_manifest,
             "source_grade_coverage": self.source_grade_coverage,
+            "verified_at_source_coverage": self.verified_at_source_coverage,
             "belnap_coverage": self.belnap_coverage,
             "internal_identity": self.internal_identity,
             "external_attested_identity": self.external_attested_identity,
