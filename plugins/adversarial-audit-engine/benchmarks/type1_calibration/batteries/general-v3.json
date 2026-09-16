@@ -1,0 +1,426 @@
+{
+  "battery_id": "general-v3",
+  "description": "General-purpose control battery v2 for Type-I (false-demolition) calibration. VALID-HEAVY and NEAR-MISS by design: the 24 valid items look superficially suspicious (many summands, pp-vs-relative distinctions, valid-but-unusual logic, correct-but-tricky citations) yet survive the strongest defence; they are what a too-aggressive auditor over-condemns, so they are what actually bounds the Type-I rate. The 12 invalid items each carry exactly one clear, verifiable defect. Every numeric/date label is checked in code (see build). Domain-neutral base layer; a domain battery stacks on top. FDR = P(demolished|valid) = Type-I; TDR = P(demolished|invalid) = power. · v3: +24 self-verifiable valid near-miss controls.",
+  "items": [
+    {
+      "id": "V01",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "Four parts weigh 7, 13, 19 and 31 kg, so the assembly weighs 70 kg.",
+      "rationale": "7+13+19+31 = 70. Correct despite the many summands."
+    },
+    {
+      "id": "V02",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "Revenue rose from 80 to 100 — an increase of 25%.",
+      "rationale": "(100-80)/80 = 25%."
+    },
+    {
+      "id": "V03",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "The default rate went from 4% to 6%: a 2 percentage-point rise, i.e. a 50% relative increase.",
+      "rationale": "6-4 = 2 pp; 2/4 = 50% relative. Both correct — the pp/relative distinction is handled right."
+    },
+    {
+      "id": "V04",
+      "label": "valid",
+      "class_hint": "lookup",
+      "artifact": "Under the GDPR, the right to data portability is set out in Article 20.",
+      "rationale": "GDPR Art. 20 is data portability. Correct."
+    },
+    {
+      "id": "V05",
+      "label": "valid",
+      "class_hint": "lookup",
+      "artifact": "Under the GDPR, the right of access by the data subject is Article 15.",
+      "rationale": "GDPR Art. 15 is right of access. Correct."
+    },
+    {
+      "id": "V06",
+      "label": "valid",
+      "class_hint": "lookup",
+      "artifact": "The GDPR became applicable on 25 May 2018.",
+      "rationale": "GDPR entered into application 25 May 2018 (adopted 2016). Correct."
+    },
+    {
+      "id": "V07",
+      "label": "valid",
+      "class_hint": "epistemic",
+      "artifact": "All A are B. All B are C. (Some A are green.) Therefore all A are C.",
+      "rationale": "Valid transitive syllogism; the 'green' premise is an irrelevant distractor, not a defect."
+    },
+    {
+      "id": "V08",
+      "label": "valid",
+      "class_hint": "epistemic",
+      "artifact": "If it rains, the match is cancelled. The match was not cancelled. Therefore it did not rain.",
+      "rationale": "Valid modus tollens (not affirming the consequent)."
+    },
+    {
+      "id": "V09",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "Each pack weighs 500 g, so four packs weigh 2 kg.",
+      "rationale": "500 g x 4 = 2000 g = 2 kg."
+    },
+    {
+      "id": "V10",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "Counting 90 days from 1 January (1 Jan = day 1), the 90th day is 31 March in a non-leap year.",
+      "rationale": "day 90 = 1 Jan + 89 days."
+    },
+    {
+      "id": "V11",
+      "label": "valid",
+      "class_hint": "non_local_mechanical",
+      "artifact": "Section A requires at least 60 on the written exam to pass. Section C says candidates scoring at least 50 on the separate oral exam advance to the interview.",
+      "rationale": "Two different exams/gates; 60 and 50 govern distinct things — no contradiction."
+    },
+    {
+      "id": "V12",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "3/7 = 0.4286 to four decimal places.",
+      "rationale": "3/7 = 0.428571... -> 0.4286."
+    },
+    {
+      "id": "V13",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "Going from 5% to 10% is a 5 percentage-point increase and a 100% relative increase.",
+      "rationale": "10-5 = 5 pp; (10-5)/5 = 100%."
+    },
+    {
+      "id": "V14",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "Net 100 plus 22% VAT gives a gross of 122.",
+      "rationale": "100 x 1.22 = 122."
+    },
+    {
+      "id": "V15",
+      "label": "valid",
+      "class_hint": "lookup",
+      "artifact": "Regulation (EU) 2018/1725 governs the processing of personal data by EU institutions and bodies.",
+      "rationale": "2018/1725 is the EU-institutions data-protection regulation (EDPS). Correct."
+    },
+    {
+      "id": "V16",
+      "label": "valid",
+      "class_hint": "lookup",
+      "artifact": "At sea-level pressure (about 101.3 kPa), water boils at 100 C.",
+      "rationale": "Standard boiling point at ~101.325 kPa is 100 C. The pressure qualifier is correct, not a trap."
+    },
+    {
+      "id": "V17",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "Three machines produce 300 units a day; at the same rate five machines produce 500 units a day.",
+      "rationale": "300/3 = 100/machine; 5 x 100 = 500."
+    },
+    {
+      "id": "V18",
+      "label": "valid",
+      "class_hint": "epistemic",
+      "artifact": "It is not the case that the rule does not apply to minors. Therefore the rule applies to minors.",
+      "rationale": "Double-negation elimination. Valid."
+    },
+    {
+      "id": "V19",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "15% of 80 equals 80% of 15 — both are 12.",
+      "rationale": "0.15x80 = 12; 0.80x15 = 12."
+    },
+    {
+      "id": "V20",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "Appeals are due within 30 days; a decision dated 1 March may be appealed until 31 March.",
+      "rationale": "1 Mar + 30 days = 31 Mar."
+    },
+    {
+      "id": "V21",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "40% of 50 is 20, and 20 is 20% of 100.",
+      "rationale": "0.40x50 = 20; 20/100 = 20%."
+    },
+    {
+      "id": "V22",
+      "label": "valid",
+      "class_hint": "epistemic",
+      "artifact": "A diagnostic test with 100% sensitivity can still produce false positives.",
+      "rationale": "Sensitivity bounds false negatives, not false positives. Statement is correct."
+    },
+    {
+      "id": "V23",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "A 20% discount off 250 gives 200.",
+      "rationale": "250 x 0.80 = 200."
+    },
+    {
+      "id": "V24",
+      "label": "valid",
+      "class_hint": "epistemic",
+      "artifact": "Every published paper was peer-reviewed. This document was not peer-reviewed, so it was not published.",
+      "rationale": "Valid contrapositive / modus tollens."
+    },
+    {
+      "id": "I01",
+      "label": "invalid",
+      "class_hint": "numeric",
+      "artifact": "Three components weigh 12, 17 and 26 kg, so the total is 45 kg.",
+      "rationale": "12+17+26 = 55, not 45."
+    },
+    {
+      "id": "I02",
+      "label": "invalid",
+      "class_hint": "numeric",
+      "artifact": "Revenue rose from 80 to 100 — an increase of 30%.",
+      "rationale": "Actual increase is 25%, not 30%."
+    },
+    {
+      "id": "I03",
+      "label": "invalid",
+      "class_hint": "lookup",
+      "artifact": "Under the GDPR, the right to erasure ('right to be forgotten') is set out in Article 15.",
+      "rationale": "Erasure is Art. 17; Art. 15 is right of access."
+    },
+    {
+      "id": "I04",
+      "label": "invalid",
+      "class_hint": "lookup",
+      "artifact": "The GDPR became applicable on 25 May 2016.",
+      "rationale": "Applicable 25 May 2018 (2016 = adoption)."
+    },
+    {
+      "id": "I05",
+      "label": "invalid",
+      "class_hint": "non_local_mechanical",
+      "artifact": "Section A requires at least 70 to pass. Section D states that a score of 65 passes.",
+      "rationale": "65 < 70 — contradicts the pass threshold."
+    },
+    {
+      "id": "I06",
+      "label": "invalid",
+      "class_hint": "epistemic",
+      "artifact": "Some engineers are cyclists. All cyclists are fit. Therefore all engineers are fit.",
+      "rationale": "'Some' does not license 'all engineers'. Invalid."
+    },
+    {
+      "id": "I07",
+      "label": "invalid",
+      "class_hint": "epistemic",
+      "artifact": "If it rains, the match is cancelled. It did not rain. Therefore the match was not cancelled.",
+      "rationale": "Denying the antecedent. Invalid."
+    },
+    {
+      "id": "I08",
+      "label": "invalid",
+      "class_hint": "numeric",
+      "artifact": "Three machines make 300 units a day; at the same rate four machines make 500 units a day.",
+      "rationale": "At 100/machine, four machines make 400, not 500."
+    },
+    {
+      "id": "I09",
+      "label": "invalid",
+      "class_hint": "numeric",
+      "artifact": "750 grams equals 7.5 kilograms.",
+      "rationale": "750 g = 0.75 kg."
+    },
+    {
+      "id": "I10",
+      "label": "invalid",
+      "class_hint": "numeric",
+      "artifact": "2/3 = 0.66 to four decimal places.",
+      "rationale": "2/3 = 0.6667 to four decimals, not 0.66."
+    },
+    {
+      "id": "I11",
+      "label": "invalid",
+      "class_hint": "numeric",
+      "artifact": "Net 200 plus 22% VAT gives a gross of 224.",
+      "rationale": "200 x 1.22 = 244, not 224."
+    },
+    {
+      "id": "I12",
+      "label": "invalid",
+      "class_hint": "non_local_conceptual_documented",
+      "artifact": "Section 1 defines churn as cancellations divided by starting customers; Section 4 computes churn as cancellations divided by ending customers.",
+      "rationale": "Inconsistent denominator (starting vs ending) — the metric contradicts its own definition."
+    },
+    {
+      "id": "V25",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "A 15% discount then a 20% discount on €200 gives €136.",
+      "rationale": "200*0.85*0.80=136; sequential discounts don't add to 35%."
+    },
+    {
+      "id": "V26",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "17 × 23 = 391.",
+      "rationale": "17*23=391 (not 371)."
+    },
+    {
+      "id": "V27",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "2^10 = 1024.",
+      "rationale": "Exact."
+    },
+    {
+      "id": "V28",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "A 30% rise then a 30% fall leaves you at 91% of the start.",
+      "rationale": "1.30*0.70=0.91."
+    },
+    {
+      "id": "V29",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "12 is 15% of 80.",
+      "rationale": "0.15*80=12."
+    },
+    {
+      "id": "V30",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "The sum 1+2+…+100 = 5050.",
+      "rationale": "n(n+1)/2."
+    },
+    {
+      "id": "V31",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "A right triangle with legs 9 and 12 has hypotenuse 15.",
+      "rationale": "9²+12²=225=15²."
+    },
+    {
+      "id": "V32",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "7! = 5040.",
+      "rationale": "1·2·…·7."
+    },
+    {
+      "id": "V33",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "A 25% markup on €64 gives €80.",
+      "rationale": "64*1.25=80."
+    },
+    {
+      "id": "V34",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "The GCD of 48 and 36 is 12.",
+      "rationale": "gcd."
+    },
+    {
+      "id": "V35",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "A 5% rate compounded over 2 years is a 10.25% total gain.",
+      "rationale": "1.05²−1=0.1025."
+    },
+    {
+      "id": "V36",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "37 °C equals 98.6 °F.",
+      "rationale": "37*9/5+32."
+    },
+    {
+      "id": "V37",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "One-third of 111 is 37.",
+      "rationale": "111/3."
+    },
+    {
+      "id": "V38",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "There are 86,400 seconds in a day.",
+      "rationale": "24*3600."
+    },
+    {
+      "id": "V39",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "3 hours 45 minutes = 225 minutes.",
+      "rationale": "3*60+45."
+    },
+    {
+      "id": "V40",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "A car at 90 km/h covers 1.5 km each minute.",
+      "rationale": "90/60."
+    },
+    {
+      "id": "V41",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "√2.25 = 1.5.",
+      "rationale": "1.5²=2.25."
+    },
+    {
+      "id": "V42",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "Taking 60% of €150 gives €90 — the same as a 40% discount.",
+      "rationale": "150*0.60=90."
+    },
+    {
+      "id": "V43",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "log10(1000) = 3.",
+      "rationale": "10³=1000."
+    },
+    {
+      "id": "V44",
+      "label": "valid",
+      "class_hint": "date",
+      "artifact": "The year 2000 was a leap year.",
+      "rationale": "Divisible by 400."
+    },
+    {
+      "id": "V45",
+      "label": "valid",
+      "class_hint": "date",
+      "artifact": "The year 1900 was NOT a leap year.",
+      "rationale": "Div by 100 but not 400."
+    },
+    {
+      "id": "V46",
+      "label": "valid",
+      "class_hint": "date",
+      "artifact": "From March 3 to March 31 inclusive is 29 days.",
+      "rationale": "31−3+1."
+    },
+    {
+      "id": "V47",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "0.1 + 0.2, rounded to two decimals, is 0.30.",
+      "rationale": "FP result rounds to 0.30."
+    },
+    {
+      "id": "V48",
+      "label": "valid",
+      "class_hint": "numeric",
+      "artifact": "Half of three-quarters is three-eighths.",
+      "rationale": "(3/4)/2=3/8."
+    }
+  ]
+}
