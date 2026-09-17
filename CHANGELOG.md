@@ -5,6 +5,36 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.7.0 — Registry consolidation + the diachronic cross-vendor signature (record-only)
+The single run registry (round 21) recorded each completed run in one place with independence and eye
+vendor as first-class fields — but only from the moment it shipped, and only for runs that flowed through
+the live core. Dozens of real audits already sat as `*.ledger.json` in scattered per-run folders, invisible
+to any portfolio view; and the property the whole trust story turns on — *what happens to the verdicts when
+the same artefact is re-audited at a higher, cross-vendor independence level* — was not computable at all.
+
+This release closes both gaps, staying strictly record-only (no adjudication, no gate, no single score):
+
+- **`consolidate(roots)`** (CLI `run_core.py --consolidate <root…>`) sweeps serialized ledgers and back-fills
+  the single registry, **idempotently** (dedup by `run_id`) and best-effort. `record_from_ledger_dict`
+  reconstructs a registry line from a `*.ledger.json` alone, so history predating the live registry becomes
+  queryable. New first-class fields on every record: **`axes_covered`** (the orthogonal taxonomy cells the
+  run touched) and **`artifact_id`** (a stable pass-to-pass identity, when stamped).
+- **`signature()`** (CLI `run_core.py --signature`) is a **descriptive** panel of the diachronic
+  cross-vendor shift: for every artefact seen at ≥2 independence levels, how the condemn / abstain / hold
+  rates move from the lowest to the highest level, and whether a different-vendor eye entered. It aggregates
+  the mean shift and prints, in the output itself, the discipline that keeps it honest: **this is a signature,
+  not a proof of Goodhart mitigation** — it shows an orthogonal cross-vendor axis *deflating* single-vendor
+  over-condemnation, but proves nothing about resistance-to-gaming, because no optimiser is pushing on the
+  measure (the closed loop is absent). No single score; abstention is never counted as success.
+
+Run against the real corpus (14 consolidated runs) the signature immediately disciplined an eyeballed claim:
+the L1→L3 pairs we *thought* we had do not auto-pair, because the free-text artefact name changes between
+passes — only a stable `artifact_id` makes the diachronic view computable. The instrument reported the gap
+in its own data rather than letting the claim stand. That is the point of the engine turned on itself.
+
+Six new tests (`test_run_registry.py`): axes derivation, idempotent consolidation with cross-vendor recording,
+and the signature's deflation reporting + its refusal to overclaim. Full suite 286 green.
+
 ## 1.6.0 — Verified-at-source gate (the dual of the source-grade gate, record-only)
 A reputation or credential claim — a "Premier Partner" badge, a star rating, a review count, an award —
 is only as good as the source it was read on. Two real misattributions an L3 audit caught made this

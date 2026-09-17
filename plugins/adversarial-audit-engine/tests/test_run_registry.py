@@ -163,5 +163,93 @@ class TestBestEffort(unittest.TestCase):
         self.assertIn("Nessun run registry", reg.render(os.path.join(tmp, "none.jsonl")))
 
 
+class TestAxesCovered(unittest.TestCase):
+    def test_axes_from_covered_cells_dict(self):
+        led = _fake_ledger(covered_cells={"inputs": "N", "mechanisms": "T"})
+        rec = reg.record_from_ledger(led, _fake_rec())
+        self.assertEqual(rec["axes_covered"], ["inputs", "mechanisms"])
+
+    def test_axes_fallback_to_findings(self):
+        f1 = types.SimpleNamespace(taxonomy_cell="outputs")
+        f2 = types.SimpleNamespace(taxonomy_cell="premises")
+        led = _fake_ledger(covered_cells=None, findings=[f1, f2])
+        rec = reg.record_from_ledger(led, _fake_rec())
+        self.assertEqual(rec["axes_covered"], ["outputs", "premises"])
+
+
+class TestConsolidate(unittest.TestCase):
+    """Back-fill from serialized ledgers: idempotent, dedup by run_id, best-effort."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.registry = os.path.join(self.tmp, "RUN_REGISTRY.jsonl")
+
+    def _write_ledger(self, name, created, digest, ind, verdicts, cells=None, eye=""):
+        d = {
+            "artifact_name": name, "created_at": created, "content_digest": digest,
+            "independence_level": ind, "external_attested_identity": eye,
+            "internal_identity": "anthropic:claude-x", "completion_state": "X",
+            "run_manifest": {"run_validity": "VALID"}, "flags": [],
+            "covered_cells": cells or {},
+            "findings": [{"verdict": v, "taxonomy_cell": (cells or {}) and list(cells)[0] or "inputs"}
+                         for v, n in verdicts.items() for _ in range(n)],
+        }
+        p = os.path.join(self.tmp, f"{name}.ledger.json")
+        json.dump(d, open(p, "w", encoding="utf-8"))
+        return p
+
+    def test_consolidate_adds_then_is_idempotent(self):
+        self._write_ledger("a", 1_700_000_000.0, "deadbeef0001", 1, {"accusa_vince": 2})
+        self._write_ledger("b", 1_700_000_100.0, "deadbeef0002", 3, {"artefatto_regge": 3}, eye="meta:llama")
+        rep1 = reg.consolidate([self.tmp], path=self.registry)
+        self.assertEqual(rep1["added"], 2)
+        rows = reg.load(self.registry)
+        self.assertEqual(len(rows), 2)
+        # a second sweep must add nothing (dedup by run_id)
+        rep2 = reg.consolidate([self.tmp], path=self.registry)
+        self.assertEqual(rep2["added"], 0)
+        self.assertEqual(len(reg.load(self.registry)), 2)
+        # the cross-vendor eye and independence were recorded on back-fill
+        b = [r for r in rows if r["artifact"] == "b"][0]
+        self.assertEqual(b["independence_level"], 3)
+        self.assertEqual(b["eye_vendor"], "meta")
+
+
+class TestSignature(unittest.TestCase):
+    """The diachronic cross-vendor signature: descriptive, honest, no single score."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.registry = os.path.join(self.tmp, "RUN_REGISTRY.jsonl")
+
+    def _rec(self, name, ind, verdicts, eye=""):
+        return {"artifact": name, "independence_level": ind, "verdicts": verdicts,
+                "eye_vendor": eye, "run_id": f"{name}-{ind}"}
+
+    def test_signature_reports_deflation_when_independence_rises(self):
+        # same artefact: L1 condemns 4/4, L3 condemns 0/4 (all hold) -> condemn deflates
+        reg.append(self._rec("Fascicolo X", 1, {"accusa_vince": 4}), path=self.registry)
+        reg.append(self._rec("Fascicolo X", 3, {"artefatto_regge": 4}, eye="meta"), path=self.registry)
+        out = reg.signature(self.registry)
+        self.assertIn("SIGNATURE", out)
+        self.assertIn("1->3", out)
+        self.assertIn("deflaziona", out.lower() + out)  # narrative present
+        # aggregate line: one pair, cross-vendor at high, condemn deflated
+        self.assertIn("coppie: 1", out)
+        self.assertIn("1/1", out)  # both "cross-vendor" and "deflated" roll-ups are 1/1
+
+    def test_signature_needs_two_levels(self):
+        reg.append(self._rec("Solo L1", 1, {"accusa_vince": 1}), path=self.registry)
+        out = reg.signature(self.registry)
+        self.assertIn(">=2 livelli", out)
+
+    def test_signature_is_honest_about_not_being_a_proof(self):
+        reg.append(self._rec("Y", 1, {"accusa_vince": 2}), path=self.registry)
+        reg.append(self._rec("Y", 3, {"artefatto_regge": 2}, eye="meta"), path=self.registry)
+        out = reg.signature(self.registry)
+        self.assertIn("non una dimostrazione", out.lower())
+        self.assertIn("Goodhart", out)
+
+
 if __name__ == "__main__":
     unittest.main()

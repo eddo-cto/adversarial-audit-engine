@@ -181,6 +181,8 @@ Usage:
   run_core.py                      same, reading the payload from stdin
   run_core.py --metrics [dir]      longitudinal, bias-resistant metrics panel
   run_core.py --registry [path]    portfolio panel over the single run registry
+  run_core.py --consolidate <root...>  back-fill the registry from scattered ledgers
+  run_core.py --signature [path]   diachronic cross-vendor shift (descriptive)
   run_core.py --help               this message
   run_core.py --version            print the engine version
 
@@ -269,6 +271,20 @@ def main(argv: list[str] | None = None) -> int:
     # single-registry portfolio panel:  run_core.py --registry [path]
     if argv and argv[0] == "--registry":
         print(reg.render(argv[1] if len(argv) > 1 else None))
+        return 0
+
+    # back-fill the single registry from scattered ledgers:
+    #   run_core.py --consolidate <root> [<root> ...]
+    if argv and argv[0] == "--consolidate":
+        roots = argv[1:] or [os.getcwd()]
+        rep = reg.consolidate(roots, box=os.environ.get("AAE_BOX", ""))
+        print(f"consolidate: scansionati {rep['scanned']} ledger, aggiunti "
+              f"{rep['added']}, saltati {rep['skipped']} -> {rep['path']}")
+        return 0
+
+    # diachronic cross-vendor signature (descriptive):  run_core.py --signature [path]
+    if argv and argv[0] == "--signature":
+        print(reg.signature(argv[1] if len(argv) > 1 else None))
         return 0
 
     if argv and argv[0].startswith("-"):
