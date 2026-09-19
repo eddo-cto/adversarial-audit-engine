@@ -41,6 +41,43 @@ def enforce_defense_gate(ledger: Ledger) -> list[str]:
 
 
 # --------------------------------------------------------------------------
+# 1b. evidence-sufficiency gate
+# --------------------------------------------------------------------------
+
+def enforce_evidence_sufficiency_gate(ledger: Ledger) -> list[str]:
+    """A finding may not be ASSERTED on a document it does not have. Any finding that
+    declares `requires_docs` not present in the run's `evidence_base` is forced out of
+    a condemning verdict (ARTIFACT_DEFECTIVE / REDUCED / still-PENDING) into
+    NEEDS_EXPERT, and its declared limit names the missing documents.
+
+    This encodes, in code, a lesson from a real L3 client-review: the engine had
+    flagged a 'patrimonial anomaly' from a 2024 conferimento and an IVA-regime issue —
+    both legitimate QUESTIONS, but neither verifiable nor even supposable from the
+    supplied fascicolo (the ante-operation comparative and the VAT returns were absent).
+    An artefact that HOLDS is untouched: needing an absent document is a bar to
+    CONDEMNING, not to absolution. Deterministic; the model's judgement is not trusted
+    to remember the limit."""
+    notes: list[str] = []
+    base = {str(d).strip().lower() for d in (getattr(ledger, "evidence_base", []) or []) if str(d).strip()}
+    condemning = (Verdict.ARTIFACT_DEFECTIVE, Verdict.REDUCED, Verdict.PENDING)
+    for f in ledger.findings:
+        if f.verdict == Verdict.ARTIFACT_HOLDS:
+            continue
+        req = [str(d).strip() for d in (getattr(f, "requires_docs", []) or []) if str(d).strip()]
+        missing = [d for d in req if d.lower() not in base]
+        if not missing:
+            continue
+        limit = ("EVIDENCE-BASE: richiede documenti non nel fascicolo (" +
+                 ", ".join(missing) + ") → il rilievo si può sollevare, non asserire; "
+                 "instradato all'esperto")
+        if f.verdict in condemning:
+            f.verdict = Verdict.NEEDS_EXPERT
+        f.declared_limit = ((f.declared_limit + " | ") if f.declared_limit else "") + limit
+        notes.append(f"{f.id}: missing evidence {missing} → NEEDS_EXPERT")
+    return notes
+
+
+# --------------------------------------------------------------------------
 # 2. coverage-gate
 # --------------------------------------------------------------------------
 

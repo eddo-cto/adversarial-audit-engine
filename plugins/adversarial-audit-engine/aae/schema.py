@@ -173,6 +173,21 @@ class Finding:
     verified_at_source: Optional[bool] = None   # operator's assertion it was read on the PRIMARY
                                                 # authoritative source. None = not asserted.
 
+    # ---- evidence-base sufficiency (round 22 / Villalta, record-only + gate) --
+    # Documents this finding NEEDS to be closable but that may not be in the
+    # supplied evidence base. A real L3 client-review made this concrete: the
+    # engine flagged a "patrimonial anomaly" from a 2024 conferimento whose
+    # before/after straddles FY2023->FY2024, while the fascicolo carried only the
+    # FY2025 statement with its FY2024 comparative — both POST-operation. The
+    # effect was structurally unobservable; the flag could be RAISED but never
+    # verified or even supposed without the ante-operation baseline. Likewise an
+    # IVA-regime flag readable from the visura activity codes but not decidable
+    # without the VAT returns. enforce_evidence_sufficiency_gate() forces any
+    # finding whose requires_docs are absent from Ledger.evidence_base out of a
+    # condemning verdict into NEEDS_EXPERT, naming the missing documents. Nothing
+    # is left to the model's judgement: the consequence is deterministic.
+    requires_docs: list[str] = field(default_factory=list)
+
     # ---- temporal/epistemic axis (round 19, record-only, longitudinal) ------
     # Orthogonal to taxonomy (WHERE) and to verdict (adjudicated truth THIS turn).
     # NEVER read by adjudicate(): purely additive/record-only. Default unset — like
@@ -322,6 +337,8 @@ class Ledger:
     findings: list[Finding] = field(default_factory=list)
     covered_cells: list[str] = field(default_factory=list)
     excluded_cells: dict[str, str] = field(default_factory=dict)  # cell -> justification
+    evidence_base: list[str] = field(default_factory=list)  # documents actually supplied to the run;
+                                             # the evidence-sufficiency gate reads it (round 22, record-only)
     independence_level: IndependenceLevel = IndependenceLevel.SAME_INSTANCE_ROLES
     created_at: float = field(default_factory=time.time)
     flags: list[str] = field(default_factory=list)
@@ -368,6 +385,7 @@ class Ledger:
             "independence_level": int(self.independence_level),
             "covered_cells": self.covered_cells,
             "excluded_cells": self.excluded_cells,
+            "evidence_base": self.evidence_base,
             "flags": self.flags,
             "completion_state": self.completion_state,
             "content_digest": self.content_digest,

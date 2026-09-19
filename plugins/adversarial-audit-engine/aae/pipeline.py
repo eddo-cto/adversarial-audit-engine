@@ -16,7 +16,8 @@ import os
 
 from .schema import Ledger, Posta, ActionState
 from .orchestrator import parse_finding, AuditResult
-from .gates import enforce_defense_gate, enforce_coverage_gate, evaluate_completion
+from .gates import (enforce_defense_gate, enforce_coverage_gate, evaluate_completion,
+                    enforce_evidence_sufficiency_gate)
 from .source_grade import (enforce_source_grade_gate, source_grade_coverage, belnap_coverage,
                            enforce_verified_at_source_gate, verified_at_source_coverage)
 from .run_manifest import build_manifest, enforce_run_validity
@@ -42,8 +43,14 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
         if f:
             ledger.add(f)
     ledger.excluded_cells = dict(payload.get("excluded_cells", {}))
+    ledger.evidence_base = list(payload.get("evidence_base", []) or [])
     ledger.adjudicate_all()
     enforce_defense_gate(ledger)
+    # evidence-sufficiency gate: a finding requiring a document absent from evidence_base cannot be
+    # asserted — it is forced to NEEDS_EXPERT with the missing documents named. Nothing is left to the
+    # model's judgement (round 22 / Villalta: a 2024-conferimento anomaly not supposable without the
+    # ante-operation comparative; an IVA-regime issue not decidable without the VAT returns).
+    ledger.flags.extend("EVIDENCE-BASE: " + n for n in enforce_evidence_sufficiency_gate(ledger))
     # source-grade gate: a condemnation on a worse-than-primary datum, when a primary is reachable,
     # is downgraded to NEEDS_READING. The operator may declare no primary via source_primary_reachable.
     primary_reachable = bool(payload.get("source_primary_reachable", True))

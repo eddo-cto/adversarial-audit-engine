@@ -5,6 +5,30 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.8.0 — Evidence-sufficiency gate: you may not assert on a document you do not have
+A real L3 client-review (a commercialista, on a company fascicolo) drew the line precisely. The engine's
+*nose* was right — it flagged, from the visura activity codes, an **IVA-regime** question a numbers-only
+reading of the balance sheet would miss, and a **patrimonial anomaly** from a 2024 *conferimento*. But the
+reviewer's verdict was exact: *those it can neither verify nor even suppose without the FY2023 comparative
+it does not have.* The 2024 operation's before/after straddles FY2023→FY2024; the fascicolo carried only the
+FY2025 statement with its FY2024 comparative — both **post-operation** — so the effect was structurally
+unobservable. The flag could be **raised**, never **asserted**.
+
+This release makes that a deterministic rule, not a matter of the model remembering to hedge:
+
+- Findings gain **`requires_docs`** (documents the finding needs to be closable). The run gains
+  **`evidence_base`** (documents actually supplied). Both record-only.
+- **`enforce_evidence_sufficiency_gate`** forces any finding whose `requires_docs` are absent from
+  `evidence_base` out of a condemning verdict (ARTIFACT_DEFECTIVE / REDUCED / still-PENDING) into
+  **NEEDS_EXPERT**, appending a declared limit that **names the missing documents**. An artefact that HOLDS
+  is untouched — needing an absent document bars a condemnation, not an absolution. Wired into the shared
+  `pipeline.discipline`, so every entry point (CLI, orchestrator) inherits it; nothing is left to judgement.
+
+Verified on the case that motivated it: with `evidence_base = [bilancio_2025, visura_2026]`, the four heavy
+findings (conferimento, parti correlate, IVA regime, rivalutazione perimeter) are all routed to the expert
+with their specific missing documents named (the FY2024/2023 comparative, the notarial deed, the VAT returns).
+Six new tests (`test_evidence_sufficiency.py`); full suite 292 green.
+
 ## 1.7.0 — Registry consolidation + the diachronic cross-vendor signature (record-only)
 The single run registry (round 21) recorded each completed run in one place with independence and eye
 vendor as first-class fields — but only from the moment it shipped, and only for runs that flowed through

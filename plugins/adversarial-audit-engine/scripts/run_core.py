@@ -88,6 +88,7 @@ def emit_schema() -> str:
             "max_posta": "high",
             "source_primary_reachable": True,
             "source_text": "<full verbatim text of the artifact (activates the grounding gate)>",
+            "evidence_base": ["<document actually supplied, e.g. 'bilancio_2025', 'visura_2026'>"],
             "excluded_cells": {"<taxonomy_cell>": "<why this dimension does not apply>"},
             "triage": {"dimensions_present": ["<taxonomy_cell>", "..."],
                        "deploy_roles": ["verifier", "propagator", "..."]},
@@ -112,6 +113,8 @@ def emit_schema() -> str:
             "source_grade": 1,
             "credential_claim": False,
             "verified_at_source": None,
+            "requires_docs": ["<document this finding NEEDS to be closable but that may be absent, "
+                              "e.g. 'bilancio_2023_comparativo', 'atto_conferimento', 'dichiarazioni_IVA'>"],
             "action_state": "open",
         },
         "vocabularies": {
@@ -138,6 +141,11 @@ def emit_schema() -> str:
             "review portal itself). An aggregator, a search snippet, or the subject's own page is "
             "self-declared (verified_at_source=false). A claim marked verified_at_source=true whose "
             "source_grade is worse than 1 is auto-downgraded to self-declared and flagged.",
+            "requires_docs / evidence_base: list on each finding the documents it NEEDS to be closable "
+            "(a prior-year comparative, a notarial deed, the VAT returns); list in the run's evidence_base "
+            "the documents actually supplied. A finding whose requires_docs are NOT in evidence_base cannot "
+            "be asserted: it is forced to NEEDS_EXPERT with the missing documents named. Raise the question, "
+            "do not suppose the answer from documents you do not have.",
             "On a HIGH-posta run record >= 1 hypothesis with action_state=deliberately_discarded, "
             "so the false-positive rate is MEASURED, not asserted.",
             "Verdicts are OUTPUT-ONLY — the code assigns them. Never put a verdict in a finding.",
