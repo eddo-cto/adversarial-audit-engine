@@ -5,6 +5,26 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.9.0 — Multi-document bundling: many sources into one audit artifact
+The box audits a single file, but real audits are multi-document — a balance sheet + a registry extract,
+a purchase proposal + the notarial deed + the cadastral plan. Until now that meant hand-assembling the
+sources, which is error-prone and loses provenance. `scripts/bundle_sources.py` makes it a first-class,
+repeatable step:
+
+- `bundle_sources.py -o audit_input.md <file1> <file2> …` (or `--id name=path` to fix ids) writes ONE
+  self-contained markdown artifact: a **manifest** that assigns each document a stable id and a content
+  hash, followed by each document in its own delimited section. Text files are read directly; PDFs use
+  `pdftotext -layout` when available, with a clear message otherwise. stdlib only; record-only (bundling
+  never adjudicates).
+- The manifest's ids ARE the `evidence_base` the findings payload should declare, so the round-22
+  evidence-sufficiency gate can tell what was actually supplied; keeping each document verbatim inside its
+  section means a quote in `accusation.evidence` is still a verbatim substring of `source_text` (the
+  grounding gate keeps working) with unambiguous provenance.
+- `commands/audit.md` step 0 now instructs the flow: with multiple sources, bundle first, audit the bundle,
+  set `evidence_base` to the manifest ids, and mark any absent document via `requires_docs`.
+
+Seven new tests (`test_bundle_sources.py`); full suite 299 green.
+
 ## 1.8.0 — Evidence-sufficiency gate: you may not assert on a document you do not have
 A real L3 client-review (a commercialista, on a company fascicolo) drew the line precisely. The engine's
 *nose* was right — it flagged, from the visura activity codes, an **IVA-regime** question a numbers-only
