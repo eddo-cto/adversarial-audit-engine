@@ -238,6 +238,15 @@ class TestSignature(unittest.TestCase):
         self.assertIn("coppie: 1", out)
         self.assertIn("1/1", out)  # both "cross-vendor" and "deflated" roll-ups are 1/1
 
+    def test_signature_pairs_on_artifact_id_despite_different_names(self):
+        # same case, two passes with DIFFERENT free-text names but the SAME artifact_id -> they pair
+        a = self._rec("Fascicolo X (L1 sandbox)", 1, {"accusa_vince": 4}); a["artifact_id"] = "bundle:caso1"
+        b = self._rec("AUDIT_L3 caso1.md", 3, {"artefatto_regge": 4}, eye="meta"); b["artifact_id"] = "bundle:caso1"
+        reg.append(a, path=self.registry); reg.append(b, path=self.registry)
+        out = reg.signature(self.registry)
+        self.assertIn("coppie: 1", out)
+        self.assertIn("1/1", out)  # cross-vendor + deflation rolled up as 1/1
+
     def test_signature_needs_two_levels(self):
         reg.append(self._rec("Solo L1", 1, {"accusa_vince": 1}), path=self.registry)
         out = reg.signature(self.registry)

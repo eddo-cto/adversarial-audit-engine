@@ -334,6 +334,9 @@ class IntegrityError(Exception):
 @dataclass
 class Ledger:
     artifact_name: str
+    artifact_id: str = ""   # STABLE identity of the audited artefact ACROSS passes/independence
+                            # levels — the free-text artifact_name changes between an L1 and an L3
+                            # pass, so the diachronic signature pairs on this instead (round 22).
     findings: list[Finding] = field(default_factory=list)
     covered_cells: list[str] = field(default_factory=list)
     excluded_cells: dict[str, str] = field(default_factory=dict)  # cell -> justification
@@ -381,6 +384,7 @@ class Ledger:
     def to_json(self, indent: int = 2) -> str:
         payload = {
             "artifact_name": self.artifact_name,
+            "artifact_id": self.artifact_id,
             "created_at": self.created_at,
             "independence_level": int(self.independence_level),
             "covered_cells": self.covered_cells,

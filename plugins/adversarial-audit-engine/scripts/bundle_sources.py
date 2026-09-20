@@ -93,9 +93,16 @@ def make_bundle(items: list[tuple[str, str, str]]) -> tuple[str, list[str]]:
         ids.append(base)
         resolved.append((base, name, text))
 
+    # a stable artefact identity for the whole bundle: same set of documents -> same id, so an L1 and
+    # an L3 pass of the same case pair in the diachronic signature. Readable when short, hashed if long.
+    _joined = "+".join(sorted(ids))
+    artifact_id = "bundle:" + (_joined if len(_joined) <= 60
+                               else hashlib.sha256(_joined.encode("utf-8")).hexdigest()[:16])
+
     lines: list[str] = []
     lines.append(f"# Audit bundle — {len(resolved)} documenti")
     lines.append(f"<!-- evidence_base: {', '.join(ids)} -->")
+    lines.append(f"<!-- artifact_id: {artifact_id} -->")
     lines.append("")
     lines.append("## Manifesto delle fonti")
     lines.append("")
@@ -106,8 +113,9 @@ def make_bundle(items: list[tuple[str, str, str]]) -> tuple[str, list[str]]:
         lines.append(f"| `{did}` | {name} | {digest} | {len(text)} |")
     lines.append("")
     lines.append("> Ogni citazione verbatim proviene dalla sezione del rispettivo documento. "
-                 "Dichiarare nel findings payload `evidence_base` con gli id qui sopra e, su ogni "
-                 "rilievo che richiede un documento assente, `requires_docs` con l'id mancante.")
+                 "Dichiarare nel findings payload `evidence_base` con gli id qui sopra, `artifact_id` "
+                 f"= `{artifact_id}` (identita' stabile per appaiare i giri L1/L3) e, su ogni rilievo "
+                 "che richiede un documento assente, `requires_docs` con l'id mancante.")
     lines.append("")
     for did, name, text in resolved:
         lines.append(f"{_MARK} INIZIO DOCUMENTO [{did}] — {name} {_MARK}")
@@ -154,8 +162,13 @@ def main(argv: list[str] | None = None) -> int:
     bundle, ids = make_bundle(items)
     with open(out_path, "w", encoding="utf-8") as fh:
         fh.write(bundle)
+    aid = ""
+    for ln in bundle.splitlines():
+        if ln.startswith("<!-- artifact_id:"):
+            aid = ln.split(":", 1)[1].strip().rstrip("->").strip(); break
     print(f"bundle: {len(items)} documenti -> {out_path}")
     print(f"evidence_base: {ids}")
+    print(f"artifact_id: {aid}")
     return 0
 
 

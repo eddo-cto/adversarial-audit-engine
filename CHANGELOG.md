@@ -5,6 +5,28 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.10.0 — Stable artifact_id: the diachronic signature can finally pair passes
+The diachronic cross-vendor signature (1.7.0) could only pair runs by the free-text `artifact_name` —
+which changes between an L1 and an L3 pass of the same case, so real pairs never matched and the signature
+stayed uncomputable (1 pair, no shift) on the actual corpus. This release gives an artefact a **stable
+identity across passes**:
+
+- `Ledger.artifact_id` is a first-class, record-only field, emitted in the ledger JSON. `pipeline.discipline`
+  sets it from the payload's `artifact_id` if given, else **derives it automatically** from `source_text`
+  (`auto:` + content hash) — same document, same id, nothing to remember.
+- `bundle_sources.py` stamps a stable `artifact_id` in the bundle manifest (`bundle:<id1>+<id2>`, hashed if
+  long): the same set of documents always yields the same id, so an L1 and an L3 run of the same case pair.
+- `signature()` already prefers `artifact_id` over the name; `commands/audit.md` and the `--schema` output
+  now instruct the flow to copy the manifest's `artifact_id` into the payload (same id for L1 and L3).
+
+Demonstrated: two runs with **different names but the same `artifact_id`** now pair, and the signature reads
+the shift (condemn 1.00→0.00, cross-vendor eye present). Old ledgers predating this field still pair only by
+name; the signal accrues from new runs forward. Two new tests (bundle id stability; signature pairing on
+`artifact_id` despite different names); full suite 301 green.
+
+This closes the instrumentation gap for the Goodhart-mitigation *signature*. It remains a signature, not a
+proof: the closed adversarial loop (an optimiser pushing on the measure) is still the separate, later step.
+
 ## 1.9.0 — Multi-document bundling: many sources into one audit artifact
 The box audits a single file, but real audits are multi-document — a balance sheet + a registry extract,
 a purchase proposal + the notarial deed + the cadastral plan. Until now that meant hand-assembling the

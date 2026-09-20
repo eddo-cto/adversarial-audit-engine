@@ -88,6 +88,9 @@ def emit_schema() -> str:
             "max_posta": "high",
             "source_primary_reachable": True,
             "source_text": "<full verbatim text of the artifact (activates the grounding gate)>",
+            "artifact_id": "<STABLE id of the artefact across passes — copy the bundle manifest's "
+                           "artifact_id, or a slug of the source filename; identical for the L1 and L3 "
+                           "pass of the same case. If omitted, the core derives it from source_text.>",
             "evidence_base": ["<document actually supplied, e.g. 'bilancio_2025', 'visura_2026'>"],
             "excluded_cells": {"<taxonomy_cell>": "<why this dimension does not apply>"},
             "triage": {"dimensions_present": ["<taxonomy_cell>", "..."],

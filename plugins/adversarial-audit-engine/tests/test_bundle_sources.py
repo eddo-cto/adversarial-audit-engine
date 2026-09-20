@@ -37,6 +37,15 @@ class TestMakeBundle(unittest.TestCase):
         self.assertIn("INIZIO DOCUMENTO [bilancio]", md)
         self.assertIn("FINE DOCUMENTO [bilancio]", md)
 
+    def test_bundle_emits_stable_artifact_id(self):
+        md1, _ = bs.make_bundle([("bilancio 2025", "b.pdf", "X"), ("visura 2026", "v.pdf", "Y")])
+        md2, _ = bs.make_bundle([("visura 2026", "v.pdf", "Y2"), ("bilancio 2025", "b.pdf", "X2")])
+        # same set of document ids -> same artifact_id regardless of order or text
+        import re
+        aid = lambda m: re.search(r"artifact_id: (\S+)", m).group(1)
+        self.assertEqual(aid(md1), aid(md2))
+        self.assertEqual(aid(md1), "bundle:bilancio_2025+visura_2026")
+
     def test_duplicate_ids_disambiguated(self):
         _, ids = bs.make_bundle([("doc", "a.txt", "x"), ("doc", "b.txt", "y")])
         self.assertEqual(ids, ["doc", "doc_2"])

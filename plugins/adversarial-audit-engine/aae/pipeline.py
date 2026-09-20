@@ -38,6 +38,16 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
     operator environment (`AAE_EXTERNAL_ATTESTED_IDENTITY`). It is NEVER taken from the model-authored
     payload — that is the C1 independence invariant."""
     ledger = Ledger(artifact_name=payload.get("artifact_name", "artifact"))
+    # STABLE artefact identity, so the diachronic signature can pair an L1 and an L3 pass of the SAME
+    # document (whose free-text artifact_name differs between passes). Explicit payload id wins; else
+    # derive it from the source text — same content -> same id, automatically, nothing to remember.
+    aid = str(payload.get("artifact_id", "") or "").strip()
+    if not aid:
+        _src = payload.get("source_text", "") or ""
+        if _src:
+            import hashlib as _hl
+            aid = "auto:" + _hl.sha256(" ".join(_src.split()).encode("utf-8")).hexdigest()[:16]
+    ledger.artifact_id = aid
     for rf in payload.get("findings", []):
         f = parse_finding(rf, role_key=rf.get("source_role", "role"))
         if f:
