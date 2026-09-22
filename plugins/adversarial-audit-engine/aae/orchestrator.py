@@ -40,7 +40,7 @@ from .triadic import TriadicLayer, TriadicResult
 from .construens import ConstruensLayer, ConstruensResult
 from .deep_causal import DeepCausalLayer, DeepCausalResult
 from .meta_epistemic import MetaGovernor, MetaAssessment
-from .schema import (Finding, Ledger, Accusation, Defense, DefectClass,
+from .schema import (Finding, Ledger, Accusation, Defense, Attack, DefectClass,
                      EvidenceBase, Posta, CostToFix, Verdict, ActionState,
                      TemporalStatus)
 
@@ -74,6 +74,11 @@ def parse_finding(raw: dict, *, role_key: str) -> Finding | None:
         present=bool(def_raw.get("present", False)),
         fact=def_raw.get("fact"),
     )
+    atk_raw = raw.get("attack", {}) or {}
+    attack = Attack(
+        attempted=bool(atk_raw.get("attempted", False)),
+        vector=str(atk_raw.get("vector", "")),
+    )
     return Finding(
         id=str(raw.get("id") or f"{role_key}-?"),
         element=str(raw.get("element")),
@@ -83,6 +88,7 @@ def parse_finding(raw: dict, *, role_key: str) -> Finding | None:
         posta=_enum(Posta, raw.get("posta"), Posta.MEDIUM),
         accusation=accusation,
         defense=defense,
+        attack=attack,
         cost_to_fix=_enum(CostToFix, raw.get("cost_to_fix"), CostToFix.MEDIUM),
         action=str(raw.get("action", "")),
         declared_limit=raw.get("declared_limit"),

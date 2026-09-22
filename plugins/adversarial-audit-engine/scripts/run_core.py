@@ -108,6 +108,8 @@ def emit_schema() -> str:
                            "evidence": "<VERBATIM quote from source_text, or executed result>",
                            "sections": ["§..", "§.."]},
             "defense": {"attempted": True, "present": False, "fact": None},
+            "attack": {"attempted": True, "vector": "<the attack move used — from the "
+                       "ATTACK VECTORS menu for this defect_class, or 'novel: <describe>'>"},
             "cost_to_fix": "<one of vocabularies.cost_to_fix>",
             "action": "<the corrective action>",
             "declared_limit": "<what you could NOT decide internally>",
@@ -122,6 +124,7 @@ def emit_schema() -> str:
         },
         "vocabularies": {
             "taxonomy_cell": list(TAXONOMY),
+            "attack_vectors": __import__("aae.attack_vectors", fromlist=["ATTACK_VECTORS"]).ATTACK_VECTORS,
             "defect_class": [e.value for e in DefectClass],
             "posta": [e.value for e in Posta],
             "evidence_base": [e.value for e in EvidenceBase],
@@ -144,6 +147,10 @@ def emit_schema() -> str:
             "review portal itself). An aggregator, a search snippet, or the subject's own page is "
             "self-declared (verified_at_source=false). A claim marked verified_at_source=true whose "
             "source_grade is worse than 1 is auto-downgraded to self-declared and flagged.",
+            "attack (dual of defense): on every finding set attack.attempted=true and attack.vector to "
+            "the move you used (from vocabularies.attack_vectors for the defect_class, or 'novel: ...'). "
+            "A cleared element (ARTIFACT_HOLDS) with no declared attack is flagged by the attack-gate as a "
+            "possible rubber-stamp — record-only, it never changes a verdict, but the silence becomes visible.",
             "requires_docs / evidence_base: list on each finding the documents it NEEDS to be closable "
             "(a prior-year comparative, a notarial deed, the VAT returns); list in the run's evidence_base "
             "the documents actually supplied. A finding whose requires_docs are NOT in evidence_base cannot "

@@ -133,6 +133,16 @@ class Defense:
     fact: Optional[str] = None         # must be verifiable, not plausibility
 
 
+@dataclass
+class Attack:
+    """The DUAL of Defense (round 23). Defense guards a CONDEMNATION from resting on no
+    real defence attempt (Type-I); Attack records WHICH move was tried, so a cleared
+    element ('holds') is not a silent rubber-stamp. The attack-gate reads it (record-only:
+    it flags a clear without a declared attack, it never changes a verdict)."""
+    attempted: bool = False            # was a real attack move tried against this element?
+    vector: str = ""                   # the move used (from attack_vectors, or 'novel: ...')
+
+
 # --------------------------------------------------------------------------
 # Finding
 # --------------------------------------------------------------------------
@@ -146,6 +156,7 @@ class Finding:
     posta: Posta
     accusation: Accusation
     defense: Defense = field(default_factory=Defense)
+    attack: Attack = field(default_factory=Attack)   # which attack move was tried (round 23)
     verdict: Verdict = Verdict.PENDING
     cost_to_fix: Optional[CostToFix] = None
     action: str = ""

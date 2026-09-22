@@ -5,6 +5,29 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.11.0 — Attack-gate + attack-vector library: the dual of the defense-gate
+The attack layer of the hive was the least code-structured part of the engine: adjudication (gates,
+verdict machine, dedup, governor) is deterministic, but the attack itself was prompt+LLM and improvised.
+Two consequences it now fixes, ahead of the adversarial-loop research where this layer is the raw material.
+
+- **Attack-vector library** (`aae/attack_vectors.py`): a structured menu of concrete attack moves per
+  `defect_class` (data, like `roles.py`), injected into every role prompt so the attack is systematic, not
+  improvised. Surfaced in the `--schema` vocabularies.
+- **`Attack` sub-structure** on every finding (the dual of `Defense`): `attempted` + `vector` (the move used).
+  Record-only.
+- **Attack-gate** (`enforce_attack_gate`, wired into `pipeline.discipline`): the mirror of the defense-gate.
+  The defense-gate stops a CONDEMNATION that rests on no defence attempt (over-condemnation, Type-I); the
+  attack-gate flags a CLEARANCE (ARTIFACT_HOLDS) that carries no declared attack — the silent under-attacking
+  (Type-II) the coverage gate cannot see, because a token 'holds' finding already marks the cell covered.
+  Deliberately **record-only**: it flags, it never changes a verdict (downgrading every unattacked clearance
+  would turn every audit into BLOCKED_OPEN_ITEMS). The flag makes the silence visible to the governor and to a
+  human, and gives the attack-surface map the future forger will probe.
+
+Why record-only and not a hard downgrade: the two false-error directions are asymmetric in harm. A false
+condemnation is actively damaging (a real party wrongly accused), so the defense-gate blocks it; a rubber-stamp
+clearance is a missed defect, better surfaced than force-converted into an open item on every clean element.
+Seven new tests (`test_attack_gate.py`), no existing verdict assertion touched; full suite 308 green.
+
 ## 1.10.0 — Stable artifact_id: the diachronic signature can finally pair passes
 The diachronic cross-vendor signature (1.7.0) could only pair runs by the free-text `artifact_name` —
 which changes between an L1 and an L3 pass of the same case, so real pairs never matched and the signature

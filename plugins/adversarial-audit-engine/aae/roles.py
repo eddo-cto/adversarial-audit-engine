@@ -29,6 +29,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .attack_vectors import render_for_prompt as _attack_menu
+
 
 DEFENSE_GATE = (
     "DEFENSE-GATE (mandatory): before declaring any defect, build the "
@@ -44,12 +46,16 @@ OUTPUT_CONTRACT = (
     "\"defect_class\", \"posta\", \"accusation\": {\"text\",\"base\",\"evidence\","
     "\"sections\"}, \"defense\": {\"attempted\",\"present\",\"fact\"}, "
     "\"cost_to_fix\", \"action\", \"declared_limit\", \"sources\", \"severity\"} ] }. "
+    "\"attack\": {\"attempted\",\"vector\"}, "
     "defect_class in [lookup, numeric, idiosyncratic_local, non_local_mechanical, "
     "non_local_conceptual_documented, non_local_conceptual_novel, epistemic, "
     "ethical, phenomenological]. base in [reading, execution, domain_knowledge, "
     "pattern]. Non-local findings MUST list >=2 sections. Cite sources (URL/clause) "
     "when domain knowledge is used. Include every element you examined that HOLDS "
-    "(verdict-intent ARTIFACT_HOLDS) — that is how we measure false-positive discipline."
+    "(verdict-intent ARTIFACT_HOLDS) — that is how we measure false-positive discipline. "
+    "On EVERY finding set attack.attempted=true and attack.vector to the move you used "
+    "(from the ATTACK VECTORS menu, or 'novel: <describe>'): a cleared element with no "
+    "declared attack is flagged as a possible rubber-stamp by the attack-gate."
 )
 
 
@@ -72,6 +78,7 @@ class Role:
             f"MANDATE: {self.mandate}",
             (f"FORBIDDEN: {self.forbidden}" if self.forbidden else ""),
             DEFENSE_GATE,
+            _attack_menu(),
             f"Use this taxonomy of dimensions for coverage: {', '.join(taxonomy)}.",
             f"Prefix every finding id with '{self.id_prefix}-'.",
             OUTPUT_CONTRACT,

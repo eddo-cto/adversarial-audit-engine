@@ -17,7 +17,7 @@ import os
 from .schema import Ledger, Posta, ActionState
 from .orchestrator import parse_finding, AuditResult
 from .gates import (enforce_defense_gate, enforce_coverage_gate, evaluate_completion,
-                    enforce_evidence_sufficiency_gate)
+                    enforce_evidence_sufficiency_gate, enforce_attack_gate)
 from .source_grade import (enforce_source_grade_gate, source_grade_coverage, belnap_coverage,
                            enforce_verified_at_source_gate, verified_at_source_coverage)
 from .run_manifest import build_manifest, enforce_run_validity
@@ -61,6 +61,9 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
     # model's judgement (round 22 / Villalta: a 2024-conferimento anomaly not supposable without the
     # ante-operation comparative; an IVA-regime issue not decidable without the VAT returns).
     ledger.flags.extend("EVIDENCE-BASE: " + n for n in enforce_evidence_sufficiency_gate(ledger))
+    # attack-gate (dual of the defense-gate, record-only): flag a clearance that carries no
+    # declared attack — the silent under-attacking the coverage gate cannot see. Verdicts untouched.
+    enforce_attack_gate(ledger)
     # source-grade gate: a condemnation on a worse-than-primary datum, when a primary is reachable,
     # is downgraded to NEEDS_READING. The operator may declare no primary via source_primary_reachable.
     primary_reachable = bool(payload.get("source_primary_reachable", True))

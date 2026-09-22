@@ -41,6 +41,32 @@ def enforce_defense_gate(ledger: Ledger) -> list[str]:
 
 
 # --------------------------------------------------------------------------
+# 1a. attack-gate (the DUAL of the defense-gate, record-only)
+# --------------------------------------------------------------------------
+
+def enforce_attack_gate(ledger: Ledger) -> list[str]:
+    """The mirror of the defense-gate. The defense-gate stops a CONDEMNATION that rests on no
+    real defence attempt (over-condemnation, Type-I). This stops a CLEARANCE that rests on no
+    real attack: an element declared to HOLD without a recorded attack (attack.attempted + a
+    named vector) is a possible rubber-stamp — the silent under-attacking (Type-II) the coverage
+    gate cannot see, because a token 'holds' finding already marks the cell 'covered'.
+
+    Record-only: it FLAGS, it never changes a verdict. Downgrading every unattacked clearance would
+    turn every audit into BLOCKED_OPEN_ITEMS; instead the flag makes the silence visible to the
+    governor and to a human, and gives the attack-surface map the future adversarial harness needs."""
+    notes: list[str] = []
+    for f in ledger.findings:
+        if f.verdict == Verdict.ARTIFACT_HOLDS:
+            a = getattr(f, "attack", None)
+            if not (a and getattr(a, "attempted", False) and str(getattr(a, "vector", "")).strip()):
+                ledger.flags.append(
+                    f"ATTACK-GATE: {f.id} ('{f.taxonomy_cell}') cleared without a declared attack "
+                    f"vector — possible rubber-stamp, verify the clearance")
+                notes.append(f"{f.id}: holds without a declared attack")
+    return notes
+
+
+# --------------------------------------------------------------------------
 # 1b. evidence-sufficiency gate
 # --------------------------------------------------------------------------
 
