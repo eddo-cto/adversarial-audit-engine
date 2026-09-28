@@ -50,6 +50,7 @@ def _cell(name: str):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True, help="Ollama model for the auditor roles, e.g. qwen2.5:7b")
+    ap.add_argument("--eye-model", default="", help="different-vendor model for the eye, e.g. llama3.1:8b; empty = no eye")
     ap.add_argument("--cell", default="defenses_off")
     ap.add_argument("--pressures", default="0,1,2,4,8")
     ap.add_argument("--k", type=int, default=30)
@@ -62,7 +63,11 @@ def main(argv=None):
     cell = _cell(args.cell)
     gold = G.MechanicalGold()
     chat = OC.make_chat(args.model, host=args.host)
-    auditor = AE.EngineAuditor(role_runner=RR.RoleRunner(chat, internal_identity=f"ollama-local:{args.model}"))
+    eye = None
+    if args.eye_model:
+        eye = RR.make_eye(OC.make_chat(args.eye_model, host=args.host))    # a REAL different-vendor eye
+    auditor = AE.EngineAuditor(role_runner=RR.RoleRunner(chat, internal_identity=f"ollama-local:{args.model}"),
+                               eye=eye, eye_identity=f"ollama-local:{args.eye_model or 'none'}")
 
     per_pressure = {p: [] for p in pressures}     # pooled escape rate across seeds
     per_seed_at_max = []                          # escape at max pressure, one per seed (variance estimate)

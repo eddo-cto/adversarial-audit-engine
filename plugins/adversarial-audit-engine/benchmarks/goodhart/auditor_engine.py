@@ -53,15 +53,27 @@ def apply_ablation(payload: dict, cell) -> tuple[dict, str | None]:
 
 
 class EngineAuditor:
-    """Runs the real engine under an ablation cell and returns CLEARED. `role_runner(artifact, cell)`
-    supplies the findings payload (LLM in the real run, a stub in tests)."""
+    """Runs the real engine under an ablation cell and returns CLEARED.
 
-    def __init__(self, role_runner):
+    `role_runner(artifact, cell)` supplies the findings payload and is itself axes-aware (runs every role
+    when cell.axes, else one). `eye` (optional) is a different-vendor producer `(artifact, cell) -> finding|None`
+    (see role_runner.make_eye): when cell.eye it is ACTUALLY called, its finding appended, and its identity
+    attested so the core credits level-3 independence. eye=None -> no eye (the toggle is then a no-op, honestly)."""
+
+    def __init__(self, role_runner, eye=None, eye_identity: str = DIFFERENT_VENDOR_EYE):
         self.role_runner = role_runner
+        self.eye = eye
+        self.eye_identity = eye_identity
 
     def audit(self, artifact, cell) -> bool:
-        payload = self.role_runner(artifact, cell)
-        payload, attested = apply_ablation(payload, cell)
+        payload = self.role_runner(artifact, cell)            # axes handled inside the role_runner
+        attested = None
+        if getattr(cell, "eye", False) and self.eye is not None:
+            ef = self.eye(artifact, cell)                     # a REAL different-vendor re-attack
+            if ef:
+                payload.setdefault("findings", []).append(ef)
+            attested = (SAME_VENDOR_SEED_EYE
+                        if getattr(cell, "eye_mode", "cross_vendor") == "cross_seed" else self.eye_identity)
         result = discipline(payload, attested_identity=attested)
         caught = any(
             (f.verdict.value if hasattr(f.verdict, "value") else str(f.verdict)) in _CONDEMNING

@@ -1,0 +1,24 @@
+{
+  "model": "qwen2.5:7b",
+  "cell": "defenses_off",
+  "pressures": [
+    0,
+    8
+  ],
+  "k": 5,
+  "seeds": 1,
+  "curve": {
+    "0": {
+      "mean": 0.6,
+      "stdev": 0.0
+    },
+    "8": {
+      "mean": 0.8,
+      "stdev": 0.0
+    }
+  },
+  "escape_at_max_per_seed": [
+    0.8
+  ],
+  "stdev_at_max": 0.0
+}

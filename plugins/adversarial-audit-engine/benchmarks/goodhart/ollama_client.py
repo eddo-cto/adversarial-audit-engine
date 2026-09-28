@@ -15,7 +15,8 @@ import json
 import urllib.request
 from typing import Callable
 
-DEFAULT_HOST = "http://localhost:11434"
+DEFAULT_HOST = "http://127.0.0.1:11434"   # IPv4 explicit: on Windows "localhost" may resolve to ::1 first,
+                                          # where Ollama does not listen, and the POST hangs.
 
 
 def _post(url: str, payload: dict, timeout: float = 120.0) -> dict:

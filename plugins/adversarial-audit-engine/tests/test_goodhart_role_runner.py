@@ -62,6 +62,29 @@ class TestAntiLeak(unittest.TestCase):
             self.assertNotIn(leak, prompt)
 
 
+class TestAxesTeeth(unittest.TestCase):
+    def _role_sensitive(self, prompt):
+        # a model that only catches on the reasoner's angle (its prompt mentions LOGICAL form)
+        return '{"defect": true, "recomputation": "clause is false"}' if "LOGICAL form" in prompt else '{"defect": false}'
+
+    def test_axes_off_misses_axes_on_catches(self):
+        art = {"kind": "arith", "expr": "20 > 19 and 20*2 == 41"}
+        off = AE.EngineAuditor(role_runner=RR.RoleRunner(chat=self._role_sensitive))
+        on = AE.EngineAuditor(role_runner=RR.RoleRunner(chat=self._role_sensitive))
+        self.assertTrue(off.audit(art, H.AblationCell("c", eye=False, axes=False, governor=False)))   # only verifier -> missed -> escape
+        self.assertFalse(on.audit(art, H.AblationCell("c", eye=False, axes=True, governor=False)))     # reasoner angle -> caught
+
+
+class TestEyeTeeth(unittest.TestCase):
+    def test_eye_catches_what_the_hive_missed(self):
+        hive_fooled = RR.RoleRunner(chat=lambda p: '{"defect": false}')          # every role misses
+        eye = RR.make_eye(lambda p: '{"defect": true, "recomputation": "eye recomputed"}')  # different vendor catches
+        aud = AE.EngineAuditor(role_runner=hive_fooled, eye=eye)
+        art = {"kind": "arith", "expr": "7*8 == 55"}
+        self.assertFalse(aud.audit(art, H.AblationCell("cv", eye=True, axes=True, governor=True)))   # eye on -> caught
+        self.assertTrue(aud.audit(art, H.AblationCell("off", eye=False, axes=True, governor=True)))  # eye off -> escape
+
+
 class TestIntegration(unittest.TestCase):
     def test_fooled_vs_competent_escape(self):
         gold = G.MechanicalGold()
