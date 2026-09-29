@@ -50,6 +50,17 @@ def escape_rate(records: list[dict]) -> dict:
     return {"rate": rate, "lo": lo, "hi": hi, "n_invalid": len(inv), "n_escaped": len(esc)}
 
 
+def false_positive_rate(records: list[dict]) -> dict:
+    """Type-I control: among gold==VALID, the fraction the auditor wrongly CONDEMNED (not cleared).
+    The dual of escape. A low escape means nothing: an auditor that says 'defect' to everything has escape 0
+    AND false-positive 1. Only a LOW escape together with a LOW false-positive rate is genuine competence.
+    Returns {rate, lo, hi, n_valid, n_condemned}."""
+    val = [r for r in records if str(r.get("gold")).upper() == "VALID"]
+    con = [r for r in val if not r.get("cleared")]
+    rate, lo, hi = _wilson(len(con), len(val))
+    return {"rate": rate, "lo": lo, "hi": hi, "n_valid": len(val), "n_condemned": len(con)}
+
+
 def _by(records, **kw):
     return [r for r in records if all(str(r.get(k)) == str(v) for k, v in kw.items())]
 

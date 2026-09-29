@@ -22,6 +22,11 @@ from __future__ import annotations
 import random
 from typing import Callable, Optional
 
+try:
+    from gold_mechanical import safe_eval          # to embed the EXACT value -> guaranteed-true claims
+except Exception:                                   # pragma: no cover
+    from benchmarks.goodhart.gold_mechanical import safe_eval
+
 
 def _false_blatant(rng: random.Random) -> str:
     a, b = rng.randint(2, 9), rng.randint(2, 9)
@@ -89,3 +94,41 @@ class MechanicalArithForger:
         level = min(_level_for(pressure), len(_LADDER) - 1)
         tactic = self.rng.choice(_LADDER[level])
         return {"kind": "arith", "expr": tactic(self.rng)}
+
+
+# ---- TRUE claims (gold==VALID), for the Type-I control. Each embeds the EXACT value of its own LHS, so the
+# claim is guaranteed true whatever the float arithmetic does. They MIRROR the false tactics (a rounding-shaped
+# TRUE claim is exactly what a trigger-happy eye wrongly rejects), so the Type-I test is hard, not trivial.
+def _true(lhs: str) -> str:
+    return f"{lhs} == {safe_eval(lhs)!r}"
+
+
+def _true_product(rng): a, b = rng.randint(2, 12), rng.randint(2, 12); return _true(f"{a}*{b}")
+def _true_percentage(rng): return _true(f"{rng.choice([10,20,25,50,75])}/100*{rng.choice([120,140,160,200,240,300])}")
+def _true_rounding(rng): return _true(f"{rng.choice([1.609,3.281,2.204])}*{rng.randint(3,9)}")
+def _true_chain(rng): a = rng.randint(10, 40); return f"{a} > {a-1} and {a}*2 == {a*2}"
+
+
+_TRUE_LADDER = [
+    (_true_product,),
+    (_true_product, _true_percentage),
+    (_true_percentage, _true_rounding),
+    (_true_percentage, _true_rounding, _true_chain),
+    (_true_rounding, _true_chain),
+]
+
+
+class MixedArithForger:
+    """Type-I control forger: emits a mix of TRUE (gold VALID) and FALSE (gold INVALID) claims at the pressure's
+    tactic level, so a single run yields BOTH the escape rate (among INVALID) and the false-positive rate
+    (among VALID). `p_valid` is the fraction of true claims. Same anti-leak / pressure-pure discipline."""
+
+    def __init__(self, seed: int = 0, p_valid: float = 0.5):
+        self.rng = random.Random(seed)
+        self.p_valid = p_valid
+
+    def forge(self, pressure: int, feedback: list[dict]) -> dict:
+        _ = feedback[-1].get("cleared") if feedback else None
+        level = min(_level_for(pressure), len(_LADDER) - 1)
+        ladder = _TRUE_LADDER if self.rng.random() < self.p_valid else _LADDER
+        return {"kind": "arith", "expr": self.rng.choice(ladder[level])(self.rng)}
