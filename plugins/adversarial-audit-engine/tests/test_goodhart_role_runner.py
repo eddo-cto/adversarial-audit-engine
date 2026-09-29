@@ -62,6 +62,17 @@ class TestAntiLeak(unittest.TestCase):
             self.assertNotIn(leak, prompt)
 
 
+class TestRobustness(unittest.TestCase):
+    def test_failed_call_is_skipped_not_fatal(self):
+        def boom(prompt):
+            raise TimeoutError("simulated hung Ollama call")
+        rr = RR.RoleRunner(chat=boom)
+        payload = rr({"kind": "arith", "expr": "2*2 == 5"}, H.AblationCell("c", eye=True, axes=True, governor=True))
+        self.assertEqual(payload["findings"], [])          # no crash: failed role -> no finding
+        aud = AE.EngineAuditor(role_runner=rr)
+        self.assertTrue(aud.audit({"kind": "arith", "expr": "2*2 == 5"}, H.AblationCell("c", eye=False, axes=True, governor=False)))
+
+
 class TestAxesTeeth(unittest.TestCase):
     def _role_sensitive(self, prompt):
         # a model that only catches on the reasoner's angle (its prompt mentions LOGICAL form)

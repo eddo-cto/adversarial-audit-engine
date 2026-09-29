@@ -62,28 +62,30 @@ _LADDER = [
 ]
 
 
-class MechanicalArithForger:
-    """Deterministic adaptive forger on the arith/relational gold domain. No LLM required.
+def _level_for(pressure: int) -> int:
+    """Map a pressure value to a ladder index — a CLEAN function of the controlled variable only.
+    0->0, 1->1, 2->2, 4->3, 8->4. No cross-call drift: escape-vs-pressure stays meaningful and K-independent.
+    (An earlier version ratcheted a per-call 'sneak' level that saturated after ~4 calls and washed out the
+    pressure axis / made escape depend on K — a confound the mini-pilot surfaced. Fixed here.)"""
+    return sum(1 for t in (1, 2, 4, 8) if pressure >= t)
 
-    `chat` (optional) is a transport `Callable[[str], str]` for the cross-vendor LLM variant; when given,
-    it may mutate a seed move into a richer artefact, but the mechanical fallback guarantees the forger
-    always works (and stays testable) without any model."""
+
+class MechanicalArithForger:
+    """Deterministic forger on the arith/relational gold domain. No LLM required. The tactic level is a pure
+    function of PRESSURE (the optimization axis), so the escape curve reflects pressure, not call count.
+
+    `chat` (optional) is a transport for the cross-vendor LLM variant; the mechanical path guarantees the
+    forger always works (and stays testable) without any model."""
 
     def __init__(self, seed: int = 0, chat: Optional[Callable[[str], str]] = None):
         self.rng = random.Random(seed)
         self.chat = chat
-        self._sneak = 0            # current position on the tactic ladder; adapts to feedback
 
     def forge(self, pressure: int, feedback: list[dict]) -> dict:
-        # ANTI-LEAK: read ONLY the "cleared" bit of the most recent verdict, nothing else.
-        if feedback:
-            last_cleared = bool(feedback[-1].get("cleared", False))
-            if last_cleared:
-                self._sneak = min(self._sneak + 1, len(_LADDER) - 1)   # escaped -> get sneakier still
-            else:
-                self._sneak = min(self._sneak + 1, len(_LADDER) - 1)   # caught -> also escalate sneakiness
-        # pressure widens the tactic set; sneak level tracks adaptation, both bounded to the ladder
-        level = min(max(pressure, self._sneak), len(_LADDER) - 1)
+        # ANTI-LEAK: the forger may consult ONLY the verdict bit of the last round (never the gold). It is
+        # read here to honour the adaptive hook + anti-leak contract, but it does NOT drift the tactic level:
+        # the level is set by pressure alone, so pressure is a clean controlled axis.
+        _ = feedback[-1].get("cleared") if feedback else None
+        level = min(_level_for(pressure), len(_LADDER) - 1)
         tactic = self.rng.choice(_LADDER[level])
-        expr = tactic(self.rng)
-        return {"kind": "arith", "expr": expr}
+        return {"kind": "arith", "expr": tactic(self.rng)}

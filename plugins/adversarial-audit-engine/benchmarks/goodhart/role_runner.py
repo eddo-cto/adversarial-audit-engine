@@ -91,7 +91,16 @@ def _finding_from(obj: dict, role: str) -> dict:
 
 
 def _run_role(chat: Callable[[str], str], artifact: dict, cell, role: str) -> Optional[dict]:
-    obj = parse_model_finding(chat(build_role_prompt(artifact, cell, role)))
+    # ROBUSTNESS: a single hung/failed model call (timeout, dropped socket, sleep) must NOT kill the whole
+    # run. Treat it as "this role produced no finding" (logged), so the loop continues. Rare when the machine
+    # stays awake; the skip is recorded so the operator can see if failures inflate the escape rate.
+    try:
+        obj = parse_model_finding(chat(build_role_prompt(artifact, cell, role)))
+    except Exception as e:                                 # noqa: BLE001 - deliberately broad: never crash the run
+        import sys
+        print(f"[role_runner] {role} call failed ({type(e).__name__}: {e}); skipping this finding",
+              file=sys.stderr)
+        return None
     return _finding_from(obj, role) if obj is not None else None
 
 
