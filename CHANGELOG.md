@@ -5,6 +5,17 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.13.1 — Orchestrator prompt hardening (no code/API change)
+Two fixes to `commands/audit.md`, both found by a real client run (CTU difendibilità, R.G. 284/2025) and
+neither touching the core, the schema, or any pinned surface. (1) **Discarded-hypothesis justification:** the
+HIGH-posta instruction now states that every `action_state: deliberately_discarded` hypothesis MUST carry its
+own `discard_justification` (not parked in `defense.fact`) — removing the recurring INTEGRITY flag the core
+(correctly) raised when the auditor dropped the field. (2) **Faithful reporting:** a new Output rule requires
+any prose summary or client referto to report the governor state and gate results exactly as the core emitted
+them (e.g. "coverage gate satisfied"), never restating a satisfied gate as a failure or inventing uncovered
+dimensions — a dramatized summary that contradicts the ledger is itself a defect. Prompt text only; the `aae`
+API, enums, gates and invariants are unchanged (SemVer: not part of the stable surface). Suite stays green.
+
 ## 1.13.0 — Evidence spans (record-only): clickable citations
 Additive, verdict-neutral. New optional field `accusation.evidence_span` = `[start, end]` byte offsets of
 the verbatim evidence quote inside `source_text`, so a referto can turn every finding into a clickable link
