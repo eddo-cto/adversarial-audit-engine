@@ -5,6 +5,16 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.13.0 — Evidence spans (record-only): clickable citations
+Additive, verdict-neutral. New optional field `accusation.evidence_span` = `[start, end]` byte offsets of
+the verbatim evidence quote inside `source_text`, so a referto can turn every finding into a clickable link
+to the exact passage in the audited document. `discipline()` AUTO-STAMPS it (record-only) right after the
+grounding gate, which already guarantees the evidence is verbatim — so the offset is exact when the quote
+locates (exact match first, else the first atomic quoted fragment); left `None` when nothing locates. It
+never changes a verdict (pinned by a test). Validation: a declared span must be `[start, end]` with
+`0 <= start <= end` (integrity flag otherwise). 1.11/1.12 ledgers omit it and validate unchanged (API.md §5:
+new optional finding field = additive). Four new tests; full suite green; core stays stdlib-only.
+
 ## 1.12.0 — Estimator defense (record-only): calibrated sub-claim confidence
 A dialogic hardening of the defense-gate, additive and verdict-neutral. New **optional** schema field
 `defense.estimates`: a list of `{subclaim_id, text, p_holds}` where `p_holds ∈ [0,1]` is the defending

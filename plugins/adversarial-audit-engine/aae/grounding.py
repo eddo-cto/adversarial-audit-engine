@@ -92,6 +92,32 @@ def _atomic_fragments(evidence: str) -> list[str]:
     return frags
 
 
+def stamp_evidence_spans(findings: list, source_text: str) -> int:
+    """RECORD-ONLY (1.13): fill accusation.evidence_span = [start,end] with the RAW byte offsets of the
+    evidence quote in source_text, so a referto can make the citation clickable. Exact match first; else the
+    first atomic (quoted) fragment. Leaves the span None when nothing locates. Never changes a verdict.
+    Returns how many spans were stamped."""
+    if not source_text:
+        return 0
+    stamped = 0
+    for f in findings:
+        acc = getattr(f, "accusation", None)
+        if acc is None or getattr(acc, "evidence_span", None) is not None:
+            continue
+        ev = getattr(acc, "evidence", "") or ""
+        candidates = [ev] + _atomic_fragments(ev)
+        for c in candidates:
+            c = c.strip()
+            if not c:
+                continue
+            i = source_text.find(c)
+            if i >= 0:
+                acc.evidence_span = [i, i + len(c)]
+                stamped += 1
+                break
+    return stamped
+
+
 def is_grounded_fragments(evidence: str, source: str) -> bool:
     """Recover evidence that is verbatim but broken by footnote markers or composite
     '...' joins: EVERY explicitly-quoted, footnote-normalized fragment must be present.

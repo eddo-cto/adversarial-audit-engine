@@ -63,11 +63,14 @@ def parse_finding(raw: dict, *, role_key: str) -> Finding | None:
         return None
     acc_raw = raw.get("accusation", {}) or {}
     def_raw = raw.get("defense", {}) or {}
+    _span = acc_raw.get("evidence_span")
     accusation = Accusation(
         text=str(acc_raw.get("text", "")),
         base=_enum(EvidenceBase, acc_raw.get("base"), EvidenceBase.READING),
         evidence=str(acc_raw.get("evidence", "")),
         sections=list(acc_raw.get("sections", []) or []),
+        evidence_span=([int(_span[0]), int(_span[1])]
+                       if isinstance(_span, (list, tuple)) and len(_span) == 2 else None),
     )
     estimates = [
         Estimate(subclaim_id=str(e.get("subclaim_id", "")), text=str(e.get("text", "")),

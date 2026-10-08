@@ -21,7 +21,7 @@ from .gates import (enforce_defense_gate, enforce_coverage_gate, evaluate_comple
 from .source_grade import (enforce_source_grade_gate, source_grade_coverage, belnap_coverage,
                            enforce_verified_at_source_gate, verified_at_source_coverage)
 from .run_manifest import build_manifest, enforce_run_validity
-from .grounding import enforce_grounding
+from .grounding import enforce_grounding, stamp_evidence_spans
 from . import metrics as metrics_mod
 from .triage import TriageResult
 from .meta_epistemic import MetaGovernor
@@ -78,6 +78,7 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
     src_text = payload.get("source_text", "")
     if src_text:
         enforce_grounding(ledger.findings, src_text)
+        stamp_evidence_spans(ledger.findings, src_text)   # record-only: clickable-citation byte spans (1.13)
 
     internal = payload.get("internal_identity", "anthropic:internal")
     external = payload.get("external_identity")

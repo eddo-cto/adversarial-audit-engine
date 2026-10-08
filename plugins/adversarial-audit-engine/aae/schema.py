@@ -124,6 +124,8 @@ class Accusation:
     base: EvidenceBase
     evidence: str = ""                 # the concrete observation / computation
     sections: list[str] = field(default_factory=list)  # ≥2 for non-local findings
+    evidence_span: Optional[list] = None   # [start,end] byte offsets of the verbatim quote in source_text
+                                           # (1.13, record-only): makes citations clickable; never a verdict
 
 
 @dataclass
@@ -328,6 +330,13 @@ class Finding:
                 problems.append(f"{self.id}: estimate p_holds must be in [0,1].")
         if self.defense.estimates and not self.defense.attempted:
             problems.append(f"{self.id}: defense.estimates present without a defense attempt.")
+        # evidence_span (1.13, record-only): if declared it must be [start,end] byte offsets, 0<=start<=end.
+        sp = self.accusation.evidence_span
+        if sp is not None:
+            ok = (isinstance(sp, (list, tuple)) and len(sp) == 2
+                  and all(isinstance(x, int) for x in sp) and 0 <= sp[0] <= sp[1])
+            if not ok:
+                problems.append(f"{self.id}: evidence_span must be [start,end] byte offsets with 0<=start<=end.")
         is_non_local = self.defect_class in (
             DefectClass.NON_LOCAL_MECHANICAL,
             DefectClass.NON_LOCAL_CONCEPTUAL_DOCUMENTED,

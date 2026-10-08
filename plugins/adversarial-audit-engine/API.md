@@ -27,6 +27,12 @@ probability that a sub-claim holds. It is **record-only**: it never changes a ve
 1.11 ledgers omit it and validate unchanged. Proper-scoring (Brier) evaluation lives in `experiments/`,
 not the core (no labels at runtime).
 
+**finding — optional evidence span (added 1.13.0, record-only).** `accusation.evidence_span` is an optional
+`[start, end]` byte-offset pair locating the verbatim evidence quote inside `source_text` (for clickable
+citations). `discipline()` auto-stamps it after the grounding gate; it is `None` when the quote does not
+locate. **Record-only** — it never changes a verdict. A declared span must be `[start, end]` with
+`0 <= start <= end` (integrity flag otherwise). 1.11/1.12 ledgers omit it and validate unchanged.
+
 **finding — optional temporal/epistemic axis (added 1.1.0, record-only).** These fields are **not
 required** in `findings.json` and are **not** part of the enforced `--schema` template; they type a
 finding's status across turns in longitudinal use and are ignored by the verdict state machine. They may
