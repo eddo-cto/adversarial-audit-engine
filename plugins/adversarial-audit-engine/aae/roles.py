@@ -38,13 +38,17 @@ DEFENSE_GATE = (
     "research. Set defense.attempted=true always; set defense.present=true and "
     "fill defense.fact ONLY if a verifiable fact defends the artifact. If the "
     "element is correct though surprising, return verdict-intent ARTIFACT_HOLDS. "
-    "Flagging a correct element as a defect is YOUR failure (a false positive)."
+    "Flagging a correct element as a defect is YOUR failure (a false positive). "
+    "OPTIONAL estimator defense: you MAY decompose the accusation into sub-claims and, in "
+    "defense.estimates, give each a calibrated p_holds in [0,1] (your true probability it holds). "
+    "Report honest probabilities — they are recorded for the human, never change the verdict."
 )
 
 OUTPUT_CONTRACT = (
     "Return JSON: {\"findings\": [ {\"id\", \"element\", \"taxonomy_cell\", "
     "\"defect_class\", \"posta\", \"accusation\": {\"text\",\"base\",\"evidence\","
-    "\"sections\"}, \"defense\": {\"attempted\",\"present\",\"fact\"}, "
+    "\"sections\"}, \"defense\": {\"attempted\",\"present\",\"fact\","
+    "\"estimates\":[{\"subclaim_id\",\"text\",\"p_holds\"}]}, "
     "\"cost_to_fix\", \"action\", \"declared_limit\", \"sources\", \"severity\"} ] }. "
     "\"attack\": {\"attempted\",\"vector\"}, "
     "defect_class in [lookup, numeric, idiosyncratic_local, non_local_mechanical, "

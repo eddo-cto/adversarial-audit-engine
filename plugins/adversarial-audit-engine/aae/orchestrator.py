@@ -40,7 +40,7 @@ from .triadic import TriadicLayer, TriadicResult
 from .construens import ConstruensLayer, ConstruensResult
 from .deep_causal import DeepCausalLayer, DeepCausalResult
 from .meta_epistemic import MetaGovernor, MetaAssessment
-from .schema import (Finding, Ledger, Accusation, Defense, Attack, DefectClass,
+from .schema import (Finding, Ledger, Accusation, Defense, Attack, Estimate, DefectClass,
                      EvidenceBase, Posta, CostToFix, Verdict, ActionState,
                      TemporalStatus)
 
@@ -69,10 +69,16 @@ def parse_finding(raw: dict, *, role_key: str) -> Finding | None:
         evidence=str(acc_raw.get("evidence", "")),
         sections=list(acc_raw.get("sections", []) or []),
     )
+    estimates = [
+        Estimate(subclaim_id=str(e.get("subclaim_id", "")), text=str(e.get("text", "")),
+                 p_holds=float(e.get("p_holds", 0.0)) if str(e.get("p_holds", "")).strip() != "" else 0.0)
+        for e in (def_raw.get("estimates", []) or []) if isinstance(e, dict)
+    ]
     defense = Defense(
         attempted=bool(def_raw.get("attempted", False)),
         present=bool(def_raw.get("present", False)),
         fact=def_raw.get("fact"),
+        estimates=estimates,
     )
     atk_raw = raw.get("attack", {}) or {}
     attack = Attack(

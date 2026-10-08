@@ -127,10 +127,23 @@ class Accusation:
 
 
 @dataclass
+class Estimate:
+    """A calibrated sub-claim probability — the estimator defense (1.12), RECORD-ONLY.
+    The attacking role decomposes the accusation into sub-claims; the defending role assigns
+    `p_holds` ∈ [0,1], the probability that the sub-claim holds. It NEVER changes a verdict here;
+    it is surfaced to the human as a triage signal. Scored (Brier) only in experiments/, where
+    labels exist — a proper scoring rule makes honest calibration the defender's optimal strategy."""
+    subclaim_id: str = ""
+    text: str = ""
+    p_holds: float = 0.0
+
+
+@dataclass
 class Defense:
     attempted: bool = False            # the defense-gate flag — must be True to condemn
     present: bool = False              # a real verifiable fact was found
     fact: Optional[str] = None         # must be verifiable, not plausibility
+    estimates: list = field(default_factory=list)   # record-only calibrated sub-claim probs (1.12); never alters a verdict
 
 
 @dataclass
@@ -303,6 +316,18 @@ class Finding:
         if self.action_state == ActionState.DELIBERATELY_DISCARDED and \
                 not self.discard_justification:
             problems.append(f"{self.id}: discarded action requires a justification.")
+        # estimator defense (1.12, record-only): p_holds must be a probability; estimates presuppose a
+        # defense attempt. These are integrity FLAGS — they never change the verdict.
+        for e in (self.defense.estimates or []):
+            p = e.get("p_holds") if isinstance(e, dict) else getattr(e, "p_holds", None)
+            try:
+                ok = p is not None and 0.0 <= float(p) <= 1.0
+            except (TypeError, ValueError):
+                ok = False
+            if not ok:
+                problems.append(f"{self.id}: estimate p_holds must be in [0,1].")
+        if self.defense.estimates and not self.defense.attempted:
+            problems.append(f"{self.id}: defense.estimates present without a defense attempt.")
         is_non_local = self.defect_class in (
             DefectClass.NON_LOCAL_MECHANICAL,
             DefectClass.NON_LOCAL_CONCEPTUAL_DOCUMENTED,

@@ -5,6 +5,25 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.12.0 — Estimator defense (record-only): calibrated sub-claim confidence
+A dialogic hardening of the defense-gate, additive and verdict-neutral. New **optional** schema field
+`defense.estimates`: a list of `{subclaim_id, text, p_holds}` where `p_holds ∈ [0,1]` is the defending
+role's calibrated probability that a decomposed sub-claim holds. Today it is **record-only** — surfaced to
+the human reviewer as a triage signal, and it NEVER changes a verdict (pinned by a dedicated test). The
+proper-scoring (Brier) evaluation that makes honest calibration the defender's optimal strategy
+(Brown-Cohen/Irving prover-estimator debate; Gneiting-Raftery) lives in `experiments/`, not the core, because
+there are no labels at runtime on client documents. Validation: `p_holds` out of [0,1], or estimates without
+a defense attempt, are integrity flags (never errors). 1.11 ledgers omit the field and validate unchanged
+(API.md §5: new optional finding field = additive, non-breaking). Graduation into the verdict state machine
+is reserved for a future 2.0, and only if the Goodhart study (Arm D) shows it improves the operating point.
+
+Separately (not part of the public surface, no version impact): `benchmarks/self_test/` — a G (audit-quality)
+release gate. It measures recall (severity-weighted) and false-positive rate against a sealed labelled corpus
+via a deterministic finding↔defect matcher (no LLM-as-judge; the grounding-gate's verbatim quotes make exact
+matching possible) and fails CI on regression. This is the long-missing other half of the Type-I calibration.
+
+Six new core tests (estimates) + 17 self-test tests; full suite green. Core stays stdlib-only.
+
 ## 1.11.0 — Attack-gate + attack-vector library: the dual of the defense-gate
 The attack layer of the hive was the least code-structured part of the engine: adjudication (gates,
 verdict machine, dedup, governor) is deterministic, but the attack itself was prompt+LLM and improvised.

@@ -16,8 +16,16 @@ CI rather than shipping silently.
 `deploy_roles`), `findings[]`.
 
 **finding:** `source_role`, `element`, `taxonomy_cell`, `defect_class`, `posta`,
-`accusation` (`text`, `base`, `evidence`, `sections`), `defense` (`attempted`, `present`, `fact`),
-`cost_to_fix`, `action`, `declared_limit`, `sources`, `severity`, `source_grade`, `action_state`.
+`accusation` (`text`, `base`, `evidence`, `sections`), `defense` (`attempted`, `present`, `fact`,
+and the optional `estimates`, see below), `cost_to_fix`, `action`, `declared_limit`, `sources`,
+`severity`, `source_grade`, `action_state`.
+
+**finding — optional estimator defense (added 1.12.0, record-only).** `defense.estimates` is an optional
+list of `{subclaim_id, text, p_holds}`, where `p_holds` ∈ [0,1] is the defending role's calibrated
+probability that a sub-claim holds. It is **record-only**: it never changes a verdict (pinned by a test).
+`p_holds` out of range, or estimates present without a defense attempt, are integrity flags, not errors.
+1.11 ledgers omit it and validate unchanged. Proper-scoring (Brier) evaluation lives in `experiments/`,
+not the core (no labels at runtime).
 
 **finding — optional temporal/epistemic axis (added 1.1.0, record-only).** These fields are **not
 required** in `findings.json` and are **not** part of the enforced `--schema` template; they type a
