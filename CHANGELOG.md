@@ -5,6 +5,14 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.14.1 — Fix: governor coverage count (not len(flags))
+`scripts/governor_check.py` counted `len(ledger.flags)` and reported it as "N dimension(s)
+uncovered/unjustified" — so any EVIDENCE-BASE / COMPETENCE / TYPE-I flag inflated a false coverage gap that
+contradicted the core coverage gate AND fed the apparent-coherence `ac` score (risking a spurious
+NOT_INTERNALLY_VERIFIABLE). Surfaced by the CTU re-run: 5 unrelated flags → "5 dimensions uncovered" while
+the core (and the ledger's full `covered_cells`) said coverage satisfied. Now counts only `COVERAGE
+INCOMPLETE` flags, mirroring `meta_epistemic.py`. One-line fix + regression test; no verdict or API change.
+
 ## 1.14.0 — Competence gate: the authority axis (code, not prompt)
 The engine multiplies an expert the operator may NOT have, so it must never assert, as a machine, a defect
 that turns on an external rule it cannot ground. New deterministic gate `enforce_competence_gate`, the third

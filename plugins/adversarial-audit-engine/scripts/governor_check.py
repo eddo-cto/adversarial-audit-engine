@@ -61,7 +61,11 @@ def verdict_from_ledger(led: dict) -> tuple[str, float, list[str]]:
     needs_expert = by.get("conteso", 0)
     holds = by.get("artefatto_regge", 0)
     declared_limits = sum(1 for f in findings if f.get("declared_limit"))
-    coverage_flags = len(led.get("flags", []))
+    # Only the coverage gate's own flags count as uncovered dimensions — NOT every ledger flag
+    # (EVIDENCE-BASE / COMPETENCE / TYPE-I are not coverage gaps). Mirrors meta_epistemic.py; before
+    # 1.14.1 this was len(flags), so any flag inflated "N dimension(s) uncovered" and the ac score.
+    coverage_flags = sum(1 for fl in led.get("flags", [])
+                         if str(fl).startswith("COVERAGE INCOMPLETE"))
     independence = int(led.get("independence_level", 1))
     # false positives proxy: ARTIFACT_HOLDS that were defended (we count holds)
     notes = []
