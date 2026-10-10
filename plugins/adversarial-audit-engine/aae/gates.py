@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .schema import (Ledger, Finding, Verdict, Posta, IndependenceLevel)
+from .schema import (Ledger, Finding, Verdict, Posta, DefectClass, IndependenceLevel)
 from .triage import TAXONOMY
 from .adapters import independence_level_between
 
@@ -100,6 +100,87 @@ def enforce_evidence_sufficiency_gate(ledger: Ledger) -> list[str]:
             f.verdict = Verdict.NEEDS_EXPERT
         f.declared_limit = ((f.declared_limit + " | ") if f.declared_limit else "") + limit
         notes.append(f"{f.id}: missing evidence {missing} → NEEDS_EXPERT")
+    return notes
+
+
+# --------------------------------------------------------------------------
+# 1-ter. competence-gate (the authority axis — 1.14)
+# --------------------------------------------------------------------------
+
+# Classes the machine CANNOT settle by re-computation or value-vs-standard lookup:
+# they turn on judgment or on an external authority. Used only to scope the
+# regulated-domain completeness FLAG — never to route a verdict (that needs a
+# declared authority dependence, below), so a legitimate internal-coherence
+# finding is never demoted for being conceptual.
+_NON_MECHANICAL = frozenset({
+    DefectClass.EPISTEMIC, DefectClass.NORMATIVE,
+    DefectClass.NON_LOCAL_CONCEPTUAL_DOCUMENTED, DefectClass.NON_LOCAL_CONCEPTUAL_NOVEL,
+    DefectClass.ETHICAL, DefectClass.PHENOMENOLOGICAL,
+})
+
+
+def enforce_competence_gate(ledger: Ledger) -> list[str]:
+    """The competence / authority axis — third of the grounding family (after
+    source_grade for negative claims and verified_at_source for positive ones).
+
+    A finding whose defect turns on an EXTERNAL rule — a statute, regulation,
+    standard, code of practice, or the mandate/quesito itself — is something the
+    machine cannot adjudicate without the governing authority in hand. So:
+
+      HARD route (any domain): a finding that declares it rests on authority
+      (`defect_class == normative` OR `rests_on_authority`) WITHOUT citing the
+      governing norm (`authority_cited`) cannot be ASSERTED. A condemnation is
+      routed to NEEDS_EXPERT; a non-condemning verdict keeps its state but carries
+      the competence limit. The machine surfaces the question; the human decides
+      the rule. (Mirrors enforce_evidence_sufficiency_gate exactly.)
+
+      COMPLETENESS flag (regulated domain only): a non-mechanical HIGH-posta
+      finding that leaves the authority axis UNCLASSIFIED (not normative, not
+      rests_on_authority, no authority cited) is named so the classification is
+      not silently skipped — forcing the auditor to mark it as internal, or to
+      declare its authority dependence and cite the norm. Record-only; never
+      demotes a legitimate internal-coherence finding.
+
+    Born from a real L4 client-review (CTU R.G. 284/2025): two HIGH-posta
+    procedural findings — an 'excess of mandate' and a 'contraddittorio' defect —
+    neither grounded in the codice di procedura nor checked against the quesito's
+    own wording; both false positives the domain expert caught. The engine had
+    even declared the limit ('no procedural/caselaw research') yet emitted them at
+    HIGH posta. This makes the consequence deterministic instead of a prompt."""
+    notes: list[str] = []
+    condemning = (Verdict.ARTIFACT_DEFECTIVE, Verdict.REDUCED, Verdict.PENDING)
+    for f in ledger.findings:
+        declared = (f.defect_class == DefectClass.NORMATIVE
+                    or bool(getattr(f, "rests_on_authority", False)))
+        if not declared:
+            continue
+        if (getattr(f, "authority_cited", None) or "").strip():
+            continue  # a governing norm is cited — the claim is grounded
+        limit = ("COMPETENCE: poggia su una regola esterna non citata "
+                 "(norma/standard/mandato) → il rilievo si può sollevare, non asserire; "
+                 "instradato all'esperto")
+        if f.verdict in condemning:
+            f.verdict = Verdict.NEEDS_EXPERT
+        f.declared_limit = ((f.declared_limit + " | ") if f.declared_limit else "") + limit
+        notes.append(f"{f.id}: authority-dependent without a cited norm → NEEDS_EXPERT")
+
+    if ledger.domain_regulated:
+        unclassified = [
+            f.id for f in ledger.findings
+            if f.posta == Posta.HIGH
+            and f.defect_class in _NON_MECHANICAL
+            and f.defect_class != DefectClass.NORMATIVE
+            and not bool(getattr(f, "rests_on_authority", False))
+            and not (getattr(f, "authority_cited", None) or "").strip()
+        ]
+        if unclassified:
+            notes.append(
+                "regulated domain — classify the authority axis on "
+                + ", ".join(unclassified)
+                + ": mark rests_on_authority and cite the governing norm if the defect turns on an "
+                "external rule, else confirm it is internal. A non-mechanical HIGH-posta finding must "
+                "not leave this axis unclassified."
+            )
     return notes
 
 

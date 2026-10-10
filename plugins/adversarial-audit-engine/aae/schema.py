@@ -47,6 +47,9 @@ class DefectClass(str, Enum):
     EPISTEMIC = "epistemic"                 # validation / inference / construct validity
     ETHICAL = "ethical"                     # harm / autonomy / undisclosed value trade-off
     PHENOMENOLOGICAL = "phenomenological"   # lived-experience / perception failure
+    NORMATIVE = "normative"                 # (non)compliance with an EXTERNAL rule/statute/standard/mandate
+                                            # — a claim the machine cannot adjudicate without the governing
+                                            # authority; the competence-gate routes it to the expert absent one.
 
 
 class EvidenceBase(str, Enum):
@@ -213,6 +216,23 @@ class Finding:
     # condemning verdict into NEEDS_EXPERT, naming the missing documents. Nothing
     # is left to the model's judgement: the consequence is deterministic.
     requires_docs: list[str] = field(default_factory=list)
+
+    # ---- competence / authority axis (1.14, record-only + gate) -------------
+    # The THIRD member of the grounding family (after source_grade for negative
+    # claims and verified_at_source for positive reputation claims). It guards a
+    # CONDEMNATION that turns on an EXTERNAL rule — a statute, regulation, standard,
+    # code of practice, or the mandate/quesito itself — which the machine cannot
+    # adjudicate without the governing authority in hand. Born from a real L4
+    # client-review (CTU R.G. 284/2025): the engine emitted two HIGH-posta
+    # procedural findings — an "excess of mandate" and a "contraddittorio" defect —
+    # neither grounded in the codice di procedura nor checked against the quesito's
+    # own wording; both were false positives the domain expert caught. A finding
+    # that `rests_on_authority` (or whose defect_class is NORMATIVE) is confirmable
+    # only if it cites the governing authority (`authority_cited`) at primary grade;
+    # otherwise enforce_competence_gate() routes a condemnation to NEEDS_EXPERT.
+    # The machine surfaces the question; the human expert adjudicates the rule.
+    rests_on_authority: bool = False            # the defect turns on an external rule/standard/mandate
+    authority_cited: Optional[str] = None       # the governing norm/clause/standard cited (None = uncited)
 
     # ---- temporal/epistemic axis (round 19, record-only, longitudinal) ------
     # Orthogonal to taxonomy (WHERE) and to verdict (adjudicated truth THIS turn).
@@ -387,6 +407,12 @@ class Ledger:
     excluded_cells: dict[str, str] = field(default_factory=dict)  # cell -> justification
     evidence_base: list[str] = field(default_factory=list)  # documents actually supplied to the run;
                                              # the evidence-sufficiency gate reads it (round 22, record-only)
+    domain_regulated: bool = False           # the audited domain is governed by external rules (law,
+                                             # medicine, tax, safety, accounting standards) — declared at
+                                             # triage. When True, the competence-gate (1.14) requires any
+                                             # authority-dependent finding to cite its governing norm, and
+                                             # the governor flags non-mechanical HIGH-posta findings whose
+                                             # authority axis is left unclassified.
     independence_level: IndependenceLevel = IndependenceLevel.SAME_INSTANCE_ROLES
     created_at: float = field(default_factory=time.time)
     flags: list[str] = field(default_factory=list)
@@ -435,6 +461,7 @@ class Ledger:
             "covered_cells": self.covered_cells,
             "excluded_cells": self.excluded_cells,
             "evidence_base": self.evidence_base,
+            "domain_regulated": self.domain_regulated,
             "flags": self.flags,
             "completion_state": self.completion_state,
             "content_digest": self.content_digest,

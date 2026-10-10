@@ -5,6 +5,27 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.14.0 — Competence gate: the authority axis (code, not prompt)
+The engine multiplies an expert the operator may NOT have, so it must never assert, as a machine, a defect
+that turns on an external rule it cannot ground. New deterministic gate `enforce_competence_gate`, the third
+of the grounding family (after source_grade and verified_at_source). A finding whose defect rests on an
+external statute, regulation, standard, code of practice, or the mandate/quesito itself is confirmable only
+if it cites the governing authority: additive fields `Finding.rests_on_authority` (bool) + `authority_cited`
+(str), new `defect_class: normative` (appended enum), and `Ledger.domain_regulated` (bool, declared at
+triage). HARD route (any domain): a finding declared authority-dependent (`normative` or `rests_on_authority`)
+without a cited norm has a CONDEMNATION routed to NEEDS_EXPERT — mirrors the evidence-sufficiency gate exactly;
+a non-condemning verdict keeps its state and carries the competence limit. COMPLETENESS flag (regulated domain
+only): non-mechanical HIGH-posta findings that leave the authority axis unclassified are named, forcing the
+classification instead of letting it default. It never demotes a legitimate internal-coherence finding (a
+measured design choice: the naive "all non-mechanical classes" trigger was rejected because it over-routed
+13/16 findings on the source case). Born from a real L4 review (CTU R.G. 284/2025): two HIGH-posta procedural
+findings — "excess of mandate" and a "contraddittorio" defect — ungrounded in the codice di procedura and
+unchecked against the quesito's own wording, both false positives the domain expert caught; the engine had
+even declared the limit yet emitted them at HIGH posta. Prompt (OUTPUT_CONTRACT + /audit triage) instructs the
+classification; the CODE enforces the consequence — a prompt can be ignored, a gate cannot. Additive, SemVer
+1.x-safe: new optional fields, appended enum, a tightening of discipline (more to the expert) that preserves
+the golden rule. New tests pin the gate; full suite green; core stays stdlib-only.
+
 ## 1.13.1 — Orchestrator prompt hardening (no code/API change)
 Two fixes to `commands/audit.md`, both found by a real client run (CTU difendibilità, R.G. 284/2025) and
 neither touching the core, the schema, or any pinned surface. (1) **Discarded-hypothesis justification:** the

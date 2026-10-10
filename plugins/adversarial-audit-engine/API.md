@@ -12,8 +12,8 @@ CI rather than shipping silently.
 `findings.json` to match it, then feed it to the core. The stable keys:
 
 **payload (top level):** `artifact_name`, `internal_identity`, `external_identity`, `max_posta`,
-`source_primary_reachable`, `source_text`, `excluded_cells`, `triage` (`dimensions_present`,
-`deploy_roles`), `findings[]`.
+`source_primary_reachable`, `source_text`, `excluded_cells`, `domain_regulated`, `triage`
+(`dimensions_present`, `deploy_roles`), `findings[]`.
 
 **finding:** `source_role`, `element`, `taxonomy_cell`, `defect_class`, `posta`,
 `accusation` (`text`, `base`, `evidence`, `sections`), `defense` (`attempted`, `present`, `fact`,
@@ -26,6 +26,16 @@ probability that a sub-claim holds. It is **record-only**: it never changes a ve
 `p_holds` out of range, or estimates present without a defense attempt, are integrity flags, not errors.
 1.11 ledgers omit it and validate unchanged. Proper-scoring (Brier) evaluation lives in `experiments/`,
 not the core (no labels at runtime).
+
+**finding — optional authority axis (added 1.14.0, gate).** `rests_on_authority` (bool, default false) and
+`authority_cited` (str, optional) declare that a finding's defect turns on an EXTERNAL rule — a statute,
+regulation, standard, code of practice, or the mandate/quesito — and name the governing norm. Together with
+the new `defect_class` member `normative`, they drive `enforce_competence_gate`: a finding that is
+authority-dependent (`normative` or `rests_on_authority`) WITHOUT a cited norm has a condemnation
+(`accusa_vince`/`accusa_ridimensionata`/`pending`) routed to `NEEDS_EXPERT`; a non-condemning verdict keeps
+its state and carries a competence limit. When the payload sets `domain_regulated: true`, the gate also emits a
+record-only completeness flag naming non-mechanical HIGH-posta findings that leave the authority axis
+unclassified. Pre-1.14 ledgers omit these and validate unchanged.
 
 **finding — optional evidence span (added 1.13.0, record-only).** `accusation.evidence_span` is an optional
 `[start, end]` byte-offset pair locating the verbatim evidence quote inside `source_text` (for clickable
@@ -46,7 +56,8 @@ persisted finding carries one. Consumers that do not know these fields may ignor
 **vocabularies (enum members are additive in 1.x — new members may be appended, none removed/renamed):**
 - `taxonomy_cell`: premises, inputs, mechanisms, outputs, boundary, interface
 - `defect_class`: lookup, numeric, idiosyncratic_local, non_local_mechanical,
-  non_local_conceptual_documented, non_local_conceptual_novel, epistemic, ethical, phenomenological
+  non_local_conceptual_documented, non_local_conceptual_novel, epistemic, ethical, phenomenological,
+  normative
 - `posta`: low, medium, high
 - `evidence_base`: reading, execution, domain_knowledge, pattern
 - `cost_to_fix`: trivial, low, medium, high
@@ -58,7 +69,9 @@ persisted finding carries one. Consumers that do not know these fields may ignor
 `accusation.evidence` must be verbatim from `source_text` or an executed result (grounding gate);
 non-local/conceptual findings need ≥2 cited sections; `source_grade` downgrades a condemnation resting on
 grade>1 when a primary is reachable; a HIGH-posta run must record ≥1 `deliberately_discarded` hypothesis;
-verdicts are output-only; the independent eye is credited only from the attested adapter identity.
+an authority-dependent finding (`normative`/`rests_on_authority`) without a cited governing norm cannot be
+asserted as a condemnation (competence gate → NEEDS_EXPERT); verdicts are output-only; the independent eye is
+credited only from the attested adapter identity.
 
 ## 2. CLI: `scripts/run_core.py` (the product entry point)
 

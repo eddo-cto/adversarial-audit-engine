@@ -110,6 +110,10 @@ def parse_finding(raw: dict, *, role_key: str) -> Finding | None:
         credential_claim=bool(raw.get("credential_claim", False)),
         verified_at_source=(bool(raw["verified_at_source"])
                             if raw.get("verified_at_source") is not None else None),
+        # competence / authority axis (1.14, record-only + gate; absent -> not authority-dependent)
+        rests_on_authority=bool(raw.get("rests_on_authority", False)),
+        authority_cited=(str(raw["authority_cited"]).strip()
+                         if raw.get("authority_cited") else None),
         action_state=_enum(ActionState, raw.get("action_state"), ActionState.OPEN),
         discard_justification=raw.get("discard_justification"),
         # temporal/epistemic axis (record-only; absent -> stays unset)

@@ -17,7 +17,8 @@ import os
 from .schema import Ledger, Posta, ActionState
 from .orchestrator import parse_finding, AuditResult
 from .gates import (enforce_defense_gate, enforce_coverage_gate, evaluate_completion,
-                    enforce_evidence_sufficiency_gate, enforce_attack_gate)
+                    enforce_evidence_sufficiency_gate, enforce_attack_gate,
+                    enforce_competence_gate)
 from .source_grade import (enforce_source_grade_gate, source_grade_coverage, belnap_coverage,
                            enforce_verified_at_source_gate, verified_at_source_coverage)
 from .run_manifest import build_manifest, enforce_run_validity
@@ -54,6 +55,7 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
             ledger.add(f)
     ledger.excluded_cells = dict(payload.get("excluded_cells", {}))
     ledger.evidence_base = list(payload.get("evidence_base", []) or [])
+    ledger.domain_regulated = bool(payload.get("domain_regulated", False))
     ledger.adjudicate_all()
     enforce_defense_gate(ledger)
     # evidence-sufficiency gate: a finding requiring a document absent from evidence_base cannot be
@@ -71,6 +73,12 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
     # verified-at-source gate (dual): a reputation/credential claim asserted "verified" but resting on a
     # non-primary source is downgraded to self-declared and flagged (record-only; never touches verdicts).
     ledger.flags.extend(enforce_verified_at_source_gate(ledger))
+    # competence gate (1.14): a finding that turns on an EXTERNAL rule (defect_class normative, or
+    # rests_on_authority) without a governing authority cited cannot be asserted as a condemnation — it is
+    # routed to NEEDS_EXPERT. In a regulated domain, non-mechanical HIGH-posta findings that leave the
+    # authority axis unclassified are flagged so the classification is not silently skipped. Born from a real
+    # L4 review (CTU R.G. 284/2025): two HIGH-posta procedural findings ungrounded in the codice di procedura.
+    ledger.flags.extend("COMPETENCE: " + n for n in enforce_competence_gate(ledger))
     enforce_coverage_gate(ledger)
     # structural integrity (non-local needs >=2 sections; a declared limit) surfaced as flags.
     ledger.flags.extend(f"INTEGRITY: {p}" for p in ledger.integrity_report())
