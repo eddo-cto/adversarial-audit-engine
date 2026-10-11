@@ -108,7 +108,16 @@ def cite(record: dict | None) -> str:
         return ("Type-I (false-demolition) NOT CALIBRATED for this auditor: the false-positive rate is "
                 "asserted, not measured. Run the control battery to calibrate.")
     lo, hi = record.get("FDR_ci95", [0.0, 1.0])
-    return (f"Type-I (false-demolition) = {record['FDR']:.0%} "
+    line = (f"Type-I (false-demolition) = {record['FDR']:.0%} "
             f"[95% CI {lo:.0%}-{hi:.0%}, n={record['n_valid']} valid controls], "
             f"power TDR = {record['TDR']:.0%}, battery '{record.get('battery_id','?')}', "
             f"calibrated {record.get('date','?')[:10]}. Certainty scales with battery size.")
+    # NULL-DETECTOR guard: a 0% false-positive rate is NOT a quality signal when the auditor also
+    # demolishes nothing true (power 0) or cannot discriminate (AUC ~ 0.5) — it simply never fires.
+    # Say so, so the reassuring 0% is not mistaken for a good auditor (the qwen2.5:7b local case).
+    tdr = record.get("TDR"); auc = record.get("AUC"); ninv = record.get("n_invalid", 0)
+    if (ninv and tdr == 0) or (auc is not None and auc <= 0.5):
+        line += (" [NULL DETECTOR: this auditor demolished nothing on the battery (power 0%, "
+                 "AUC ~ 0.5) — the low false-positive rate is not a quality signal, it never fires; "
+                 "do not rely on it as a standalone auditor.]")
+    return line

@@ -429,6 +429,9 @@ class Ledger:
     internal_identity: str = ""              # "vendor:model" that ran the hive (round 21, record-only)
     external_attested_identity: str = ""     # the eye ACTUALLY called, adapter-attested; the
                                              # vendor of this string is what lifts independence to 3
+    eye_corroboration: str = ""              # "" none-called | "none" eye called but corroborated nothing
+                                             # grounded (level 3 is NOMINAL) | "corroborated" (1.15). The
+                                             # level says WHO reviewed; this says whether it actually agreed.
 
     def add(self, finding: Finding) -> None:
         self.findings.append(finding)
@@ -471,6 +474,7 @@ class Ledger:
             "belnap_coverage": self.belnap_coverage,
             "internal_identity": self.internal_identity,
             "external_attested_identity": self.external_attested_identity,
+            "eye_corroboration": self.eye_corroboration,
             "findings": [f.to_dict() for f in self.findings],
         }
         return json.dumps(payload, indent=indent, ensure_ascii=False)

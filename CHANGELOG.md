@@ -5,6 +5,19 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.15.0 — Honest qualification of deceptive metrics (independence 3 and Type-I 0%)
+Two deterministic signals so a reassuring number is not read as quality. Both surfaced by real runs (CTU
+re-run; local qwen2.5:7b calibration). (1) **LEVEL-3 NOMINAL:** a different-vendor eye lifts independence to
+3 by WHO it is, even if it corroborated nothing that met the grounding bar. New record-only ledger field
+`eye_corroboration` (""=none called | "none" | "corroborated") and payload field `eye_corroborations`: when an
+eye is attested but corroborated nothing (counted from findings whose `source_role` names the eye, or a
+flow-declared count; conservative default = nominal), the core sets `eye_corroboration="none"` and flags
+"LEVEL-3 NOMINAL — independence is vendor-nominal, not corroborative." The level still says WHO reviewed; this
+says whether it agreed. (2) **cite() NULL-DETECTOR:** `type1_calibration.cite()` now flags a 0% false-positive
+rate that comes with 0 power / AUC~0.5 — an auditor that demolishes nothing never false-fires, so its 0% is
+not quality. The local qwen2.5:7b measured FDR 0% / TDR 0% / AUC 0.5 → now cited as a NULL DETECTOR. Additive,
+SemVer-1.x-safe (new optional field + flag + cite caveat); no verdict change. New tests; suite green.
+
 ## 1.14.1 — Fix: governor coverage count (not len(flags))
 `scripts/governor_check.py` counted `len(ledger.flags)` and reported it as "N dimension(s)
 uncovered/unjustified" — so any EVIDENCE-BASE / COMPETENCE / TYPE-I flag inflated a false coverage gap that

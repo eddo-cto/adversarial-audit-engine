@@ -142,6 +142,27 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
     ledger.internal_identity = internal or ""
     ledger.external_attested_identity = attested_identity or ""
 
+    # LEVEL-3 can be NOMINAL (1.15): a different-vendor eye lifts independence to 3 by WHO it is, even if it
+    # contributed nothing that met the grounding bar. Without saying so, a reader reads "level 3" as
+    # corroboration. Deterministic: count eye claims folded into findings (source_role naming the eye) OR a
+    # flow-declared count; conservative default = nominal, so the burden is on PROVING corroboration — the
+    # flag still fires if the flow forgot to report it. Mirrors the calibration null-detector caveat: a
+    # reassuring signal (independence 3) qualified by whether it means anything.
+    if attested_identity:
+        _eye_roles = {"external-auditor", "external_auditor", "eye", "independent-eye"}
+        _folded = sum(1 for f in ledger.findings
+                      if str(getattr(f, "source_role", "")).strip().lower() in _eye_roles
+                      or str(getattr(f, "source_role", "")).strip() == attested_identity)
+        _declared = int(payload.get("eye_corroborations", 0) or 0)
+        if max(_folded, _declared) > 0:
+            ledger.eye_corroboration = "corroborated"
+        else:
+            ledger.eye_corroboration = "none"
+            ledger.flags.append(
+                "INDEPENDENCE: LEVEL-3 NOMINAL — the independent eye (" + attested_identity +
+                ") was called but corroborated nothing that met the grounding bar; independence is "
+                "vendor-nominal, not corroborative. Do not read level 3 as agreement.")
+
     m = metrics_mod.compute(ledger)
     result = AuditResult(ledger=ledger,
                          triage=TriageResult(dimensions_present=[], deploy_roles=[]),

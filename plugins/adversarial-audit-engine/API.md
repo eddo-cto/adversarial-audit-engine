@@ -27,6 +27,14 @@ probability that a sub-claim holds. It is **record-only**: it never changes a ve
 1.11 ledgers omit it and validate unchanged. Proper-scoring (Brier) evaluation lives in `experiments/`,
 not the core (no labels at runtime).
 
+**payload / ledger — eye corroboration (added 1.15.0, record-only + flag).** Optional payload field
+`eye_corroborations` (int) = how many independent-eye claims met the grounding bar and were folded into
+findings. When an eye is attested (independence 3) but corroborated nothing (this count is 0 and no finding's
+`source_role` names the eye), the core sets ledger `eye_corroboration="none"` and flags the run LEVEL-3
+NOMINAL — the level reflects WHO reviewed, not that it agreed. `corroborated` when ≥1; `""` when no eye called.
+Conservative default: nominal unless corroboration is shown. (Separately, `type1_calibration.cite()` flags a
+0% Type-I that comes with 0 power / AUC~0.5 as a NULL DETECTOR — the same principle for the calibration line.)
+
 **finding — optional authority axis (added 1.14.0, gate).** `rests_on_authority` (bool, default false) and
 `authority_cited` (str, optional) declare that a finding's defect turns on an EXTERNAL rule — a statute,
 regulation, standard, code of practice, or the mandate/quesito — and name the governing norm. Together with
