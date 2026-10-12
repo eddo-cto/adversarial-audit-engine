@@ -432,6 +432,10 @@ class Ledger:
     eye_corroboration: str = ""              # "" none-called | "none" eye called but corroborated nothing
                                              # grounded (level 3 is NOMINAL) | "corroborated" (1.15). The
                                              # level says WHO reviewed; this says whether it actually agreed.
+    routing_delta: list = field(default_factory=list)  # 1.16 routing sentinel, record-only: findings kept
+                                             # out of condemnation ONLY by a self-declared lever
+                                             # (requires_docs / source_grade>1): [{id, verdict,
+                                             # counterfactual, levers}]. Never changes a verdict.
 
     def add(self, finding: Finding) -> None:
         self.findings.append(finding)
@@ -475,6 +479,7 @@ class Ledger:
             "internal_identity": self.internal_identity,
             "external_attested_identity": self.external_attested_identity,
             "eye_corroboration": self.eye_corroboration,
+            "routing_delta": self.routing_delta,
             "findings": [f.to_dict() for f in self.findings],
         }
         return json.dumps(payload, indent=indent, ensure_ascii=False)

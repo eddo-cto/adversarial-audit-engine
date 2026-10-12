@@ -23,6 +23,7 @@ from .source_grade import (enforce_source_grade_gate, source_grade_coverage, bel
                            enforce_verified_at_source_gate, verified_at_source_coverage)
 from .run_manifest import build_manifest, enforce_run_validity
 from .grounding import enforce_grounding, stamp_evidence_spans
+from .routing_sentinel import routing_sentinel
 from . import metrics as metrics_mod
 from .triage import TriageResult
 from .meta_epistemic import MetaGovernor
@@ -87,6 +88,12 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
     if src_text:
         enforce_grounding(ledger.findings, src_text)
         stamp_evidence_spans(ledger.findings, src_text)   # record-only: clickable-citation byte spans (1.13)
+    # routing sentinel (1.16, record-only): name the findings kept out of condemnation ONLY by a self-declared
+    # lever (requires_docs absent from evidence_base, or source_grade>1). The verdict is a pure function of
+    # auditor-declared fields; this exposes the lever without judging it (real run R.G.E. 95/2025: 0 -> 5
+    # condemnations once the levers were removed). Content gates (defense, competence, grounding) are kept.
+    ledger.flags.extend(routing_sentinel(ledger, primary_reachable=primary_reachable,
+                                         source_text=src_text or ""))
 
     internal = payload.get("internal_identity", "anthropic:internal")
     external = payload.get("external_identity")

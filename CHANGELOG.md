@@ -5,6 +5,17 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.16.0 — Routing sentinel: expose condemnations avoided only by self-declared levers
+The verdict is a pure function of auditor-declared fields, and two of them route a finding out of condemnation with no
+content check: `requires_docs` (→ NEEDS_EXPERT) and `source_grade > 1` (→ NEEDS_READING). Found on a real run (Rimini
+R.G.E. 95/2025, auditor that had read the gate code): 0 condemnations, 5 once those declarations were removed, three of them
+decidable from the bundle alone — a conservative Goodhart ("never be caught overstating"). New `aae/routing_sentinel.py`:
+the core recomputes each non-condemning, non-held verdict without the two levers, keeping the content gates (defense,
+competence, grounding), and records the difference in the new ledger field `routing_delta` + a `ROUTING SENTINEL` flag.
+Record-only: verdicts unchanged (verified identical on the 4 most recent real payloads); it exposes the lever, the human
+judges it. Regression: the same payloads give identical verdicts on 1.11 → 1.15 → 1.16. New `tests/test_routing_sentinel.py`
+(10). Additive, SemVer-1.x-safe.
+
 ## 1.15.0 — Honest qualification of deceptive metrics (independence 3 and Type-I 0%)
 Two deterministic signals so a reassuring number is not read as quality. Both surfaced by real runs (CTU
 re-run; local qwen2.5:7b calibration). (1) **LEVEL-3 NOMINAL:** a different-vendor eye lifts independence to

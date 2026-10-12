@@ -35,6 +35,13 @@ NOMINAL — the level reflects WHO reviewed, not that it agreed. `corroborated` 
 Conservative default: nominal unless corroboration is shown. (Separately, `type1_calibration.cite()` flags a
 0% Type-I that comes with 0 power / AUC~0.5 as a NULL DETECTOR — the same principle for the calibration line.)
 
+**ledger — routing sentinel (added 1.16.0, record-only + flag).** `routing_delta` lists the findings kept out of
+a condemnation ONLY by a self-declared routing lever — `requires_docs` absent from `evidence_base` (→ NEEDS_EXPERT) or
+`source_grade > 1` with a reachable primary (→ NEEDS_READING): `[{id, label, verdict, counterfactual, levers}]`. The core
+recomputes each verdict without those two levers while keeping every content gate (defense, competence, grounding);
+a difference is recorded and flagged `ROUTING SENTINEL`. It never changes a verdict and does not judge whether the
+routing was warranted — that is the human's call (is the document needed for the claim AS STATED, or only to resolve it?).
+
 **finding — optional authority axis (added 1.14.0, gate).** `rests_on_authority` (bool, default false) and
 `authority_cited` (str, optional) declare that a finding's defect turns on an EXTERNAL rule — a statute,
 regulation, standard, code of practice, or the mandate/quesito — and name the governing norm. Together with
