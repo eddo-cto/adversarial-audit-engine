@@ -436,6 +436,8 @@ class Ledger:
                                              # out of condemnation ONLY by a self-declared lever
                                              # (requires_docs / source_grade>1): [{id, verdict,
                                              # counterfactual, levers}]. Never changes a verdict.
+    defense_holds: list = field(default_factory=list)  # 1.17 record-only: HIGH-posta findings held ONLY by
+                                             # the auditor's own defense (would condemn without it)
 
     def add(self, finding: Finding) -> None:
         self.findings.append(finding)
@@ -480,6 +482,7 @@ class Ledger:
             "external_attested_identity": self.external_attested_identity,
             "eye_corroboration": self.eye_corroboration,
             "routing_delta": self.routing_delta,
+            "defense_holds": self.defense_holds,
             "findings": [f.to_dict() for f in self.findings],
         }
         return json.dumps(payload, indent=indent, ensure_ascii=False)

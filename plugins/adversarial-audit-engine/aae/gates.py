@@ -227,6 +227,37 @@ def _machine_external(external_identity: str | None) -> str | None:
     return s
 
 
+# --- 1.17: closure guards against the "defend everything" escape ---------------------------------------
+_ALL_HELD_MIN = 5   # below this a fully-held run is not suspicious by itself
+
+
+def unsettled_holds(ledger: Ledger) -> list:
+    """Held findings that ADMIT missing evidence: `artefatto_regge` while declaring `requires_docs` absent
+    from `evidence_base`. The evidence-sufficiency gate deliberately lets absolution through (needing a
+    document bars condemning, not absolving) — but a hold that rests on a document the run does not have is
+    not SETTLED, so it must not count as closed at completion. Verdict untouched."""
+    base = {str(d).strip().lower() for d in (getattr(ledger, "evidence_base", []) or []) if str(d).strip()}
+    out = []
+    for f in ledger.findings:
+        if f.verdict != Verdict.ARTIFACT_HOLDS or f.action_state.value == "deliberately_discarded":
+            continue
+        missing = [str(d).strip() for d in (getattr(f, "requires_docs", []) or [])
+                   if str(d).strip() and str(d).strip().lower() not in base]
+        if missing:
+            out.append(f)
+    return out
+
+
+def all_held_suspicious(ledger: Ledger, max_posta: Posta) -> bool:
+    """A HIGH-stakes run where EVERY live finding holds (nothing condemned, nothing routed) has resolved the
+    whole artefact internally. The governor already calls this suspicious; here it becomes a closure bar.
+    Real runs RN95 A1/B1: 17-18/18 held with defenses of the form 'the expert declares the limit'."""
+    live = [f for f in ledger.findings if f.action_state.value != "deliberately_discarded"]
+    if max_posta != Posta.HIGH or len(live) < _ALL_HELD_MIN:
+        return False
+    return all(f.verdict == Verdict.ARTIFACT_HOLDS for f in live)
+
+
 def evaluate_completion(ledger: Ledger, *, max_posta: Posta,
                         external_identity: str | None,
                         internal_identity: str,
@@ -266,6 +297,22 @@ def evaluate_completion(ledger: Ledger, *, max_posta: Posta,
             "BLOCKED_OPEN_ITEMS",
             f"{len(blockers)} NEEDS_READING/NEEDS_EXPERT findings still open "
             "(e.g. conceptual-novel routed to human expert).",
+        )
+    # 1.17 closure guards (verdicts untouched; only closure is withheld)
+    _unsettled = unsettled_holds(ledger)
+    if _unsettled:
+        return CompletionStatus(
+            "BLOCKED_OPEN_ITEMS",
+            f"{len(_unsettled)} held finding(s) rest on documents not in the evidence base "
+            "(held but UNSETTLED: " + ", ".join(str(f.id) for f in _unsettled[:8]) + ") — a human "
+            "must read the defense against the missing document before closure.",
+        )
+    if all_held_suspicious(ledger, max_posta):
+        return CompletionStatus(
+            "BLOCKED_OPEN_ITEMS",
+            "ALL-HELD on a high-stakes run: every live finding holds, nothing condemned or routed — "
+            "the artefact was resolved entirely by the auditor's own defenses. A human must review "
+            "the defenses of the HIGH-posta findings before closure.",
         )
 
     # Human closure — only a cryptographically verified attestation validates.

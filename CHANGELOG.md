@@ -5,6 +5,18 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.17.0 — Closure guards against the "defend everything" escape
+A/B pilot on the real RN95 auction (2 runs with engine code readable, 2 denied; pre-registered): code access did NOT explain
+the behaviour (H1 not supported), but run-to-run variance did — 2 of 4 runs held 17-18/18 findings with defenses of the form
+"the expert declares the limit" (incl. the two biggest risks: leases and the uninspected roof), and one was promoted to
+CROSS_MODEL_REVIEWED with nothing left for the human. After 1.16 guarded the `requires_docs` lever, the escape moved to the
+unguarded `defense.present` lever. Now, in code: (1) a finding that HOLDS while declaring a missing `requires_docs` is
+UNSETTLED and blocks completion; (2) a HIGH-stakes run with ≥5 live findings all held is ALL-HELD and blocks completion
+(the governor's 'resolved everything internally' signal becomes a bar); (3) new record-only `defense_holds` + `DEFENSE LEVER`
+flag: HIGH-posta holds resting only on the auditor's defense. Verdicts never change (verified identical on 12 real
+payloads); only closure is withheld (RN95-B1: CROSS_MODEL_REVIEWED → BLOCKED). The 1.16 `/audit` sentence that pushed
+against declaring `requires_docs` is replaced by a neutral one. New `tests/test_closure_guards.py` (7).
+
 ## 1.16.0 — Routing sentinel: expose condemnations avoided only by self-declared levers
 The verdict is a pure function of auditor-declared fields, and two of them route a finding out of condemnation with no
 content check: `requires_docs` (→ NEEDS_EXPERT) and `source_grade > 1` (→ NEEDS_READING). Found on a real run (Rimini

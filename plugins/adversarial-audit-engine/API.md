@@ -42,6 +42,12 @@ recomputes each verdict without those two levers while keeping every content gat
 a difference is recorded and flagged `ROUTING SENTINEL`. It never changes a verdict and does not judge whether the
 routing was warranted — that is the human's call (is the document needed for the claim AS STATED, or only to resolve it?).
 
+**closure guards + defense lever (added 1.17.0).** Completion (never a verdict) is withheld — `BLOCKED_OPEN_ITEMS` — when
+(a) a finding HOLDS while declaring `requires_docs` absent from `evidence_base` (held but UNSETTLED), or (b) on a HIGH-stakes
+run with ≥5 live findings EVERY live finding holds (ALL-HELD: resolved entirely by the auditor's own defenses). Record-only
+ledger field `defense_holds` lists HIGH-posta findings that hold ONLY by `defense.present` (without it they would condemn,
+content gates kept), flagged `DEFENSE LEVER`. Born from the RN95 A/B pilot: 2 of 4 runs held 17-18/18, one was promoted.
+
 **finding — optional authority axis (added 1.14.0, gate).** `rests_on_authority` (bool, default false) and
 `authority_cited` (str, optional) declare that a finding's defect turns on an EXTERNAL rule — a statute,
 regulation, standard, code of practice, or the mandate/quesito — and name the governing norm. Together with

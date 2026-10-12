@@ -80,10 +80,31 @@ def routing_sentinel(ledger, *, primary_reachable: bool = True, source_text: str
             delta.append({"id": fid, "label": label, "verdict": f.verdict.value,
                           "counterfactual": cf.value, "levers": levers})
     ledger.routing_delta = delta
+    # 1.17 defense lever (record-only): HIGH-posta findings held ONLY by the auditor's own defense — without
+    # `defense.present` they would condemn. Not a judgement: the list of defenses a human should read first.
+    dh = []
+    for f in ledger.findings:
+        if f.verdict != Verdict.ARTIFACT_HOLDS or getattr(f.posta, "value", f.posta) != "high":
+            continue
+        if f.action_state.value == "deliberately_discarded":
+            continue
+        cf = copy.deepcopy(f)
+        cf.defense.present = False
+        cf.requires_docs = []
+        v = _counterfactual(cf, primary_reachable=primary_reachable, source_text=source_text)
+        if v in _CONDEMN:
+            fid = str(f.id or "")
+            dh.append(fid if fid and not fid.endswith("-?") else (str(f.element or fid)[:40] or "?"))
+    ledger.defense_holds = dh
+    notes = []
+    if dh:
+        notes.append(f"DEFENSE LEVER: {len(dh)} rilievo/i ad ALTA posta regge/reggono SOLO per la difesa scritta "
+                     f"dall'auditor — {'; '.join(dh)}. Record-only: l'umano legga per prime queste difese "
+                     f"(un limite dichiarato non è una confutazione).")
     if not delta:
-        return []
+        return notes
     items = "; ".join(f"{d['label']} ({', '.join(d['levers'])}: {d['verdict']} → senza: {d['counterfactual']})"
                       for d in delta)
-    return [f"ROUTING SENTINEL: {len(delta)} condanna/e evitata/e SOLO da instradamento auto-dichiarato — "
+    return notes + [f"ROUTING SENTINEL: {len(delta)} condanna/e evitata/e SOLO da instradamento auto-dichiarato — "
             f"{items}. Record-only: verificare che ciascun documento/grado sia necessario al rilievo COSÌ "
             f"COM'È FORMULATO (non solo a risolverlo)."]
