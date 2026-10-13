@@ -1,0 +1,16 @@
+{
+ "_nota": "PRE-REGISTRATO 13/10/2026 prima di qualsiasi scoring. Fattori materiali dell'asta RN95 derivati da perizia+avviso, NON dai rilievi delle run. Regex su element+accusation.text, case-insensitive. Sovrapposizioni possibili e dichiarate.",
+ "possesso_locazioni": ["locazion", "contratt", "possesso", "liberazion", "occupat"],
+ "copertura_terrazzo_infiltrazioni": ["terrazz", "infiltraz", "copertura", "muffa", "impermeabil"],
+ "ripristino_difformita_non_sanabili": ["ripristin", "non regolarizzabil", "non sanabil", "sottoscala"],
+ "oneri_sanatoria_9900": ["9[.]?900", "sanatoria", "\\bcila\\b", "oblazion"],
+ "valore_unitario_omi": ["\\bomi\\b", "1[.]800", "valore unitario", "comparabil"],
+ "abbattimento_10": ["abbattiment", "\\b10 ?%", "forfettari"],
+ "consistenze_catasto": ["\\bvani\\b", "docfa", "consistenz", "rendita"],
+ "asseverazione_agibilita": ["asseverazion", "agibilit", "salubrit"],
+ "impianti_ape": ["impiant", "\\bape\\b", "classe g", "energetic"],
+ "cancellazione_formalita": ["cancellazion", "formalit", "gravam"],
+ "altezza_tolleranze": ["1,95", "altezz", "tolleranz"],
+ "confini_parti_comuni_allacci": ["confin", "parti comuni", "allacc"],
+ "prezzo_offerta_minima": ["offerta minima", "196[.]500", "ribasso", "24,5"]
+}

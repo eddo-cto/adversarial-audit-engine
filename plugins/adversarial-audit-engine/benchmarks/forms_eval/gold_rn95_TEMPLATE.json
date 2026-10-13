@@ -1,0 +1,20 @@
+{
+ "_istruzioni": "Da compilare SOLO dal revisore umano L4 (non dall'auditor né da chi ha scritto le forme). Per ogni fattore: 'non-solid' = in un referto corretto NON può essere presentato come solido (va aperto o segnalato); 'solid' = può legittimamente essere presentato come punto che regge; 'skip' = non valutabile. Salvare come gold_rn95.json nella stessa cartella. Non guardare forms_replay_report.json prima di compilare.",
+ "revisore": "",
+ "data": "",
+ "labels": {
+  "possesso_locazioni": "",
+  "copertura_terrazzo_infiltrazioni": "",
+  "ripristino_difformita_non_sanabili": "",
+  "oneri_sanatoria_9900": "",
+  "valore_unitario_omi": "",
+  "abbattimento_10": "",
+  "consistenze_catasto": "",
+  "asseverazione_agibilita": "",
+  "impianti_ape": "",
+  "cancellazione_formalita": "",
+  "altezza_tolleranze": "",
+  "confini_parti_comuni_allacci": "",
+  "prezzo_offerta_minima": ""
+ }
+}
