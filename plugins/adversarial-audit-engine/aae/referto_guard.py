@@ -18,6 +18,11 @@ Rules (violations are returned as human-readable strings; empty list == consiste
      `artefatto_regge` (holds) or `conteso`/`pending` (routed to the expert, not settled) may NOT
      be presented as a defect.
   3. every manifest id must exist in the ledger (no invented findings).
+  4. (1.18) a finding the core marks as resting only on the auditor's own defense (`defense_holds`) or as a
+     hold that admits a missing document (UNSETTLED: artefatto_regge + requires_docs absent from
+     evidence_base) may NOT be presented as "holds" (solid) — only as "open" (to verify). RN95 A/B pilot:
+     the biggest risks (leases, roof) held on "the expert declares the limit" defenses.
+  5. (1.18) those same findings may not be silently omitted: each must appear in the manifest.
 """
 from __future__ import annotations
 
@@ -54,10 +59,47 @@ def _ledger_index(ledger) -> dict:
     return out
 
 
+def _must_be_open(ledger) -> dict:
+    """{id: reason} for findings that may only be presented as 'open' (1.18)."""
+    if isinstance(ledger, dict):
+        findings = ledger.get("findings", [])
+        dh = ledger.get("defense_holds", []) or []
+        base = ledger.get("evidence_base", []) or []
+    else:
+        findings = getattr(ledger, "findings", ledger) or []
+        dh = getattr(ledger, "defense_holds", []) or []
+        base = getattr(ledger, "evidence_base", []) or []
+    base = {str(b).strip().lower() for b in base if str(b).strip()}
+    dh = {str(x) for x in dh}
+    out = {}
+    for f in findings if isinstance(findings, list) else []:
+        g = (lambda k: f.get(k)) if isinstance(f, dict) else (lambda k: getattr(f, k, None))
+        fid = g("id")
+        if not fid:
+            continue
+        verdict = g("verdict"); verdict = getattr(verdict, "value", verdict)
+        state = g("action_state"); state = getattr(state, "value", state)
+        if str(verdict) != "artefatto_regge" or str(state) == "deliberately_discarded":
+            continue
+        label = str(fid) if not str(fid).endswith("-?") else str(g("element") or fid)[:40]
+        if label in dh or str(fid) in dh:
+            out[fid] = "held ONLY by the auditor's own defense (DEFENSE LEVER)"
+            continue
+        missing = [d for d in (g("requires_docs") or []) if str(d).strip().lower() not in base]
+        if missing:
+            out[fid] = "held but UNSETTLED (missing: " + ", ".join(map(str, missing)) + ")"
+    return out
+
+
 def check_referto_consistency(ledger, manifest: list[dict]) -> list[str]:
     """Return a list of overstatement violations (empty == the referto matches the ledger)."""
     idx = _ledger_index(ledger)
     violations: list[str] = []
+    must_open = _must_be_open(ledger)
+    presented = {e.get("id") for e in (manifest or [])}
+    for fid, why in must_open.items():
+        if fid not in presented:
+            violations.append(f"{fid}: {why} — omitted from the referto; it must be presented as 'open'")
     for entry in manifest or []:
         fid = entry.get("id")
         if fid not in idx:
@@ -75,4 +117,7 @@ def check_referto_consistency(ledger, manifest: list[dict]) -> list[str]:
             violations.append(
                 f"{fid}: presented as '{pres_as}' but the ledger verdict is '{verdict}' "
                 f"(allowed: {', '.join(sorted(allowed))}) — the narrator overstated the ledger")
+        if fid in must_open and pres_as == "holds":
+            violations.append(
+                f"{fid}: presented as 'holds' (solid) but it is {must_open[fid]} — present it as 'open'")
     return violations

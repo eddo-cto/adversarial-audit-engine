@@ -42,6 +42,12 @@ recomputes each verdict without those two levers while keeping every content gat
 a difference is recorded and flagged `ROUTING SENTINEL`. It never changes a verdict and does not judge whether the
 routing was warranted — that is the human's call (is the document needed for the claim AS STATED, or only to resolve it?).
 
+**referto guard + unique ids (added 1.18.0).** `referto_guard.check_referto_consistency` adds two rules: a finding in
+`defense_holds` or held-but-UNSETTLED (held with `requires_docs` absent from `evidence_base`) may be presented only as
+`open`, never `holds`; and it may not be omitted from the manifest. The core now assigns a UNIQUE id to every finding
+(declared unique ids are kept; missing/`<role>-?`/duplicated ids become `<base>-NN` by position), so per-finding checks
+are unambiguous. Verdicts unchanged.
+
 **closure guards + defense lever (added 1.17.0).** Completion (never a verdict) is withheld — `BLOCKED_OPEN_ITEMS` — when
 (a) a finding HOLDS while declaring `requires_docs` absent from `evidence_base` (held but UNSETTLED), or (b) on a HIGH-stakes
 run with ≥5 live findings EVERY live finding holds (ALL-HELD: resolved entirely by the auditor's own defenses). Record-only

@@ -5,6 +5,15 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.18.0 — The referto may not sell a defense-only hold as solid; unique finding ids
+Round 2 of the RN95 A/B pilot (pre-registered, engine 1.17): 4/4 runs BLOCKED (1.17 effective; two runs that held
+20/20 and 25/26 would have been promoted under 1.15); code access again did not explain behaviour; no displacement to
+`cost_to_fix=trivial`. The remaining gap was the NARRATOR: a referto could still present defense-only or unsettled holds
+(leases, roof) as solid. `referto_guard` now (4) forbids presenting a `defense_holds` / UNSETTLED finding as `holds` and
+(5) forbids omitting it. The core now gives every finding a unique id (id-less payloads produced duplicate `<role>-?`
+ids that made the guard ambiguous on real runs). Verdicts identical 1.15→1.18 on 16 real payloads. New
+`tests/test_referto_guard_118.py` (6).
+
 ## 1.17.0 — Closure guards against the "defend everything" escape
 A/B pilot on the real RN95 auction (2 runs with engine code readable, 2 denied; pre-registered): code access did NOT explain
 the behaviour (H1 not supported), but run-to-run variance did — 2 of 4 runs held 17-18/18 findings with defenses of the form

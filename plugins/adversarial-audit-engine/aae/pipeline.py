@@ -50,9 +50,17 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
             import hashlib as _hl
             aid = "auto:" + _hl.sha256(" ".join(_src.split()).encode("utf-8")).hexdigest()[:16]
     ledger.artifact_id = aid
-    for rf in payload.get("findings", []):
+    _seen_ids: set = set()
+    for _i, rf in enumerate(payload.get("findings", []), start=1):
         f = parse_finding(rf, role_key=rf.get("source_role", "role"))
         if f:
+            # 1.18: every finding gets a UNIQUE id. A payload without ids yielded duplicate "<role>-?" ids, which
+            # made per-finding checks (referto_guard, sentinels) ambiguous on real runs (RN95 A/B). Declared unique
+            # ids are kept untouched; only missing or duplicated ones are replaced, deterministically by position.
+            if not f.id or f.id.endswith("-?") or f.id in _seen_ids:
+                base = (f.id[:-2] if f.id.endswith("-?") else f.id) or "F"
+                f.id = f"{base}-{_i:02d}"
+            _seen_ids.add(f.id)
             ledger.add(f)
     ledger.excluded_cells = dict(payload.get("excluded_cells", {}))
     ledger.evidence_base = list(payload.get("evidence_base", []) or [])
