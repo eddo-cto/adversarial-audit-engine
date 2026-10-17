@@ -23,6 +23,8 @@ Rules (violations are returned as human-readable strings; empty list == consiste
      evidence_base) may NOT be presented as "holds" (solid) — only as "open" (to verify). RN95 A/B pilot:
      the biggest risks (leases, roof) held on "the expert declares the limit" defenses.
   5. (1.18) those same findings may not be silently omitted: each must appear in the manifest.
+  6. (1.19) a common cause (root) may be presented as a CONCLUSION only if the ledger labels it 'sostenuta' (blind judge:
+     support + intruder, controls clean). Manifest entry: {"root_id": "R1", "presented_as": "conclusion"|"hypothesis"}.
 """
 from __future__ import annotations
 
@@ -100,7 +102,19 @@ def check_referto_consistency(ledger, manifest: list[dict]) -> list[str]:
     for fid, why in must_open.items():
         if fid not in presented:
             violations.append(f"{fid}: {why} — omitted from the referto; it must be presented as 'open'")
+    roots = {}
+    _rs = ledger.get("root_support", []) if isinstance(ledger, dict) else getattr(ledger, "root_support", [])
+    for r in _rs or []:
+        roots[str(r.get("id"))] = r.get("label")
     for entry in manifest or []:
+        if "root_id" in entry:
+            rid = str(entry.get("root_id"))
+            if rid not in roots:
+                violations.append(f"root {rid}: presented but absent from the ledger's root_support")
+            elif str(entry.get("presented_as", "hypothesis")).lower() == "conclusion" and roots[rid] != "sostenuta":
+                violations.append(f"root {rid}: presented as a conclusion but labelled '{roots[rid]}' — "
+                                  f"present it as a hypothesis of common cause")
+            continue
         fid = entry.get("id")
         if fid not in idx:
             violations.append(f"{fid}: presented but absent from the ledger (invented finding)")

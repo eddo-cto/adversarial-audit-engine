@@ -5,6 +5,16 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.19.0 — Common-cause support: a blind judge decides whether a root is sustained or a hypothesis
+From the «imbuto → Y» programme (teoria_Y, phases 1–3): a common cause is the trunk of a merge tree of findings, the
+fabricable part. On 4 real runs (12 roots) a lexical coherence test saw nothing (causes are abstractions), while a blind
+semantic judge separated real roots from same-run random groups (support 1.08 vs 0.50; intruder 7/12 vs chance 0.24;
+'sustained' 6/12 vs 0/12), in line with attribution (AIS/ALCE) and word-intrusion methods. New `aae/root_support.py`:
+roots declared with members; `run_core.py --root-probe` emits a deterministic blind probe with intruders and controls;
+the core scores the judge's answers with its own hidden key; controls flag a lenient judge; ledger `root_support` +
+`root_support_summary`; `referto_guard` rule 6 (no root as a conclusion unless sustained). Record-only, verdicts
+unchanged. New `tests/test_root_support.py` (9).
+
 ## 1.18.0 — The referto may not sell a defense-only hold as solid; unique finding ids
 Round 2 of the RN95 A/B pilot (pre-registered, engine 1.17): 4/4 runs BLOCKED (1.17 effective; two runs that held
 20/20 and 25/26 would have been promoted under 1.15); code access again did not explain behaviour; no displacement to

@@ -203,6 +203,7 @@ Usage:
   run_core.py --signature [path]   diachronic cross-vendor shift (descriptive)
   run_core.py --help               this message
   run_core.py --version            print the engine version
+  run_core.py --root-probe <findings.json>  print the BLIND probe for the declared common causes (1.19)
 
 Environment:
   AAE_OUT       output directory for this run (default: ./aae_out)
@@ -303,6 +304,16 @@ def main(argv: list[str] | None = None) -> int:
     # diachronic cross-vendor signature (descriptive):  run_core.py --signature [path]
     if argv and argv[0] == "--signature":
         print(reg.signature(argv[1] if len(argv) > 1 else None))
+        return 0
+
+    # blind probe for declared common causes (1.19):  run_core.py --root-probe findings.json
+    if argv and argv[0] == "--root-probe":
+        from aae.root_support import build_probe
+        if len(argv) < 2:
+            print("run_core.py --root-probe <findings.json>", file=sys.stderr)
+            return 2
+        with open(argv[1], encoding="utf-8") as fh:
+            print(json.dumps(build_probe(json.load(fh)), ensure_ascii=False, indent=1))
         return 0
 
     if argv and argv[0].startswith("-"):

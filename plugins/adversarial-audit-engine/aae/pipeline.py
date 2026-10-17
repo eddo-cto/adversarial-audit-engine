@@ -24,6 +24,7 @@ from .source_grade import (enforce_source_grade_gate, source_grade_coverage, bel
 from .run_manifest import build_manifest, enforce_run_validity
 from .grounding import enforce_grounding, stamp_evidence_spans
 from .routing_sentinel import routing_sentinel
+from .root_support import score_roots
 from . import metrics as metrics_mod
 from .triage import TriageResult
 from .meta_epistemic import MetaGovernor
@@ -102,6 +103,12 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
     # condemnations once the levers were removed). Content gates (defense, competence, grounding) are kept.
     ledger.flags.extend(routing_sentinel(ledger, primary_reachable=primary_reachable,
                                          source_text=src_text or ""))
+    # root support (1.19, record-only): declared common causes scored by a blind external judge (probe built and keyed
+    # deterministically by the core; controls detect a lenient judge). Verdicts untouched.
+    _rs, _rs_sum, _rs_notes = score_roots(payload)
+    ledger.root_support = _rs
+    ledger.root_support_summary = _rs_sum
+    ledger.flags.extend(_rs_notes)
 
     internal = payload.get("internal_identity", "anthropic:internal")
     external = payload.get("external_identity")

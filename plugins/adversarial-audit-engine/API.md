@@ -42,6 +42,15 @@ recomputes each verdict without those two levers while keeping every content gat
 a difference is recorded and flagged `ROUTING SENTINEL`. It never changes a verdict and does not judge whether the
 routing was warranted — that is the human's call (is the document needed for the claim AS STATED, or only to resolve it?).
 
+**common-cause support (added 1.19.0, record-only).** Optional payload fields `deep_causal_roots: [{id, statement,
+finding_ids}]` and `root_judgments: [{id, supporto, intruso}]`. `run_core.py --root-probe <findings.json>` prints a BLIND
+probe (per root: members' quotes + a seeded intruder; plus a same-statement CONTROL over random non-members), keyed
+deterministically by the core (the key is never in the payload). An independent judge answers support (pieno|parziale|
+assente) and the intruder letter. Ledger `root_support` labels each root `sostenuta` (support ≥ parziale AND intruder
+recognised), `ipotesi`, `non_verificabile` (members missing/unknown) or `non_verificato` (no judgment); if any control
+scores as sustained the judge is LENIENT and all roots fall to `ipotesi`. `root_support_summary` holds the counts.
+`referto_guard` rule 6: a root may be presented as a `conclusion` only if `sostenuta`. Verdicts never change.
+
 **referto guard + unique ids (added 1.18.0).** `referto_guard.check_referto_consistency` adds two rules: a finding in
 `defense_holds` or held-but-UNSETTLED (held with `requires_docs` absent from `evidence_base`) may be presented only as
 `open`, never `holds`; and it may not be omitted from the manifest. The core now assigns a UNIQUE id to every finding

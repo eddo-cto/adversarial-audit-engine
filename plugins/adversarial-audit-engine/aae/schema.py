@@ -436,6 +436,9 @@ class Ledger:
                                              # out of condemnation ONLY by a self-declared lever
                                              # (requires_docs / source_grade>1): [{id, verdict,
                                              # counterfactual, levers}]. Never changes a verdict.
+    root_support: list = field(default_factory=list)          # 1.19 record-only: per declared common cause, label
+                                             # sostenuta | ipotesi | non_verificabile | non_verificato
+    root_support_summary: dict = field(default_factory=dict)  # 1.19 counts + control (judge leniency) results
     defense_holds: list = field(default_factory=list)  # 1.17 record-only: HIGH-posta findings held ONLY by
                                              # the auditor's own defense (would condemn without it)
 
@@ -483,6 +486,8 @@ class Ledger:
             "eye_corroboration": self.eye_corroboration,
             "routing_delta": self.routing_delta,
             "defense_holds": self.defense_holds,
+            "root_support": self.root_support,
+            "root_support_summary": self.root_support_summary,
             "findings": [f.to_dict() for f in self.findings],
         }
         return json.dumps(payload, indent=indent, ensure_ascii=False)
