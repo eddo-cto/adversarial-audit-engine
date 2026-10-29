@@ -8,7 +8,7 @@ it is an *amplifier* — it lends a third party's error the authority of a
 only because the oracle happened to climb to the filed primary PDFs.
 
 This makes the rule the run proposed enforceable IN CODE, not in a prompt: a
-conviction (ARTIFACT_DEFECTIVE) that rests on a numeric datum of grade worse than
+conviction (ARTIFACT_DEFECTIVE or, since 1.20, REDUCED) that rests on a numeric datum of grade worse than
 primary — when a primary document on the same datum is reachable — cannot stand;
 it is downgraded to NEEDS_READING (read the primary first). Data-driven: the grade
 lives on the finding (`source_grade`), read from the payload, not from a side table.
@@ -38,7 +38,11 @@ def enforce_source_grade_gate(ledger: Ledger, *,
     if not primary_reachable:
         return notes
     for f in ledger.findings:
-        if f.verdict != Verdict.ARTIFACT_DEFECTIVE:
+        # 1.20: REDUCED is a condemnation too ("real but minor"). Looking at ARTIFACT_DEFECTIVE only let a claim on a
+        # non-primary datum escape the gate by declaring cost_to_fix=trivial — a SEVERITY declaration deciding a TRUTH
+        # gate (gauge leak). Found on a real run (CT 2800/2025, F-12: a lookup on a secondary source, overturned at L4
+        # by reading the primary). Severity may order a condemnation; it may not exempt it from the source check.
+        if f.verdict not in (Verdict.ARTIFACT_DEFECTIVE, Verdict.REDUCED):
             continue
         grade = int(getattr(f, "source_grade", SourceGrade.UNKNOWN) or SourceGrade.UNKNOWN)
         if grade > int(SourceGrade.PRIMARY_FILED):

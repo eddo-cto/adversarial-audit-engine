@@ -42,6 +42,16 @@ recomputes each verdict without those two levers while keeping every content gat
 a difference is recorded and flagged `ROUTING SENTINEL`. It never changes a verdict and does not judge whether the
 routing was warranted — that is the human's call (is the document needed for the claim AS STATED, or only to resolve it?).
 
+**gauge invariance (added 1.20.0, record-only) + source-grade gate on REDUCED (behaviour change).** A severity
+declaration (`posta`, `cost_to_fix`) may order a finding, never decide whether it condemns, holds or stays open. After the
+gates, the core re-runs ITSELF on each finding under every single-lever severity variation (`discipline(..., _probe=True)`
+stops the recursion) and records in `gauge_report` the findings whose truth class (condemn / holds / open) moves, with
+`gauge_summary = {checked, dependent, levers}` and a `GAUGE` flag. Verdicts never change here. The one leak found on 28
+real payloads (29/463 findings) was the source-grade gate looking only at ARTIFACT_DEFECTIVE: declaring
+`cost_to_fix=trivial` turned a condemnation on a non-primary datum into REDUCED and out of the gate. Since 1.20 the gate
+also downgrades REDUCED to NEEDS_READING when a primary is reachable (11/463 verdicts change, all REDUCED → NEEDS_READING);
+after the fix the probe finds 0 dependent findings on the same payloads.
+
 **common-cause support (added 1.19.0, record-only).** Optional payload fields `deep_causal_roots: [{id, statement,
 finding_ids}]` and `root_judgments: [{id, supporto, intruso}]`. `run_core.py --root-probe <findings.json>` prints a BLIND
 probe (per root: members' quotes + a seeded intruder; plus a same-statement CONTROL over random non-members), keyed

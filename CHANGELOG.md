@@ -5,6 +5,19 @@ preview; every entry below is enforced in code and pinned by tests (CI on `main`
 Python 3.10–3.13). Version numbers are the plugin version (`aae.__version__`); repository/paper
 releases are tagged separately (`v1.0.x`).
 
+## 1.20.0 — Gauge invariance: severity may not decide truth; source-grade gate closes the REDUCED escape
+From the «Trasduzione e uscita da Goodhart» programme: measure only what is invariant under the transformations the
+optimiser controls (quotient by G), and wherever proxy and target are not aligned there is a direction that moves the
+proxy alone. In the engine the verdict is a function of auditor-declared fields; `posta` and `cost_to_fix` describe how
+much a defect matters and must be a gauge for whether it is real. New `aae/gauge.py` re-runs the core on each finding
+under every single-lever severity variation and records the findings whose truth class (condemn / holds / open) moves
+(`gauge_report`, `gauge_summary`, `GAUGE` flag; record-only). On 28 real payloads it found 29/463 dependent findings, all
+from one leak: the source-grade gate looked only at ARTIFACT_DEFECTIVE, so `cost_to_fix=trivial` turned a condemnation on
+a non-primary datum into REDUCED and out of the gate (real case: CT 2800/2025 F-12, false, overturned at L4 by reading
+the primary). **Behaviour change:** the gate now covers REDUCED too — 11/463 verdicts change, all REDUCED → NEEDS_READING
+(towards anti-over-demolition); afterwards 0 dependent findings. New `tests/test_gauge.py` (7, incl. a seeded property
+test and a leak-detection test with the old gate restored).
+
 ## 1.19.0 — Common-cause support: a blind judge decides whether a root is sustained or a hypothesis
 From the «imbuto → Y» programme (teoria_Y, phases 1–3): a common cause is the trunk of a merge tree of findings, the
 fabricable part. On 4 real runs (12 roots) a lexical coherence test saw nothing (causes are abstractions), while a blind

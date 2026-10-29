@@ -439,6 +439,9 @@ class Ledger:
     root_support: list = field(default_factory=list)          # 1.19 record-only: per declared common cause, label
                                              # sostenuta | ipotesi | non_verificabile | non_verificato
     root_support_summary: dict = field(default_factory=dict)  # 1.19 counts + control (judge leniency) results
+    gauge_report: list = field(default_factory=list)   # 1.20 record-only: findings whose truth class moves with a
+                                             # severity-only re-declaration (posta / cost_to_fix)
+    gauge_summary: dict = field(default_factory=dict)  # 1.20 {checked, dependent, levers}
     defense_holds: list = field(default_factory=list)  # 1.17 record-only: HIGH-posta findings held ONLY by
                                              # the auditor's own defense (would condemn without it)
 
@@ -488,6 +491,8 @@ class Ledger:
             "defense_holds": self.defense_holds,
             "root_support": self.root_support,
             "root_support_summary": self.root_support_summary,
+            "gauge_report": self.gauge_report,
+            "gauge_summary": self.gauge_summary,
             "findings": [f.to_dict() for f in self.findings],
         }
         return json.dumps(payload, indent=indent, ensure_ascii=False)

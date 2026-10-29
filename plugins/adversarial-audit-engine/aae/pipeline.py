@@ -33,7 +33,7 @@ from .type1_calibration import latest_calibration, cite as cite_type1
 from .layer_policy import deep_causal_warranted
 
 
-def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditResult:
+def discipline(payload: dict, *, attested_identity: str | None = None, _probe: bool = False) -> AuditResult:
     """Enforce the whole discipline on a findings payload and return the AuditResult (no I/O).
 
     `attested_identity`: the identity of an external eye that was ACTUALLY called. Trusted callers
@@ -109,6 +109,15 @@ def discipline(payload: dict, *, attested_identity: str | None = None) -> AuditR
     ledger.root_support = _rs
     ledger.root_support_summary = _rs_sum
     ledger.flags.extend(_rs_notes)
+    # gauge invariance (1.20, record-only): the TRUTH class of a verdict (condemn / holds / open) must not change when
+    # only a SEVERITY declaration (posta, cost_to_fix) is re-declared. The probe re-runs this very core per finding
+    # (`_probe=True` stops the recursion), so it audits every current and future gate without a parallel model of it.
+    if not _probe:
+        from .gauge import gauge_probe
+        _g, _g_sum, _g_notes = gauge_probe(payload, ledger)
+        ledger.gauge_report = _g
+        ledger.gauge_summary = _g_sum
+        ledger.flags.extend(_g_notes)
 
     internal = payload.get("internal_identity", "anthropic:internal")
     external = payload.get("external_identity")
