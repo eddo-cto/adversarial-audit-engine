@@ -35,6 +35,31 @@ maps every name to plain language, so the codebase is readable without the paper
 | `schema` | core data structures (Ledger, Finding, Verdict, IndependenceLevel, …). |
 | `config` | run configuration (stakes, identities, thresholds). |
 
+## Run contract, sources and closure
+
+| module | plain language |
+|---|---|
+| `pipeline` | the one disciplined core: every entry point funnels through `discipline()`, which applies all gates to a findings payload. |
+| `run_manifest` | the execution manifest: which layers ran; a run missing a required layer is `INVALID_RUN`. |
+| `layer_policy` | decides deterministically when the deep-causal layer is warranted. |
+| `run_registry` | the single longitudinal registry of runs (record-only). |
+| `attestation` | makes closure real: `VALIDATED` needs an HMAC under an operator key the model cannot reach; independence is credited only from the adapter-attested identity. |
+| `source_grade` | the source-grade gate: a condemnation on a worse-than-primary source, when a primary is reachable, must be read first. |
+| `type1_calibration` | measures an auditor's false-demolition rate on a control battery and cites it with its confidence interval. |
+| `attack_vectors` | the library of attack moves per defect class (the dual of the defense-gate). |
+
+## Anti-Goodhart guards (1.16–1.20, record-only unless stated)
+
+The verdict is a function of fields the auditor declares, so an auditor can optimise the verdict instead of the truth.
+These modules expose that, without changing verdicts.
+
+| module | plain language |
+|---|---|
+| `routing_sentinel` | lists condemnations avoided only by the auditor's own routing (missing documents, secondary source); also the high-stakes findings that hold only on the auditor's own defense (*defense lever*). |
+| `referto_guard` | the ledger is the truth, the prose may not overstate it: a report may not present an open or defense-only finding as solid, nor an unsustained common cause as a conclusion. |
+| `root_support` | a declared common cause is checked by a blind external judge with intruders and control groups: *sustained* or *hypothesis*. |
+| `gauge` | a severity declaration (stakes, fix cost) may order a finding but never decide whether it is real: the core re-runs each finding with other severities and flags any change of truth class. |
+
 ## Roles, oracles and I/O
 
 | module | plain language |

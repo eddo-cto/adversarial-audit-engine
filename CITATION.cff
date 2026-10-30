@@ -3,14 +3,14 @@ doi: 10.5281/zenodo.21288401
 title: "Adversarial Audit Engine, and: Managing epistemic circularity in self-referential evaluation"
 message: "If you use this software or these papers, please cite them as below."
 type: software
-version: "0.14.17"
+version: "1.20.0"
 authors:
   - family-names: Gazzoni
     given-names: Edoardo
     affiliation: "Independent researcher"
 repository-code: "https://github.com/eddo-cto/adversarial-audit-engine"
 license: MIT
-date-released: 2026-07-09
+date-released: 2026-10-29
 keywords:
   - self-referential evaluation
   - circularity

@@ -43,6 +43,12 @@ pinned by a test, so it behaves identically every run and cannot be talked out o
   **calibrated** on a blind control battery and each run **cites** the number with its confidence interval
   (`benchmarks/type1_calibration/`), never "low" — it gives the rate or says "not calibrated".
 
+- **Anti-Goodhart guards (1.16–1.20).** The verdict is a function of fields the auditor declares, so the
+  core checks that the auditor cannot move it with declarations alone: condemnations avoided only by
+  self-declared routing are listed (`routing_sentinel`), a report may not present an open finding as solid
+  (`referto_guard`), declared common causes are scored by a blind judge with controls (`root_support`), and a
+  severity declaration may never change whether a finding is real (`gauge`).
+
 Full version history: **[`CHANGELOG.md`](CHANGELOG.md)**.
 
 ## What it does (and does not)
@@ -93,9 +99,11 @@ the discipline.
 ## Installation (Claude Code)
 
 ```
-/plugin marketplace add <this-repo-on-github>
-/plugin install adversarial-audit-engine
+/plugin marketplace add eddo-cto/adversarial-audit-engine
+/plugin install adversarial-audit-engine@capybara-media
 ```
+
+To update an existing install: `/plugin marketplace update capybara-media`, then reinstall or update the plugin.
 
 Then, inside the project you want to audit:
 
@@ -134,7 +142,7 @@ done
 - **[`GLOSSARY.md`](plugins/adversarial-audit-engine/GLOSSARY.md)** — every module and coined term in one
   plain-language line.
 - **[`INVARIANTI_metodo.md`](plugins/adversarial-audit-engine/INVARIANTI_metodo.md)** — the
-  non-negotiable method invariants.
+  non-negotiable method invariants (in Italian, with an English abstract).
 - **[`MEASUREMENT_layer_contribution.md`](plugins/adversarial-audit-engine/MEASUREMENT_layer_contribution.md)**
   — how `REQUIRED_LAYERS` is measured, not assumed.
 - **[`ARCHITETTURA_confini.md`](plugins/adversarial-audit-engine/ARCHITETTURA_confini.md)** — role
